@@ -631,7 +631,13 @@ function cardHtml(t) {
       if (!isNaN(d)) return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'});
       return dataRaw.includes('/') ? dataRaw.split('T')[0] : dataRaw;
     })();
-    const horaFmt = t.Hora ? t.Hora.trim() : '';
+    const horaRaw = t.Hora ? t.Hora.trim() : '';
+    const horaFmt = (() => {
+      if (!horaRaw) return '';
+      const d = new Date(horaRaw);
+      if (!isNaN(d)) return d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+      return horaRaw.substring(0, 5);
+    })();
     meta.push(horaFmt ? `📅 ${dataFmt} às ${horaFmt}` : `📅 ${dataFmt}`);
   }
   if (t.Envolvido) meta.push(`👤 ${t.Envolvido}`);
