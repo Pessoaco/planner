@@ -624,8 +624,16 @@ function cardHtml(t) {
   const concluido = status === 'Concluído';
 
   const meta = [];
-  if (t['Data Prevista']) meta.push(`📅 ${t['Data Prevista']}`);
-  if (t.Hora) meta.push(`⏰ ${t.Hora}`);
+  if (t['Data Prevista']) {
+    const dataRaw = t['Data Prevista'];
+    const dataFmt = (() => {
+      const d = new Date(dataRaw);
+      if (!isNaN(d)) return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'});
+      return dataRaw.includes('/') ? dataRaw.split('T')[0] : dataRaw;
+    })();
+    const horaFmt = t.Hora ? t.Hora.trim() : '';
+    meta.push(horaFmt ? `📅 ${dataFmt} às ${horaFmt}` : `📅 ${dataFmt}`);
+  }
   if (t.Envolvido) meta.push(`👤 ${t.Envolvido}`);
   if (t.Observação) meta.push(`💬 ${t.Observação}`);
 
