@@ -645,7 +645,6 @@ function cardHtml(t) {
       <div class="badges">
         <span class="badge badge-prio-${prio}">${prio}</span>
         <span class="badge badge-status-${status.replace(/\s/g,'')}">${status}</span>
-        ${t['Data criação'] ? `<span class="badge badge-info">📆 ${t['Data criação']}</span>` : ''}
       </div>
       ${meta.length ? `<div class="tarefa-meta">${meta.map(m => `<span class="meta-item">${m}</span>`).join('')}</div>` : ''}
       ${!concluido ? `<button class="btn-concluir" onclick="concluir('${t.ID}', this)" id="btn-${t.ID}">✅ Marcar como concluída</button>` : ''}
