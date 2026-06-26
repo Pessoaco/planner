@@ -2,7 +2,7 @@
   "name": "Planner da Produtividade",
   "short_name": "Planner",
   "description": "Gerenciador de tarefas pessoal",
-  "start_url": "/",
+  "start_url": "/planner/",
   "display": "standalone",
   "background_color": "#f8f9fa",
   "theme_color": "#4f46e5",
