@@ -468,9 +468,12 @@
 <div class="filters" id="filters">
   <button class="filter-btn active" data-filter="todos" onclick="setFilter('todos')">Todas</button>
   <button class="filter-btn" data-filter="Aberto" onclick="setFilter('Aberto')">Abertas</button>
-  <button class="filter-btn" data-filter="Andamento" onclick="setFilter('Andamento')">Em andamento</button>
+  <button class="filter-btn" data-filter="Andamento" onclick="setFilter('Andamento')">Andamento</button>
   <button class="filter-btn" data-filter="Concluído" onclick="setFilter('Concluído')">Concluídas</button>
   <button class="filter-btn" data-filter="Alta" onclick="setFilter('Alta')">🔴 Alta</button>
+  <button class="filter-btn" data-filter="Média" onclick="setFilter('Média')">🟡 Média</button>
+  <button class="filter-btn" data-filter="Baixa" onclick="setFilter('Baixa')">🟢 Baixa</button>
+  <button class="filter-btn" data-filter="daniel" onclick="setFilter('daniel')">👤 Daniel</button>
 </div>
 
 <main class="main" id="main">
@@ -574,8 +577,10 @@ function renderCounters(tarefas) {
 
 function renderTarefas(tarefas) {
   let filtradas = tarefas;
-  if (filtroAtual === 'Alta') {
-    filtradas = tarefas.filter(t => t.Prioridade === 'Alta');
+  if (filtroAtual === 'Alta' || filtroAtual === 'Média' || filtroAtual === 'Baixa') {
+    filtradas = tarefas.filter(t => t.Prioridade === filtroAtual);
+  } else if (filtroAtual === 'daniel') {
+    filtradas = tarefas.filter(t => (t.Envolvido || '').toLowerCase().includes('daniel'));
   } else if (filtroAtual !== 'todos') {
     filtradas = tarefas.filter(t => t.Status === filtroAtual);
   }
