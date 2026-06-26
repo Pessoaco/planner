@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#4f46e5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Planner">
+<link rel="manifest" href="manifest.json">
+<title>Planner da Produtividade</title>
+<style>
+  :root {
+    --primary: #4f46e5;
+    --primary-light: #eef2ff;
+    --success: #16a34a;
+    --success-light: #dcfce7;
+    --warning: #d97706;
+    --warning-light: #fef3c7;
+    --danger: #dc2626;
+    --danger-light: #fee2e2;
+    --gray: #6b7280;
+    --gray-light: #f3f4f6;
+    --border: #e5e7eb;
+    --text: #111827;
+    --text-muted: #6b7280;
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--primary);
+    color: white;
+    padding: 16px 20px 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(79,70,229,0.3);
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+  .header-subtitle { font-size: 12px; opacity: 0.8; }
+
+  .btn-refresh {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .btn-refresh:active { background: rgba(255,255,255,0.3); }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    padding: 0 4px;
+  }
+
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.7);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .tab.active {
+    color: white;
+    border-bottom-color: white;
+  }
+
+  /* CONTADORES */
+  .counters {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .counters::-webkit-scrollbar { display: none; }
+
+  .counter-card {
+    flex: 0 0 auto;
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    min-width: 80px;
+  }
+
+  .counter-card .num {
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .counter-card .label {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .counter-card.aberto .num { color: var(--primary); }
+  .counter-card.andamento .num { color: var(--warning); }
+  .counter-card.concluido .num { color: var(--success); }
+  .counter-card.total .num { color: var(--text); }
+
+  /* FILTROS */
+  .filters {
+    display: flex;
+    gap: 6px;
+    padding: 0 16px 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .filters::-webkit-scrollbar { display: none; }
+
+  .filter-btn {
+    flex: 0 0 auto;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    background: var(--card);
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .filter-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+  }
+
+  /* MAIN */
+  .main {
+    padding: 0 16px 100px;
+  }
+
+  /* CATEGORIA */
+  .categoria-group {
+    margin-bottom: 16px;
+  }
+
+  .categoria-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0 6px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .categoria-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    flex: 1;
+  }
+
+  .categoria-count {
+    background: var(--gray-light);
+    color: var(--gray);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 10px;
+  }
+
+  .categoria-toggle { color: var(--text-muted); font-size: 12px; }
+
+  /* CARD TAREFA */
+  .tarefa-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 8px;
+    box-shadow: var(--shadow);
+    border-left: 3px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .tarefa-card.prioridade-Alta { border-left-color: var(--danger); }
+  .tarefa-card.prioridade-Média { border-left-color: var(--warning); }
+  .tarefa-card.prioridade-Baixa { border-left-color: var(--success); }
+  .tarefa-card.status-Concluído { opacity: 0.55; }
+
+  .tarefa-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .tarefa-nome {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .tarefa-card.status-Concluído .tarefa-nome {
+    text-decoration: line-through;
+    color: var(--text-muted);
+  }
+
+  .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 8px;
+  }
+
+  .badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+
+  .badge-prio-Alta { background: var(--danger-light); color: var(--danger); }
+  .badge-prio-Média { background: var(--warning-light); color: var(--warning); }
+  .badge-prio-Baixa { background: var(--success-light); color: var(--success); }
+
+  .badge-status-Aberto { background: var(--primary-light); color: var(--primary); }
+  .badge-status-Andamento { background: var(--warning-light); color: var(--warning); }
+  .badge-status-Concluído { background: var(--success-light); color: var(--success); }
+
+  .badge-info { background: var(--gray-light); color: var(--gray); }
+
+  .tarefa-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+  }
+
+  .meta-item {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  /* BOTÃO CONCLUIR */
+  .btn-concluir {
+    margin-top: 10px;
+    width: 100%;
+    padding: 8px;
+    background: var(--success-light);
+    color: var(--success);
+    border: 1.5px solid var(--success);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-concluir:active { background: var(--success); color: white; }
+  .btn-concluir:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* LOADING */
+  .loading {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+  }
+
+  .spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 12px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  /* FAB IMPRIMIR */
+  .fab {
+    position: fixed;
+    bottom: 24px;
+    right: 20px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 52px;
+    height: 52px;
+    font-size: 20px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(79,70,229,0.4);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* MODAL IMPRIMIR */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 300;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: white;
+    border-radius: 20px 20px 0 0;
+    padding: 24px 20px 40px;
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+
+  .print-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .print-option:active { background: var(--primary-light); border-color: var(--primary); }
+
+  .print-option-icon { font-size: 24px; }
+
+  .print-option-text strong { display: block; font-size: 14px; }
+  .print-option-text span { font-size: 12px; color: var(--text-muted); }
+
+  .modal-cancel {
+    width: 100%;
+    padding: 12px;
+    background: var(--gray-light);
+    border: none;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    margin-top: 8px;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #1f2937;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 400;
+    white-space: nowrap;
+  }
+
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* PRINT STYLES */
+  @media print {
+    .header, .fab, .modal-overlay, .toast, .btn-concluir, .filters { display: none !important; }
+    body { background: white; }
+    .main { padding: 0; }
+    .tarefa-card { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; margin-bottom: 6px; }
+
+    .print-blank .tarefa-nome,
+    .print-blank .badges,
+    .print-blank .tarefa-meta { visibility: hidden; }
+
+    .print-lines .tarefa-card::after {
+      content: '';
+      display: block;
+      height: 40px;
+      border-bottom: 1px solid #ccc;
+      margin-top: 8px;
+    }
+  }
+
+  @media (min-width: 640px) {
+    .main { max-width: 700px; margin: 0 auto; }
+    .counters { justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-top">
+    <div>
+      <h1>📋 Planner</h1>
+      <div class="header-subtitle" id="last-update">Carregando...</div>
+    </div>
+    <button class="btn-refresh" onclick="loadData()">↻ Atualizar</button>
+  </div>
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-aba="PESSOAL" onclick="switchTab('PESSOAL')">Pessoal</div>
+    <div class="tab" data-aba="OBRA" onclick="switchTab('OBRA')">Obra</div>
+    <div class="tab" data-aba="WORK" onclick="switchTab('WORK')">Work</div>
+    <div class="tab" data-aba="ODOO PROJETO" onclick="switchTab('ODOO PROJETO')">Odoo</div>
+  </div>
+</header>
+
+<div class="counters" id="counters"></div>
+
+<div class="filters" id="filters">
+  <button class="filter-btn active" data-filter="todos" onclick="setFilter('todos')">Todas</button>
+  <button class="filter-btn" data-filter="Aberto" onclick="setFilter('Aberto')">Abertas</button>
+  <button class="filter-btn" data-filter="Andamento" onclick="setFilter('Andamento')">Em andamento</button>
+  <button class="filter-btn" data-filter="Concluído" onclick="setFilter('Concluído')">Concluídas</button>
+  <button class="filter-btn" data-filter="Alta" onclick="setFilter('Alta')">🔴 Alta</button>
+</div>
+
+<main class="main" id="main">
+  <div class="loading"><div class="spinner"></div>Carregando tarefas...</div>
+</main>
+
+<button class="fab" onclick="openPrintModal()" title="Imprimir">🖨️</button>
+
+<div class="modal-overlay" id="modal" onclick="closePrintModal(event)">
+  <div class="modal">
+    <h3>🖨️ Opções de impressão</h3>
+    <div class="print-option" onclick="doPrint('lista')">
+      <span class="print-option-icon">📄</span>
+      <div class="print-option-text">
+        <strong>Lista preenchida</strong>
+        <span>Imprime todas as tarefas com dados</span>
+      </div>
+    </div>
+    <div class="print-option" onclick="doPrint('branco')">
+      <span class="print-option-icon">📋</span>
+      <div class="print-option-text">
+        <strong>Layout em branco</strong>
+        <span>Estrutura vazia para preencher à mão</span>
+      </div>
+    </div>
+    <div class="print-option" onclick="doPrint('linhas')">
+      <span class="print-option-icon">✏️</span>
+      <div class="print-option-text">
+        <strong>Lista com espaço para escrever</strong>
+        <span>Tarefas + linhas para anotações</span>
+      </div>
+    </div>
+    <button class="modal-cancel" onclick="closePrintModal()">Cancelar</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ⚙️ CONFIGURAÇÃO — cole aqui a URL do Google Apps Script após deploy
+const API_URL = 'https://script.google.com/macros/s/AKfycbwHY-VQAb31qHvwCVkGaHWOgywUQumkvjRYorx0iGTj-xL3EQEwjn6sWFa2CHRJQgSSfg/exec';
+
+// Estado
+let allData = {};
+let abaAtual = 'PESSOAL';
+let filtroAtual = 'todos';
+let categoriasColapsadas = new Set();
+
+// PWA Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ===== DADOS =====
+async function loadData() {
+  showLoading();
+  try {
+    const res = await fetch(`${API_URL}?action=getAll`, { cache: 'no-store' });
+    allData = await res.json();
+    const now = new Date().toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    document.getElementById('last-update').textContent = `Atualizado às ${now}`;
+    render();
+  } catch (e) {
+    document.getElementById('main').innerHTML =
+      `<div class="empty">⚠️ Erro ao carregar dados.<br><small>${e.message}</small></div>`;
+  }
+}
+
+function switchTab(aba) {
+  abaAtual = aba;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.aba === aba));
+  render();
+}
+
+function setFilter(f) {
+  filtroAtual = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
+  render();
+}
+
+// ===== RENDER =====
+function render() {
+  const tarefas = allData[abaAtual] || [];
+  renderCounters(tarefas);
+  renderTarefas(tarefas);
+}
+
+function renderCounters(tarefas) {
+  const aberto = tarefas.filter(t => t.Status === 'Aberto').length;
+  const andamento = tarefas.filter(t => t.Status === 'Andamento').length;
+  const concluido = tarefas.filter(t => t.Status === 'Concluído').length;
+  const total = tarefas.length;
+
+  document.getElementById('counters').innerHTML = `
+    <div class="counter-card total"><div class="num">${total}</div><div class="label">Total</div></div>
+    <div class="counter-card aberto"><div class="num">${aberto}</div><div class="label">Abertas</div></div>
+    <div class="counter-card andamento"><div class="num">${andamento}</div><div class="label">Andamento</div></div>
+    <div class="counter-card concluido"><div class="num">${concluido}</div><div class="label">Concluídas</div></div>
+  `;
+}
+
+function renderTarefas(tarefas) {
+  let filtradas = tarefas;
+  if (filtroAtual === 'Alta') {
+    filtradas = tarefas.filter(t => t.Prioridade === 'Alta');
+  } else if (filtroAtual !== 'todos') {
+    filtradas = tarefas.filter(t => t.Status === filtroAtual);
+  }
+
+  if (!filtradas.length) {
+    document.getElementById('main').innerHTML = '<div class="empty">Nenhuma tarefa encontrada.</div>';
+    return;
+  }
+
+  // Agrupar por categoria
+  const grupos = {};
+  filtradas.forEach(t => {
+    const cat = t.Categoria || 'Sem categoria';
+    if (!grupos[cat]) grupos[cat] = [];
+    grupos[cat].push(t);
+  });
+
+  const html = Object.entries(grupos).sort(([a], [b]) => a.localeCompare(b)).map(([cat, items]) => {
+    const colapsado = categoriasColapsadas.has(cat + abaAtual);
+    const itemsHtml = colapsado ? '' : items.map(t => cardHtml(t)).join('');
+    return `
+      <div class="categoria-group">
+        <div class="categoria-header" onclick="toggleCategoria('${cat}')">
+          <span class="categoria-title">${cat}</span>
+          <span class="categoria-count">${items.length}</span>
+          <span class="categoria-toggle">${colapsado ? '▶' : '▼'}</span>
+        </div>
+        ${itemsHtml}
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('main').innerHTML = html;
+}
+
+function cardHtml(t) {
+  const prio = t.Prioridade || 'Média';
+  const status = t.Status || 'Aberto';
+  const concluido = status === 'Concluído';
+
+  const meta = [];
+  if (t['Data Prevista']) meta.push(`📅 ${t['Data Prevista']}`);
+  if (t.Hora) meta.push(`⏰ ${t.Hora}`);
+  if (t.Envolvido) meta.push(`👤 ${t.Envolvido}`);
+  if (t.Observação) meta.push(`💬 ${t.Observação}`);
+
+  return `
+    <div class="tarefa-card prioridade-${prio} status-${status.replace(/\s/g,'')}" id="card-${t.ID}">
+      <div class="tarefa-top">
+        <div class="tarefa-nome">${t.Tarefa}</div>
+      </div>
+      <div class="badges">
+        <span class="badge badge-prio-${prio}">${prio}</span>
+        <span class="badge badge-status-${status.replace(/\s/g,'')}">${status}</span>
+        ${t['Data criação'] ? `<span class="badge badge-info">📆 ${t['Data criação']}</span>` : ''}
+      </div>
+      ${meta.length ? `<div class="tarefa-meta">${meta.map(m => `<span class="meta-item">${m}</span>`).join('')}</div>` : ''}
+      ${!concluido ? `<button class="btn-concluir" onclick="concluir('${t.ID}', this)" id="btn-${t.ID}">✅ Marcar como concluída</button>` : ''}
+    </div>
+  `;
+}
+
+function toggleCategoria(cat) {
+  const key = cat + abaAtual;
+  if (categoriasColapsadas.has(key)) categoriasColapsadas.delete(key);
+  else categoriasColapsadas.add(key);
+  render();
+}
+
+// ===== AÇÕES =====
+async function concluir(id, btn) {
+  btn.disabled = true;
+  btn.textContent = 'Salvando...';
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'updateStatus', aba: abaAtual, id, status: 'Concluído' })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      // Atualiza localmente sem recarregar tudo
+      const tarefa = (allData[abaAtual] || []).find(t => String(t.ID) === String(id));
+      if (tarefa) {
+        tarefa.Status = 'Concluído';
+        tarefa['Data conclusão'] = new Date().toLocaleDateString('pt-BR');
+      }
+      render();
+      showToast('✅ Tarefa concluída!');
+    } else {
+      btn.disabled = false;
+      btn.textContent = '✅ Marcar como concluída';
+      showToast('⚠️ Erro: ' + (data.error || 'tente novamente'));
+    }
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = '✅ Marcar como concluída';
+    showToast('⚠️ Sem conexão');
+  }
+}
+
+// ===== PRINT =====
+function openPrintModal() { document.getElementById('modal').classList.add('open'); }
+
+function closePrintModal(e) {
+  if (!e || e.target === document.getElementById('modal')) {
+    document.getElementById('modal').classList.remove('open');
+  }
+}
+
+function doPrint(tipo) {
+  document.getElementById('modal').classList.remove('open');
+  document.body.className = tipo === 'branco' ? 'print-blank' : tipo === 'linhas' ? 'print-lines' : '';
+  setTimeout(() => {
+    window.print();
+    document.body.className = '';
+  }, 100);
+}
+
+// ===== UTILS =====
+function showLoading() {
+  document.getElementById('main').innerHTML = '<div class="loading"><div class="spinner"></div>Carregando tarefas...</div>';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Inicia
+loadData();
+</script>
+</body>
+</html>
