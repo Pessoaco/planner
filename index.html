@@ -571,21 +571,7 @@
   <div class="loading"><div class="spinner"></div>Carregando tarefas...</div>
 </main>
 
-<button class="fab" onclick="openPrintModal()" title="Imprimir">🖨️</button>
-
-<div class="modal-overlay" id="modal" onclick="closePrintModal(event)">
-  <div class="modal">
-    <h3>🖨️ Imprimir</h3>
-    <div class="print-option" onclick="doPrint()">
-      <span class="print-option-icon">📄</span>
-      <div class="print-option-text">
-        <strong>Enviar para impressora</strong>
-        <span>Gera PDF e envia por e-mail para a Brother</span>
-      </div>
-    </div>
-    <button class="modal-cancel" onclick="closePrintModal()">Cancelar</button>
-  </div>
-</div>
+<button class="fab" onclick="window.print()" title="Imprimir">🖨️</button>
 
 <div class="toast" id="toast"></div>
 
@@ -806,30 +792,7 @@ async function excluir(id, nome, btn) {
 }
 
 // ===== PRINT =====
-function openPrintModal() { document.getElementById('modal').classList.add('open'); }
-
-function closePrintModal(e) {
-  if (!e || e.target === document.getElementById('modal')) {
-    document.getElementById('modal').classList.remove('open');
-  }
-}
-
-async function doPrint() {
-  document.getElementById('modal').classList.remove('open');
-  showToast('📤 Enviando para impressora...');
-  try {
-    const res = await fetch(`${API_URL}?action=printSheet&aba=${encodeURIComponent(abaAtual)}`, { cache: 'no-store' });
-    const text = await res.text();
-    const data = JSON.parse(text);
-    if (data.ok) {
-      showToast('✅ Enviado! A impressora vai receber em instantes.');
-    } else {
-      showToast('⚠️ Erro: ' + (data.error || 'tente novamente'));
-    }
-  } catch (e) {
-    showToast('⚠️ Não foi possível enviar para a impressora.');
-  }
-}
+// window.print() chamado diretamente no botão 🖨️
 
 // ===== UTILS =====
 function showLoading() {
