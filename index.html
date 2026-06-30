@@ -439,22 +439,95 @@
 
   /* PRINT STYLES */
   @media print {
-    .header, .fab, .modal-overlay, .toast, .btn-concluir, .filters { display: none !important; }
-    body { background: white; }
-    .main { padding: 0; }
-    .tarefa-card { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; margin-bottom: 6px; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-    .print-blank .tarefa-nome,
-    .print-blank .badges,
-    .print-blank .tarefa-meta { visibility: hidden; }
+    .header, .fab, .modal-overlay, .toast, .filters,
+    .counters, .tarefa-acoes, .btn-concluir, .btn-excluir,
+    .categoria-toggle { display: none !important; }
 
-    .print-lines .tarefa-card::after {
-      content: '';
+    body { background: white; font-size: 9px; }
+
+    .main { padding: 4px 6px; max-width: 100% !important; margin: 0; }
+
+    /* Título da aba impressa */
+    .main::before {
+      content: attr(data-aba);
       display: block;
-      height: 40px;
-      border-bottom: 1px solid #ccc;
-      margin-top: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      border-bottom: 2px solid #333;
+      margin-bottom: 4px;
+      padding-bottom: 2px;
     }
+
+    .categoria-group { margin-bottom: 4px; break-inside: avoid; }
+
+    .categoria-header {
+      padding: 2px 0;
+      border-bottom: 1px solid #aaa;
+      margin-bottom: 2px;
+    }
+
+    .categoria-title {
+      font-size: 9px;
+      font-weight: 700;
+      color: #333;
+      text-transform: uppercase;
+    }
+
+    .categoria-count { display: none; }
+
+    /* Cada tarefa vira uma linha compacta */
+    .tarefa-card {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      break-inside: avoid;
+      box-shadow: none;
+      border: none;
+      border-bottom: 1px dotted #ddd;
+      border-left: none !important;
+      margin-bottom: 0;
+      padding: 2px 0;
+      border-radius: 0;
+    }
+
+    /* Indicador de prioridade como letra */
+    .tarefa-card::before {
+      font-size: 8px;
+      font-weight: 700;
+      flex-shrink: 0;
+      width: 10px;
+    }
+    .tarefa-card.prioridade-Alta::before   { content: 'A'; color: #dc2626; }
+    .tarefa-card.prioridade-Média::before  { content: 'M'; color: #d97706; }
+    .tarefa-card.prioridade-Baixa::before  { content: 'B'; color: #16a34a; }
+
+    .tarefa-top { flex: 1; }
+
+    .tarefa-nome {
+      font-size: 9px;
+      font-weight: 500;
+      line-height: 1.2;
+    }
+
+    .tarefa-card.status-Concluído .tarefa-nome {
+      text-decoration: line-through;
+      color: #999;
+    }
+
+    /* Data e envolvido em linha, pequeno */
+    .tarefa-meta {
+      flex-shrink: 0;
+      margin-top: 0;
+      gap: 4px;
+    }
+
+    .meta-item { font-size: 8px; color: #666; }
+
+    /* Oculta badges — info já está na linha */
+    .badges { display: none !important; }
   }
 
   @media (min-width: 640px) {
@@ -502,26 +575,12 @@
 
 <div class="modal-overlay" id="modal" onclick="closePrintModal(event)">
   <div class="modal">
-    <h3>🖨️ Opções de impressão</h3>
-    <div class="print-option" onclick="doPrint('lista')">
+    <h3>🖨️ Imprimir</h3>
+    <div class="print-option" onclick="doPrint()">
       <span class="print-option-icon">📄</span>
       <div class="print-option-text">
-        <strong>Lista preenchida</strong>
-        <span>Imprime todas as tarefas com dados</span>
-      </div>
-    </div>
-    <div class="print-option" onclick="doPrint('branco')">
-      <span class="print-option-icon">📋</span>
-      <div class="print-option-text">
-        <strong>Layout em branco</strong>
-        <span>Estrutura vazia para preencher à mão</span>
-      </div>
-    </div>
-    <div class="print-option" onclick="doPrint('linhas')">
-      <span class="print-option-icon">✏️</span>
-      <div class="print-option-text">
-        <strong>Lista com espaço para escrever</strong>
-        <span>Tarefas + linhas para anotações</span>
+        <strong>Enviar para impressora</strong>
+        <span>Gera PDF e envia por e-mail para a Brother</span>
       </div>
     </div>
     <button class="modal-cancel" onclick="closePrintModal()">Cancelar</button>
@@ -550,13 +609,14 @@ async function loadData() {
   showLoading();
   try {
     const res = await fetch(`${API_URL}?action=getAll`, { cache: 'no-store' });
-    allData = await res.json();
+    const text = await res.text();
+    allData = JSON.parse(text);
     const now = new Date().toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     document.getElementById('last-update').textContent = `Atualizado às ${now}`;
     render();
   } catch (e) {
     document.getElementById('main').innerHTML =
-      `<div class="empty">⚠️ Erro ao carregar dados.<br><small>${e.message}</small></div>`;
+      `<div class="empty">⚠️ Erro ao carregar dados. Verifique sua conexão e tente novamente.<br><small>${e.message}</small></div>`;
   }
 }
 
@@ -616,7 +676,10 @@ function renderTarefas(tarefas) {
     grupos[cat].push(t);
   });
 
+  const priOrd = { 'Alta': 0, 'Média': 1, 'Baixa': 2 };
+
   const html = Object.entries(grupos).sort(([a], [b]) => a.localeCompare(b)).map(([cat, items]) => {
+    items.sort((a, b) => (priOrd[a.Prioridade] ?? 1) - (priOrd[b.Prioridade] ?? 1));
     const colapsado = categoriasColapsadas.has(cat + abaAtual);
     const itemsHtml = colapsado ? '' : items.map(t => cardHtml(t)).join('');
     return `
@@ -631,7 +694,9 @@ function renderTarefas(tarefas) {
     `;
   }).join('');
 
-  document.getElementById('main').innerHTML = html;
+  const mainEl = document.getElementById('main');
+  mainEl.innerHTML = html;
+  mainEl.dataset.aba = abaAtual;
 }
 
 function cardHtml(t) {
@@ -749,13 +814,21 @@ function closePrintModal(e) {
   }
 }
 
-function doPrint(tipo) {
+async function doPrint() {
   document.getElementById('modal').classList.remove('open');
-  document.body.className = tipo === 'branco' ? 'print-blank' : tipo === 'linhas' ? 'print-lines' : '';
-  setTimeout(() => {
-    window.print();
-    document.body.className = '';
-  }, 100);
+  showToast('📤 Enviando para impressora...');
+  try {
+    const res = await fetch(`${API_URL}?action=printSheet&aba=${encodeURIComponent(abaAtual)}`, { cache: 'no-store' });
+    const text = await res.text();
+    const data = JSON.parse(text);
+    if (data.ok) {
+      showToast('✅ Enviado! A impressora vai receber em instantes.');
+    } else {
+      showToast('⚠️ Erro: ' + (data.error || 'tente novamente'));
+    }
+  } catch (e) {
+    showToast('⚠️ Não foi possível enviar para a impressora.');
+  }
 }
 
 // ===== UTILS =====
