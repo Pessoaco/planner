@@ -300,6 +300,22 @@
   .btn-concluir:active { background: var(--success); color: white; }
   .btn-concluir:disabled { opacity: 0.5; cursor: not-allowed; }
 
+  .tarefa-acoes { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+  .tarefa-acoes .btn-concluir { margin-top: 0; flex: 1; }
+  .btn-excluir {
+    padding: 8px 12px;
+    background: var(--danger-light);
+    color: var(--danger);
+    border: 1.5px solid var(--danger);
+    border-radius: 8px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .btn-excluir:active { background: var(--danger); color: white; }
+  .btn-excluir:disabled { opacity: 0.5; cursor: not-allowed; }
+
   /* LOADING */
   .loading {
     text-align: center;
@@ -653,7 +669,10 @@ function cardHtml(t) {
         <span class="badge badge-status-${status.replace(/\s/g,'')}">${status}</span>
       </div>
       ${meta.length ? `<div class="tarefa-meta">${meta.map(m => `<span class="meta-item">${m}</span>`).join('')}</div>` : ''}
-      ${!concluido ? `<button class="btn-concluir" onclick="concluir('${t.ID}', this)" id="btn-${t.ID}">✅ Marcar como concluída</button>` : ''}
+      <div class="tarefa-acoes">
+        ${!concluido ? `<button class="btn-concluir" onclick="concluir('${t.ID}', this)" id="btn-${t.ID}">✅ Marcar como concluída</button>` : ''}
+        <button class="btn-excluir" onclick="excluir('${t.ID}', '${(t.Tarefa||'').replace(/'/g,"\\'")}', this)">🗑️</button>
+      </div>
     </div>
   `;
 }
@@ -693,6 +712,30 @@ async function concluir(id, btn) {
   } catch (e) {
     btn.disabled = false;
     btn.textContent = '✅ Marcar como concluída';
+    showToast('⚠️ Sem conexão');
+  }
+}
+
+async function excluir(id, nome, btn) {
+  if (!confirm(`Excluir "${nome}"?`)) return;
+  btn.disabled = true;
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'deleteTask', aba: abaAtual, id })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      allData[abaAtual] = (allData[abaAtual] || []).filter(t => String(t.ID) !== String(id));
+      render();
+      showToast('🗑️ Tarefa excluída!');
+    } else {
+      btn.disabled = false;
+      showToast('⚠️ Erro: ' + (data.error || 'tente novamente'));
+    }
+  } catch (e) {
+    btn.disabled = false;
     showToast('⚠️ Sem conexão');
   }
 }
