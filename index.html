@@ -522,6 +522,8 @@
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
   /* PRINT STYLES */
+  @page { margin: 8mm; }
+
   @media print {
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
@@ -531,7 +533,7 @@
 
     body { background: white; font-size: 9px; }
 
-    .main { padding: 4px 6px; max-width: 100% !important; margin: 0; }
+    .main { padding: 0; max-width: 100% !important; margin: 0; }
 
     /* Título da aba impressa */
     .main::before {
