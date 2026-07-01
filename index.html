@@ -102,6 +102,25 @@
     border-bottom-color: white;
   }
 
+  /* BUSCA */
+  .search-bar {
+    padding: 10px 16px 0;
+  }
+
+  .search-bar input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    background: var(--card);
+    box-shadow: var(--shadow);
+  }
+
+  .search-bar input:focus { border-color: var(--primary); }
+
   /* CONTADORES */
   .counters {
     display: flex;
@@ -645,6 +664,10 @@
   </div>
 </header>
 
+<div class="search-bar">
+  <input type="search" id="search-input" placeholder="🔎 Buscar tarefa, categoria..." oninput="setSearch(this.value)">
+</div>
+
 <div class="counters" id="counters"></div>
 
 <div class="filters" id="filters">
@@ -729,10 +752,18 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbwHY-VQAb31qHvwCVkGaHWOgywUQumkvjRYorx0iGTj-xL3EQEwjn6sWFa2CHRJQgSSfg/exec';
 
 // Estado
+const ABAS = ['PESSOAL', 'OBRA', 'WORK', 'ODOO PROJETO'];
+const ABA_LABEL = { 'PESSOAL': 'Pessoal', 'OBRA': 'Obra', 'WORK': 'Work', 'ODOO PROJETO': 'Odoo' };
 let allData = {};
 let abaAtual = 'PESSOAL';
 let filtroAtual = 'todos';
+let searchTerm = '';
 let categoriasColapsadas = new Set();
+
+function setSearch(v) {
+  searchTerm = v.trim().toLowerCase();
+  render();
+}
 
 // PWA Service Worker
 if ('serviceWorker' in navigator) {
@@ -757,6 +788,8 @@ async function loadData() {
 
 function switchTab(aba) {
   abaAtual = aba;
+  searchTerm = '';
+  document.getElementById('search-input').value = '';
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.aba === aba));
   render();
 }
@@ -769,7 +802,13 @@ function setFilter(f) {
 
 // ===== RENDER =====
 function render() {
-  const tarefas = allData[abaAtual] || [];
+  if (searchTerm) {
+    const cruzadas = ABAS.flatMap(aba => (allData[aba] || []).map(t => ({ ...t, _aba: aba })));
+    document.getElementById('counters').innerHTML = '';
+    renderTarefas(cruzadas);
+    return;
+  }
+  const tarefas = (allData[abaAtual] || []).map(t => ({ ...t, _aba: abaAtual }));
   renderCounters(tarefas);
   renderTarefas(tarefas);
 }
@@ -798,15 +837,26 @@ function renderTarefas(tarefas) {
     filtradas = tarefas.filter(t => t.Status === filtroAtual);
   }
 
+  if (searchTerm) {
+    filtradas = filtradas.filter(t =>
+      (t.Tarefa || '').toLowerCase().includes(searchTerm) ||
+      (t.Categoria || '').toLowerCase().includes(searchTerm) ||
+      (t.Observação || '').toLowerCase().includes(searchTerm) ||
+      (t.Envolvido || '').toLowerCase().includes(searchTerm)
+    );
+  }
+
   if (!filtradas.length) {
-    document.getElementById('main').innerHTML = '<div class="empty">Nenhuma tarefa encontrada.</div>';
+    document.getElementById('main').innerHTML = searchTerm
+      ? `<div class="empty">Nenhuma tarefa encontrada para "${searchTerm}".</div>`
+      : '<div class="empty">Nenhuma tarefa encontrada.</div>';
     return;
   }
 
-  // Agrupar por categoria
+  // Agrupar por categoria (+ aba, quando buscando em todas)
   const grupos = {};
   filtradas.forEach(t => {
-    const cat = t.Categoria || 'Sem categoria';
+    const cat = (t.Categoria || 'Sem categoria') + (searchTerm ? ` — ${ABA_LABEL[t._aba]}` : '');
     if (!grupos[cat]) grupos[cat] = [];
     grupos[cat].push(t);
   });
@@ -870,8 +920,8 @@ function cardHtml(t) {
       </div>
       ${meta.length ? `<div class="tarefa-meta">${meta.map(m => `<span class="meta-item">${m}</span>`).join('')}</div>` : ''}
       <div class="tarefa-acoes">
-        ${!concluido ? `<button class="btn-concluir" onclick="concluir('${t.ID}', this)" id="btn-${t.ID}">✅ Marcar como concluída</button>` : ''}
-        <button class="btn-excluir" onclick="excluir('${t.ID}', '${(t.Tarefa||'').replace(/'/g,"\\'")}', this)">🗑️</button>
+        ${!concluido ? `<button class="btn-concluir" onclick="concluir('${t.ID}', this, '${t._aba}')" id="btn-${t.ID}">✅ Marcar como concluída</button>` : ''}
+        <button class="btn-excluir" onclick="excluir('${t.ID}', '${(t.Tarefa||'').replace(/'/g,"\\'")}', this, '${t._aba}')">🗑️</button>
       </div>
     </div>
   `;
@@ -885,19 +935,20 @@ function toggleCategoria(cat) {
 }
 
 // ===== AÇÕES =====
-async function concluir(id, btn) {
+async function concluir(id, btn, aba) {
+  aba = aba || abaAtual;
   btn.disabled = true;
   btn.textContent = 'Salvando...';
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'updateStatus', aba: abaAtual, id, status: 'Concluído' })
+      body: JSON.stringify({ action: 'updateStatus', aba, id, status: 'Concluído' })
     });
     const data = await res.json();
     if (data.ok) {
       // Atualiza localmente sem recarregar tudo
-      const tarefa = (allData[abaAtual] || []).find(t => String(t.ID) === String(id));
+      const tarefa = (allData[aba] || []).find(t => String(t.ID) === String(id));
       if (tarefa) {
         tarefa.Status = 'Concluído';
         tarefa['Data conclusão'] = new Date().toLocaleDateString('pt-BR');
@@ -916,18 +967,19 @@ async function concluir(id, btn) {
   }
 }
 
-async function excluir(id, nome, btn) {
+async function excluir(id, nome, btn, aba) {
+  aba = aba || abaAtual;
   if (!confirm(`Excluir "${nome}"?`)) return;
   btn.disabled = true;
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'deleteTask', aba: abaAtual, id })
+      body: JSON.stringify({ action: 'deleteTask', aba, id })
     });
     const data = await res.json();
     if (data.ok) {
-      allData[abaAtual] = (allData[abaAtual] || []).filter(t => String(t.ID) !== String(id));
+      allData[aba] = (allData[aba] || []).filter(t => String(t.ID) !== String(id));
       render();
       showToast('🗑️ Tarefa excluída!');
     } else {
