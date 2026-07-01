@@ -934,7 +934,12 @@ async function excluir(id, nome, btn) {
 }
 
 // ===== NOVA TAREFA =====
-function openAddModal() {
+async function openAddModal() {
+  // Garante que os dados (e categorias) já foram carregados
+  if (!Object.keys(allData).length) {
+    showToast('⏳ Carregando categorias...');
+    await loadData();
+  }
   // Sincroniza aba selecionada com a aba atual
   document.getElementById('f-aba').value = abaAtual;
   preencherCategorias(abaAtual);
