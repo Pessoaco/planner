@@ -319,8 +319,23 @@
   .btn-concluir:active { background: var(--success); color: white; }
   .btn-concluir:disabled { opacity: 0.5; cursor: not-allowed; }
 
+  .btn-andamento {
+    padding: 8px;
+    background: var(--warning-light);
+    color: var(--warning);
+    border: 1.5px solid var(--warning);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-andamento:active { background: var(--warning); color: white; }
+  .btn-andamento:disabled { opacity: 0.5; cursor: not-allowed; }
+
   .tarefa-acoes { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
-  .tarefa-acoes .btn-concluir { margin-top: 0; flex: 1; }
+  .tarefa-acoes .btn-concluir,
+  .tarefa-acoes .btn-andamento { margin-top: 0; flex: 1; }
   .btn-excluir {
     padding: 8px 12px;
     background: var(--danger-light);
@@ -334,6 +349,19 @@
   }
   .btn-excluir:active { background: var(--danger); color: white; }
   .btn-excluir:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-editar {
+    padding: 8px 12px;
+    background: var(--primary-light);
+    color: var(--primary);
+    border: 1.5px solid var(--primary);
+    border-radius: 8px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .btn-editar:active { background: var(--primary); color: white; }
 
   /* LOADING */
   .loading {
@@ -692,7 +720,7 @@
 
 <div class="modal-overlay" id="modal-add" onclick="closeAddModal(event)">
   <div class="modal">
-    <h3>✏️ Nova tarefa</h3>
+    <h3 id="modal-add-title">✏️ Nova tarefa</h3>
 
     <div class="form-group">
       <label>Aba</label>
@@ -920,7 +948,9 @@ function cardHtml(t) {
       </div>
       ${meta.length ? `<div class="tarefa-meta">${meta.map(m => `<span class="meta-item">${m}</span>`).join('')}</div>` : ''}
       <div class="tarefa-acoes">
-        ${!concluido ? `<button class="btn-concluir" onclick="concluir('${t.ID}', this, '${t._aba}')" id="btn-${t.ID}">✅ Marcar como concluída</button>` : ''}
+        ${status === 'Aberto' ? `<button class="btn-andamento" onclick="atualizarStatus('${t.ID}', this, '${t._aba}', 'Andamento')" id="btn-and-${t.ID}">▶️ Em andamento</button>` : ''}
+        ${!concluido ? `<button class="btn-concluir" onclick="atualizarStatus('${t.ID}', this, '${t._aba}', 'Concluído')" id="btn-${t.ID}">✅ Concluir</button>` : ''}
+        <button class="btn-editar" onclick='openEditModal(${JSON.stringify(t).replace(/'/g,"&#39;")})'>✏️</button>
         <button class="btn-excluir" onclick="excluir('${t.ID}', '${(t.Tarefa||'').replace(/'/g,"\\'")}', this, '${t._aba}')">🗑️</button>
       </div>
     </div>
@@ -935,34 +965,35 @@ function toggleCategoria(cat) {
 }
 
 // ===== AÇÕES =====
-async function concluir(id, btn, aba) {
+async function atualizarStatus(id, btn, aba, novoStatus) {
   aba = aba || abaAtual;
+  const textoOriginal = btn.textContent;
   btn.disabled = true;
   btn.textContent = 'Salvando...';
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'updateStatus', aba, id, status: 'Concluído' })
+      body: JSON.stringify({ action: 'updateStatus', aba, id, status: novoStatus })
     });
     const data = await res.json();
     if (data.ok) {
       // Atualiza localmente sem recarregar tudo
       const tarefa = (allData[aba] || []).find(t => String(t.ID) === String(id));
       if (tarefa) {
-        tarefa.Status = 'Concluído';
-        tarefa['Data conclusão'] = new Date().toLocaleDateString('pt-BR');
+        tarefa.Status = novoStatus;
+        if (novoStatus === 'Concluído') tarefa['Data conclusão'] = new Date().toLocaleDateString('pt-BR');
       }
       render();
-      showToast('✅ Tarefa concluída!');
+      showToast(novoStatus === 'Concluído' ? '✅ Tarefa concluída!' : '▶️ Tarefa em andamento!');
     } else {
       btn.disabled = false;
-      btn.textContent = '✅ Marcar como concluída';
+      btn.textContent = textoOriginal;
       showToast('⚠️ Erro: ' + (data.error || 'tente novamente'));
     }
   } catch (e) {
     btn.disabled = false;
-    btn.textContent = '✅ Marcar como concluída';
+    btn.textContent = textoOriginal;
     showToast('⚠️ Sem conexão');
   }
 }
@@ -992,13 +1023,21 @@ async function excluir(id, nome, btn, aba) {
   }
 }
 
-// ===== NOVA TAREFA =====
+// ===== NOVA TAREFA / EDITAR =====
+let editandoId = null;
+let editandoAba = null;
+
 async function openAddModal() {
+  editandoId = null;
+  editandoAba = null;
   // Garante que os dados (e categorias) já foram carregados
   if (!Object.keys(allData).length) {
     showToast('⏳ Carregando categorias...');
     await loadData();
   }
+  document.getElementById('modal-add-title').textContent = '✏️ Nova tarefa';
+  document.getElementById('btn-salvar').textContent = 'Salvar tarefa';
+  document.getElementById('f-aba').disabled = false;
   // Sincroniza aba selecionada com a aba atual
   document.getElementById('f-aba').value = abaAtual;
   preencherCategorias(abaAtual);
@@ -1007,6 +1046,32 @@ async function openAddModal() {
   document.getElementById('f-data').value = '';
   document.querySelectorAll('.prio-btn').forEach(b => b.classList.toggle('sel', b.dataset.p === 'Alta'));
   document.getElementById('modal-add').classList.add('open');
+}
+
+async function openEditModal(t) {
+  editandoId = t.ID;
+  editandoAba = t._aba;
+  if (!Object.keys(allData).length) await loadData();
+  document.getElementById('modal-add-title').textContent = '✏️ Editar tarefa';
+  document.getElementById('btn-salvar').textContent = 'Salvar alterações';
+  document.getElementById('f-aba').value = t._aba;
+  document.getElementById('f-aba').disabled = true;
+  preencherCategorias(t._aba);
+  document.getElementById('f-categoria').value = t.Categoria || '';
+  document.getElementById('f-tarefa').value = t.Tarefa || '';
+  document.getElementById('f-obs').value = t['Observação'] || '';
+  document.getElementById('f-data').value = parseDataParaInput(t['Data Prevista']);
+  const prio = t.Prioridade || 'Média';
+  document.querySelectorAll('.prio-btn').forEach(b => b.classList.toggle('sel', b.dataset.p === prio));
+  document.getElementById('modal-add').classList.add('open');
+}
+
+function parseDataParaInput(dataRaw) {
+  if (!dataRaw) return '';
+  const partes = String(dataRaw).split('/');
+  if (partes.length === 3) return `${partes[2]}-${partes[1]}-${partes[0]}`;
+  const d = new Date(dataRaw);
+  return !isNaN(d) ? d.toISOString().split('T')[0] : '';
 }
 
 function closeAddModal(e) {
@@ -1052,34 +1117,37 @@ async function salvarTarefa() {
   const prioridade = document.querySelector('.prio-btn.sel')?.dataset.p || 'Média';
   const dataPrevista = document.getElementById('f-data').value;
   const obs = document.getElementById('f-obs').value.trim();
+  const editando = !!editandoId;
 
   const btn = document.getElementById('btn-salvar');
+  const textoOriginal = btn.textContent;
   btn.disabled = true;
   btn.textContent = 'Salvando...';
+
+  const fields = {
+    Tarefa: tarefa,
+    Categoria: categoria,
+    Prioridade: prioridade,
+    'Data Prevista': dataPrevista || '',
+    'Observação': obs
+  };
+  if (!editando) fields.Status = 'Aberto';
 
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({
-        action: 'addTask',
-        aba,
-        fields: {
-          Tarefa: tarefa,
-          Categoria: categoria,
-          Prioridade: prioridade,
-          Status: 'Aberto',
-          'Data Prevista': dataPrevista || '',
-          'Observação': obs
-        }
-      })
+      body: JSON.stringify(editando
+        ? { action: 'editTask', aba: editandoAba, id: editandoId, fields }
+        : { action: 'addTask', aba, fields }
+      )
     });
     const data = await res.json();
     if (data.ok) {
       closeAddModal();
-      showToast('✅ Tarefa criada!');
-      // Se estiver na mesma aba, recarrega os dados
-      if (aba === abaAtual) await loadData();
+      showToast(editando ? '✅ Tarefa atualizada!' : '✅ Tarefa criada!');
+      const abaRecarregar = editando ? editandoAba : aba;
+      if (abaRecarregar === abaAtual || searchTerm) await loadData();
     } else {
       showToast('⚠️ Erro: ' + (data.error || 'tente novamente'));
     }
@@ -1087,7 +1155,7 @@ async function salvarTarefa() {
     showToast('⚠️ Sem conexão');
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Salvar tarefa';
+    btn.textContent = textoOriginal;
   }
 }
 
