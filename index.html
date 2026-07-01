@@ -566,6 +566,9 @@
 
     .categoria-count { display: none; }
 
+    /* Não imprime tarefas concluídas — só andamento/relatório na tela */
+    .tarefa-card.status-Concluído { display: none !important; }
+
     /* Cada tarefa vira uma linha compacta */
     .tarefa-card {
       display: flex;
