@@ -342,11 +342,19 @@
     font-size: 14px;
   }
 
-  /* FAB IMPRIMIR */
-  .fab {
+  /* FABs */
+  .fab-group {
     position: fixed;
     bottom: 24px;
     right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    z-index: 200;
+  }
+
+  .fab {
     background: var(--primary);
     color: white;
     border: none;
@@ -356,11 +364,87 @@
     font-size: 20px;
     cursor: pointer;
     box-shadow: 0 4px 12px rgba(79,70,229,0.4);
-    z-index: 200;
     display: flex;
     align-items: center;
     justify-content: center;
   }
+
+  .fab-add {
+    background: var(--success);
+    box-shadow: 0 4px 12px rgba(22,163,74,0.4);
+  }
+
+  /* MODAL FORM */
+  .form-group { margin-bottom: 14px; }
+
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--text);
+    background: white;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus { border-color: var(--primary); }
+
+  .form-group textarea { resize: none; height: 60px; }
+
+  .prio-btns {
+    display: flex;
+    gap: 8px;
+  }
+
+  .prio-btn {
+    flex: 1;
+    padding: 10px 4px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: white;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+
+  .prio-btn[data-p="Alta"].sel   { background: var(--danger-light);  border-color: var(--danger);  color: var(--danger); }
+  .prio-btn[data-p="Média"].sel  { background: var(--warning-light); border-color: var(--warning); color: var(--warning); }
+  .prio-btn[data-p="Baixa"].sel  { background: var(--success-light); border-color: var(--success); color: var(--success); }
+
+  .btn-salvar {
+    width: 100%;
+    padding: 13px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: opacity 0.2s;
+  }
+
+  .btn-salvar:disabled { opacity: 0.6; cursor: not-allowed; }
 
   /* MODAL IMPRIMIR */
   .modal-overlay {
@@ -571,7 +655,65 @@
   <div class="loading"><div class="spinner"></div>Carregando tarefas...</div>
 </main>
 
-<button class="fab" onclick="window.print()" title="Imprimir">🖨️</button>
+<div class="fab-group">
+  <button class="fab" onclick="window.print()" title="Imprimir">🖨️</button>
+  <button class="fab fab-add" onclick="openAddModal()" title="Nova tarefa">➕</button>
+</div>
+
+<div class="modal-overlay" id="modal-add" onclick="closeAddModal(event)">
+  <div class="modal">
+    <h3>✏️ Nova tarefa</h3>
+
+    <div class="form-group">
+      <label>Aba</label>
+      <select id="f-aba">
+        <option value="PESSOAL">Pessoal</option>
+        <option value="OBRA">Obra</option>
+        <option value="WORK">Work</option>
+        <option value="ODOO PROJETO">Odoo</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Categoria</label>
+      <select id="f-categoria">
+        <option value="">Carregando...</option>
+      </select>
+    </div>
+
+    <div class="form-group" id="f-nova-cat-group" style="display:none">
+      <label>Nome da nova categoria</label>
+      <input type="text" id="f-nova-cat" placeholder="Digite a categoria">
+    </div>
+
+    <div class="form-group">
+      <label>Tarefa *</label>
+      <input type="text" id="f-tarefa" placeholder="Descreva a tarefa">
+    </div>
+
+    <div class="form-group">
+      <label>Prioridade</label>
+      <div class="prio-btns">
+        <button class="prio-btn sel" data-p="Alta" onclick="selPrio(this)">🔴 Alta</button>
+        <button class="prio-btn" data-p="Média" onclick="selPrio(this)">🟡 Média</button>
+        <button class="prio-btn" data-p="Baixa" onclick="selPrio(this)">🟢 Baixa</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Data prevista (opcional)</label>
+      <input type="date" id="f-data">
+    </div>
+
+    <div class="form-group">
+      <label>Observação (opcional)</label>
+      <textarea id="f-obs" placeholder="Detalhes adicionais..."></textarea>
+    </div>
+
+    <button class="btn-salvar" id="btn-salvar" onclick="salvarTarefa()">Salvar tarefa</button>
+    <button class="modal-cancel" onclick="closeAddModal()" style="margin-top:8px">Cancelar</button>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -788,6 +930,100 @@ async function excluir(id, nome, btn) {
   } catch (e) {
     btn.disabled = false;
     showToast('⚠️ Sem conexão');
+  }
+}
+
+// ===== NOVA TAREFA =====
+function openAddModal() {
+  // Sincroniza aba selecionada com a aba atual
+  document.getElementById('f-aba').value = abaAtual;
+  preencherCategorias(abaAtual);
+  document.getElementById('f-tarefa').value = '';
+  document.getElementById('f-obs').value = '';
+  document.getElementById('f-data').value = '';
+  document.querySelectorAll('.prio-btn').forEach(b => b.classList.toggle('sel', b.dataset.p === 'Alta'));
+  document.getElementById('modal-add').classList.add('open');
+}
+
+function closeAddModal(e) {
+  if (!e || e.target === document.getElementById('modal-add')) {
+    document.getElementById('modal-add').classList.remove('open');
+  }
+}
+
+function preencherCategorias(aba) {
+  const tarefas = allData[aba] || [];
+  const cats = [...new Set(tarefas.map(t => t.Categoria).filter(Boolean))].sort();
+  const sel = document.getElementById('f-categoria');
+  sel.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('') +
+    '<option value="__nova__">+ Nova categoria...</option>';
+  sel.onchange = () => {
+    const novo = sel.value === '__nova__';
+    document.getElementById('f-nova-cat-group').style.display = novo ? 'block' : 'none';
+  };
+  document.getElementById('f-nova-cat-group').style.display = 'none';
+}
+
+// Muda categorias ao trocar de aba no formulário
+document.getElementById('f-aba').addEventListener('change', function() {
+  preencherCategorias(this.value);
+});
+
+function selPrio(btn) {
+  document.querySelectorAll('.prio-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+async function salvarTarefa() {
+  const tarefa = document.getElementById('f-tarefa').value.trim();
+  if (!tarefa) { showToast('⚠️ Digite o nome da tarefa'); return; }
+
+  const aba = document.getElementById('f-aba').value;
+  const catSel = document.getElementById('f-categoria').value;
+  const categoria = catSel === '__nova__'
+    ? document.getElementById('f-nova-cat').value.trim()
+    : catSel;
+  if (!categoria) { showToast('⚠️ Informe a categoria'); return; }
+
+  const prioridade = document.querySelector('.prio-btn.sel')?.dataset.p || 'Média';
+  const dataPrevista = document.getElementById('f-data').value;
+  const obs = document.getElementById('f-obs').value.trim();
+
+  const btn = document.getElementById('btn-salvar');
+  btn.disabled = true;
+  btn.textContent = 'Salvando...';
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: 'addTask',
+        aba,
+        fields: {
+          Tarefa: tarefa,
+          Categoria: categoria,
+          Prioridade: prioridade,
+          Status: 'Aberto',
+          'Data Prevista': dataPrevista || '',
+          'Observação': obs
+        }
+      })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      closeAddModal();
+      showToast('✅ Tarefa criada!');
+      // Se estiver na mesma aba, recarrega os dados
+      if (aba === abaAtual) await loadData();
+    } else {
+      showToast('⚠️ Erro: ' + (data.error || 'tente novamente'));
+    }
+  } catch (e) {
+    showToast('⚠️ Sem conexão');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Salvar tarefa';
   }
 }
 
