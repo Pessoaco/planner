@@ -119,6 +119,30 @@
   .tab.active[data-aba="WORK"]         { background: var(--aba-work-light);    color: var(--aba-work); }
   .tab.active[data-aba="ODOO PROJETO"] { background: var(--aba-odoo-light);    color: var(--aba-odoo); }
 
+  /* Arrastar abas para reorganizar */
+  .tab-wrap {
+    flex: 1;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .tab-wrap .tab { flex: 1; }
+
+  .tab-wrap.tab-dragging {
+    opacity: 0.85;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    border-radius: 8px;
+  }
+
+  .tabs-hint {
+    text-align: center;
+    font-size: 10px;
+    color: var(--text-muted);
+    padding: 4px 0 6px;
+    opacity: 0.75;
+  }
+
   /* BUSCA */
   .search-bar {
     padding: 10px 16px 0;
@@ -704,12 +728,8 @@
     </div>
     <button class="btn-refresh" onclick="loadData()">↻ Atualizar</button>
   </div>
-  <div class="tabs" id="tabs">
-    <div class="tab active" data-aba="PESSOAL" onclick="switchTab('PESSOAL')">Pessoal</div>
-    <div class="tab" data-aba="OBRA" onclick="switchTab('OBRA')">Obra</div>
-    <div class="tab" data-aba="WORK" onclick="switchTab('WORK')">Work</div>
-    <div class="tab" data-aba="ODOO PROJETO" onclick="switchTab('ODOO PROJETO')">Odoo</div>
-  </div>
+  <div class="tabs" id="tabs"></div>
+  <div class="tabs-hint">↔️ Segure e arraste uma aba para reorganizar</div>
 </header>
 
 <div class="search-bar">
@@ -811,9 +831,89 @@ let filtroDaniel = false;
 let searchTerm = '';
 let categoriasColapsadas = new Set();
 
+// Ordem das abas: salva no próprio celular, cada pessoa pode organizar do seu jeito
+let abaOrdem = [...ABAS];
+try {
+  const salvo = JSON.parse(localStorage.getItem('abaOrdem') || 'null');
+  if (Array.isArray(salvo) && salvo.length === ABAS.length && salvo.every(a => ABAS.includes(a))) {
+    abaOrdem = salvo;
+  }
+} catch (e) { /* localStorage indisponível — usa ordem padrão */ }
+abaAtual = abaOrdem[0];
+
 function setSearch(v) {
   searchTerm = v.trim().toLowerCase();
   render();
+}
+
+function renderTabs() {
+  const html = abaOrdem.map((aba, i) => `
+    <div class="tab-wrap" data-aba="${aba}" style="order:${i}">
+      <div class="tab ${aba === abaAtual ? 'active' : ''}" data-aba="${aba}">${ABA_LABEL[aba]}</div>
+    </div>
+  `).join('');
+  document.getElementById('tabs').innerHTML = html;
+  document.querySelectorAll('.tab-wrap').forEach(w => {
+    w.addEventListener('pointerdown', onTabPointerDown);
+  });
+}
+
+// ===== ARRASTAR ABAS =====
+let dragState = null;
+
+function onTabPointerDown(e) {
+  const wrap = e.currentTarget;
+  dragState = { aba: wrap.dataset.aba, wrap, startX: e.clientX, dragging: false };
+  wrap.setPointerCapture(e.pointerId);
+  wrap.addEventListener('pointermove', onTabPointerMove);
+  wrap.addEventListener('pointerup', onTabPointerUp);
+  wrap.addEventListener('pointercancel', onTabPointerUp);
+}
+
+function onTabPointerMove(e) {
+  if (!dragState) return;
+  const dx = e.clientX - dragState.startX;
+
+  if (!dragState.dragging && Math.abs(dx) > 10) {
+    dragState.dragging = true;
+    dragState.wrap.classList.add('tab-dragging');
+  }
+  if (!dragState.dragging) return;
+
+  dragState.wrap.style.transform = `translateX(${dx}px)`;
+  dragState.wrap.style.zIndex = 10;
+
+  const outros = [...document.querySelectorAll('.tab-wrap')].filter(w => w !== dragState.wrap);
+  let novoIndex = abaOrdem.indexOf(dragState.aba);
+  outros.forEach(w => {
+    const r = w.getBoundingClientRect();
+    const centro = r.left + r.width / 2;
+    const idxOutro = abaOrdem.indexOf(w.dataset.aba);
+    if (e.clientX > centro && idxOutro > novoIndex) novoIndex = idxOutro;
+    else if (e.clientX < centro && idxOutro < novoIndex) novoIndex = idxOutro;
+  });
+
+  const atualIndex = abaOrdem.indexOf(dragState.aba);
+  if (novoIndex !== atualIndex) {
+    abaOrdem.splice(atualIndex, 1);
+    abaOrdem.splice(novoIndex, 0, dragState.aba);
+    outros.forEach(w => { w.style.order = abaOrdem.indexOf(w.dataset.aba); });
+  }
+}
+
+function onTabPointerUp(e) {
+  if (!dragState) return;
+  if (dragState.dragging) {
+    dragState.wrap.classList.remove('tab-dragging');
+    dragState.wrap.style.transform = '';
+    dragState.wrap.style.zIndex = '';
+    try { localStorage.setItem('abaOrdem', JSON.stringify(abaOrdem)); } catch (e) {}
+    renderTabs();
+    showToast('✅ Ordem das abas salva!');
+  } else {
+    switchTab(dragState.aba);
+  }
+  dragState = null;
 }
 
 // PWA Service Worker
@@ -841,7 +941,7 @@ function switchTab(aba) {
   abaAtual = aba;
   searchTerm = '';
   document.getElementById('search-input').value = '';
-  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.aba === aba));
+  renderTabs();
   render();
 }
 
@@ -1211,6 +1311,7 @@ function showToast(msg) {
 }
 
 // Inicia
+renderTabs();
 loadData();
 </script>
 </body>
