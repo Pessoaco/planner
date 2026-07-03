@@ -702,15 +702,15 @@
 <div class="counters" id="counters"></div>
 
 <div class="filters" id="filters">
-  <button class="filter-btn active" data-filter="todos" onclick="setFilter('todos')">Todas</button>
-  <button class="filter-btn" data-filter="Alta" onclick="setFilter('Alta')">🔴 Alta</button>
-  <button class="filter-btn" data-filter="Média" onclick="setFilter('Média')">🟡 Média</button>
-  <button class="filter-btn" data-filter="Baixa" onclick="setFilter('Baixa')">🟢 Baixa</button>
+  <button class="filter-btn active" data-grupo="todos" onclick="setFilter('todos')">Todas</button>
+  <button class="filter-btn" data-grupo="prioridade" data-valor="Alta" onclick="setFilter('prioridade','Alta')">🔴 Alta</button>
+  <button class="filter-btn" data-grupo="prioridade" data-valor="Média" onclick="setFilter('prioridade','Média')">🟡 Média</button>
+  <button class="filter-btn" data-grupo="prioridade" data-valor="Baixa" onclick="setFilter('prioridade','Baixa')">🟢 Baixa</button>
   <div class="filters-break"></div>
-  <button class="filter-btn" data-filter="Aberto" onclick="setFilter('Aberto')">Aberto</button>
-  <button class="filter-btn" data-filter="Andamento" onclick="setFilter('Andamento')">Em andamento</button>
-  <button class="filter-btn" data-filter="Concluído" onclick="setFilter('Concluído')">Concluídas</button>
-  <button class="filter-btn" data-filter="daniel" onclick="setFilter('daniel')">👤 Daniel</button>
+  <button class="filter-btn" data-grupo="status" data-valor="Aberto" onclick="setFilter('status','Aberto')">Aberto</button>
+  <button class="filter-btn" data-grupo="status" data-valor="Andamento" onclick="setFilter('status','Andamento')">Em andamento</button>
+  <button class="filter-btn" data-grupo="status" data-valor="Concluído" onclick="setFilter('status','Concluído')">Concluídas</button>
+  <button class="filter-btn" data-grupo="daniel" onclick="setFilter('daniel')">👤 Daniel</button>
 </div>
 
 <main class="main" id="main">
@@ -788,7 +788,9 @@ const ABAS = ['PESSOAL', 'OBRA', 'WORK', 'ODOO PROJETO'];
 const ABA_LABEL = { 'PESSOAL': 'Pessoal', 'OBRA': 'Obra', 'WORK': 'Work', 'ODOO PROJETO': 'Odoo' };
 let allData = {};
 let abaAtual = 'PESSOAL';
-let filtroAtual = 'todos';
+let filtroPrioridade = '';
+let filtroStatus = '';
+let filtroDaniel = false;
 let searchTerm = '';
 let categoriasColapsadas = new Set();
 
@@ -826,9 +828,26 @@ function switchTab(aba) {
   render();
 }
 
-function setFilter(f) {
-  filtroAtual = f;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
+function setFilter(grupo, valor) {
+  if (grupo === 'todos') {
+    filtroPrioridade = '';
+    filtroStatus = '';
+    filtroDaniel = false;
+  } else if (grupo === 'prioridade') {
+    filtroPrioridade = filtroPrioridade === valor ? '' : valor;
+  } else if (grupo === 'status') {
+    filtroStatus = filtroStatus === valor ? '' : valor;
+  } else if (grupo === 'daniel') {
+    filtroDaniel = !filtroDaniel;
+  }
+
+  const nenhumFiltro = !filtroPrioridade && !filtroStatus && !filtroDaniel;
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    if (b.dataset.grupo === 'todos') { b.classList.toggle('active', nenhumFiltro); return; }
+    if (b.dataset.grupo === 'prioridade') { b.classList.toggle('active', b.dataset.valor === filtroPrioridade); return; }
+    if (b.dataset.grupo === 'status') { b.classList.toggle('active', b.dataset.valor === filtroStatus); return; }
+    if (b.dataset.grupo === 'daniel') { b.classList.toggle('active', filtroDaniel); return; }
+  });
   render();
 }
 
@@ -861,13 +880,9 @@ function renderCounters(tarefas) {
 
 function renderTarefas(tarefas) {
   let filtradas = tarefas;
-  if (filtroAtual === 'Alta' || filtroAtual === 'Média' || filtroAtual === 'Baixa') {
-    filtradas = tarefas.filter(t => t.Prioridade === filtroAtual);
-  } else if (filtroAtual === 'daniel') {
-    filtradas = tarefas.filter(t => (t.Envolvido || '').toLowerCase().includes('daniel'));
-  } else if (filtroAtual !== 'todos') {
-    filtradas = tarefas.filter(t => t.Status === filtroAtual);
-  }
+  if (filtroPrioridade) filtradas = filtradas.filter(t => t.Prioridade === filtroPrioridade);
+  if (filtroStatus) filtradas = filtradas.filter(t => t.Status === filtroStatus);
+  if (filtroDaniel) filtradas = filtradas.filter(t => (t.Envolvido || '').toLowerCase().includes('daniel'));
 
   if (searchTerm) {
     filtradas = filtradas.filter(t =>
