@@ -40,6 +40,8 @@
     --aba-work-light: #cffafe;
     --aba-odoo: #16a34a;
     --aba-odoo-light: #dcfce7;
+    --aba-ideias: #c026d3;
+    --aba-ideias-light: #fae8ff;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -112,12 +114,14 @@
   .tab[data-aba="OBRA"]         { border-bottom-color: var(--aba-obra); }
   .tab[data-aba="WORK"]         { border-bottom-color: var(--aba-work); }
   .tab[data-aba="ODOO PROJETO"] { border-bottom-color: var(--aba-odoo); }
+  .tab[data-aba="Projeto Ideias"] { border-bottom-color: var(--aba-ideias); }
 
   .tab.active { font-weight: 700; }
   .tab.active[data-aba="PESSOAL"]      { background: var(--aba-pessoal-light); color: var(--aba-pessoal); }
   .tab.active[data-aba="OBRA"]         { background: var(--aba-obra-light);    color: var(--aba-obra); }
   .tab.active[data-aba="WORK"]         { background: var(--aba-work-light);    color: var(--aba-work); }
   .tab.active[data-aba="ODOO PROJETO"] { background: var(--aba-odoo-light);    color: var(--aba-odoo); }
+  .tab.active[data-aba="Projeto Ideias"] { background: var(--aba-ideias-light); color: var(--aba-ideias); }
 
   /* Arrastar abas para reorganizar */
   .tab-wrap {
@@ -770,6 +774,7 @@
         <option value="OBRA">Obra</option>
         <option value="WORK">Work</option>
         <option value="ODOO PROJETO">Odoo</option>
+        <option value="Projeto Ideias">Ideias</option>
       </select>
     </div>
 
@@ -786,7 +791,7 @@
     </div>
 
     <div class="form-group">
-      <label>Tarefa *</label>
+      <label id="f-tarefa-label">Tarefa *</label>
       <input type="text" id="f-tarefa" placeholder="Descreva a tarefa">
     </div>
 
@@ -821,8 +826,8 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbwHY-VQAb31qHvwCVkGaHWOgywUQumkvjRYorx0iGTj-xL3EQEwjn6sWFa2CHRJQgSSfg/exec';
 
 // Estado
-const ABAS = ['PESSOAL', 'OBRA', 'WORK', 'ODOO PROJETO'];
-const ABA_LABEL = { 'PESSOAL': 'Pessoal', 'OBRA': 'Obra', 'WORK': 'Work', 'ODOO PROJETO': 'Odoo' };
+const ABAS = ['PESSOAL', 'OBRA', 'WORK', 'ODOO PROJETO', 'Projeto Ideias'];
+const ABA_LABEL = { 'PESSOAL': 'Pessoal', 'OBRA': 'Obra', 'WORK': 'Work', 'ODOO PROJETO': 'Odoo', 'Projeto Ideias': 'Ideias' };
 let allData = {};
 let abaAtual = 'PESSOAL';
 let filtroPrioridade = '';
@@ -1177,6 +1182,7 @@ async function openAddModal() {
   // Sincroniza aba selecionada com a aba atual
   document.getElementById('f-aba').value = abaAtual;
   preencherCategorias(abaAtual);
+  atualizaLabelTarefa(abaAtual);
   document.getElementById('f-tarefa').value = '';
   document.getElementById('f-obs').value = '';
   document.getElementById('f-data').value = '';
@@ -1193,6 +1199,7 @@ async function openEditModal(t) {
   document.getElementById('f-aba').value = t._aba;
   document.getElementById('f-aba').disabled = true;
   preencherCategorias(t._aba);
+  atualizaLabelTarefa(t._aba);
   document.getElementById('f-categoria').value = t.Categoria || '';
   document.getElementById('f-tarefa').value = t.Tarefa || '';
   document.getElementById('f-obs').value = t['Observação'] || '';
@@ -1216,6 +1223,12 @@ function closeAddModal(e) {
   }
 }
 
+function atualizaLabelTarefa(aba) {
+  const isIdeias = aba === 'Projeto Ideias';
+  document.getElementById('f-tarefa-label').textContent = isIdeias ? 'Ideia *' : 'Tarefa *';
+  document.getElementById('f-tarefa').placeholder = isIdeias ? 'Descreva a ideia' : 'Descreva a tarefa';
+}
+
 function preencherCategorias(aba) {
   const tarefas = allData[aba] || [];
   const cats = [...new Set(tarefas.map(t => t.Categoria).filter(Boolean))].sort();
@@ -1232,6 +1245,7 @@ function preencherCategorias(aba) {
 // Muda categorias ao trocar de aba no formulário
 document.getElementById('f-aba').addEventListener('change', function() {
   preencherCategorias(this.value);
+  atualizaLabelTarefa(this.value);
 });
 
 function selPrio(btn) {
