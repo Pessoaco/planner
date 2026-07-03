@@ -325,7 +325,7 @@
   .badge-prio-Baixa { background: var(--success-light); color: var(--success); }
 
   .badge-status-Aberto { background: var(--primary-light); color: var(--primary); }
-  .badge-status-Andamento { background: var(--warning-light); color: var(--warning); }
+  .badge-status-EmAndamento { background: var(--warning-light); color: var(--warning); }
   .badge-status-Concluído { background: var(--success-light); color: var(--success); }
 
   .badge-info { background: var(--gray-light); color: var(--gray); }
@@ -745,7 +745,7 @@
   <button class="filter-btn" data-grupo="prioridade" data-valor="Baixa" onclick="setFilter('prioridade','Baixa')">🟢 Baixa</button>
   <div class="filters-break"></div>
   <button class="filter-btn" data-grupo="status" data-valor="Aberto" onclick="setFilter('status','Aberto')">Aberto</button>
-  <button class="filter-btn" data-grupo="status" data-valor="Andamento" onclick="setFilter('status','Andamento')">Em andamento</button>
+  <button class="filter-btn" data-grupo="status" data-valor="Em Andamento" onclick="setFilter('status','Em Andamento')">Em andamento</button>
   <button class="filter-btn" data-grupo="status" data-valor="Concluído" onclick="setFilter('status','Concluído')">Concluídas</button>
   <button class="filter-btn" data-grupo="daniel" onclick="setFilter('daniel')">👤 Daniel</button>
 </div>
@@ -983,7 +983,7 @@ function render() {
 
 function renderCounters(tarefas) {
   const aberto = tarefas.filter(t => t.Status === 'Aberto').length;
-  const andamento = tarefas.filter(t => t.Status === 'Andamento').length;
+  const andamento = tarefas.filter(t => (t.Status || '').trim().toLowerCase() === 'em andamento').length;
   const concluido = tarefas.filter(t => t.Status === 'Concluído').length;
   const total = tarefas.length;
 
@@ -998,7 +998,7 @@ function renderCounters(tarefas) {
 function renderTarefas(tarefas) {
   let filtradas = tarefas;
   if (filtroPrioridade) filtradas = filtradas.filter(t => t.Prioridade === filtroPrioridade);
-  if (filtroStatus) filtradas = filtradas.filter(t => t.Status === filtroStatus);
+  if (filtroStatus) filtradas = filtradas.filter(t => (t.Status || '').trim().toLowerCase() === filtroStatus.trim().toLowerCase());
   if (filtroDaniel) filtradas = filtradas.filter(t => (t.Envolvido || '').toLowerCase().includes('daniel'));
 
   if (searchTerm) {
@@ -1084,7 +1084,7 @@ function cardHtml(t) {
       </div>
       ${meta.length ? `<div class="tarefa-meta">${meta.map(m => `<span class="meta-item">${m}</span>`).join('')}</div>` : ''}
       <div class="tarefa-acoes">
-        ${status === 'Aberto' ? `<button class="btn-andamento" onclick="atualizarStatus('${t.ID}', this, '${t._aba}', 'Andamento')" id="btn-and-${t.ID}">▶️ Em andamento</button>` : ''}
+        ${status === 'Aberto' ? `<button class="btn-andamento" onclick="atualizarStatus('${t.ID}', this, '${t._aba}', 'Em Andamento')" id="btn-and-${t.ID}">▶️ Em andamento</button>` : ''}
         ${!concluido ? `<button class="btn-concluir" onclick="atualizarStatus('${t.ID}', this, '${t._aba}', 'Concluído')" id="btn-${t.ID}">✅ Concluir</button>` : ''}
         <button class="btn-editar" onclick='openEditModal(${JSON.stringify(t).replace(/'/g,"&#39;")})'>✏️</button>
         <button class="btn-excluir" onclick="excluir('${t.ID}', '${(t.Tarefa||'').replace(/'/g,"\\'")}', this, '${t._aba}')">🗑️</button>
