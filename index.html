@@ -162,25 +162,28 @@
   /* FILTROS */
   .filters {
     display: flex;
+    flex-wrap: wrap;
     gap: 6px;
     padding: 0 16px 12px;
-    overflow-x: auto;
-    scrollbar-width: none;
   }
 
-  .filters::-webkit-scrollbar { display: none; }
+  .filters-break {
+    flex-basis: 100%;
+    height: 0;
+  }
 
   .filter-btn {
     flex: 0 0 auto;
-    padding: 6px 14px;
+    padding: 6px 10px;
     border-radius: 20px;
     border: 1.5px solid var(--border);
     background: var(--card);
     color: var(--text-muted);
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
+    white-space: nowrap;
   }
 
   .filter-btn.active {
@@ -700,12 +703,13 @@
 
 <div class="filters" id="filters">
   <button class="filter-btn active" data-filter="todos" onclick="setFilter('todos')">Todas</button>
-  <button class="filter-btn" data-filter="Aberto" onclick="setFilter('Aberto')">Abertas</button>
-  <button class="filter-btn" data-filter="Andamento" onclick="setFilter('Andamento')">Andamento</button>
-  <button class="filter-btn" data-filter="Concluído" onclick="setFilter('Concluído')">Concluídas</button>
   <button class="filter-btn" data-filter="Alta" onclick="setFilter('Alta')">🔴 Alta</button>
   <button class="filter-btn" data-filter="Média" onclick="setFilter('Média')">🟡 Média</button>
   <button class="filter-btn" data-filter="Baixa" onclick="setFilter('Baixa')">🟢 Baixa</button>
+  <div class="filters-break"></div>
+  <button class="filter-btn" data-filter="Aberto" onclick="setFilter('Aberto')">Aberto</button>
+  <button class="filter-btn" data-filter="Andamento" onclick="setFilter('Andamento')">Em andamento</button>
+  <button class="filter-btn" data-filter="Concluído" onclick="setFilter('Concluído')">Concluídas</button>
   <button class="filter-btn" data-filter="daniel" onclick="setFilter('daniel')">👤 Daniel</button>
 </div>
 
