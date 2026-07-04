@@ -1119,7 +1119,7 @@ function cardHtml(t) {
       </div>
       ${meta.length ? `<div class="tarefa-meta">${meta.map(m => `<span class="meta-item">${m}</span>`).join('')}</div>` : ''}
       ${desfazerDisponivel[t.ID] ? `
-        <button class="btn-desfazer" onclick="desfazerStatus('${t.ID}', this, '${t._aba}')">↩️ Desfazer (voltou pra "${desfazerDisponivel[t.ID]}" por engano?)</button>
+        <button class="btn-desfazer" onclick="desfazerStatus('${t.ID}', this, '${t._aba}')">↩️ Desfazer (se clicou por engano)</button>
       ` : ''}
       <div class="tarefa-acoes">
         ${status === 'Aberto' ? `<button class="btn-andamento" onclick="atualizarStatus('${t.ID}', this, '${t._aba}', 'Em Andamento')" id="btn-and-${t.ID}">▶️ Em andamento</button>` : ''}
