@@ -102,26 +102,27 @@
     padding: 10px 4px;
     font-size: 13px;
     font-weight: 600;
-    color: var(--text-muted);
     cursor: pointer;
-    border-bottom: 3px solid var(--border);
+    border: 2px solid transparent;
     border-radius: 8px 8px 0 0;
     transition: all 0.2s;
     white-space: nowrap;
   }
 
-  .tab[data-aba="PESSOAL"]      { border-bottom-color: var(--aba-pessoal); }
-  .tab[data-aba="OBRA"]         { border-bottom-color: var(--aba-obra); }
-  .tab[data-aba="WORK"]         { border-bottom-color: var(--aba-work); }
-  .tab[data-aba="ODOO PROJETO"] { border-bottom-color: var(--aba-odoo); }
-  .tab[data-aba="Projeto Ideias"] { border-bottom-color: var(--aba-ideias); }
+  /* Abas sempre coloridas, tipo divisória de fichário */
+  .tab[data-aba="PESSOAL"]      { background: var(--aba-pessoal-light); color: var(--aba-pessoal); }
+  .tab[data-aba="OBRA"]         { background: var(--aba-obra-light);    color: var(--aba-obra); }
+  .tab[data-aba="WORK"]         { background: var(--aba-work-light);    color: var(--aba-work); }
+  .tab[data-aba="ODOO PROJETO"] { background: var(--aba-odoo-light);    color: var(--aba-odoo); }
+  .tab[data-aba="Projeto Ideias"] { background: var(--aba-ideias-light); color: var(--aba-ideias); }
 
-  .tab.active { font-weight: 700; }
-  .tab.active[data-aba="PESSOAL"]      { background: var(--aba-pessoal-light); color: var(--aba-pessoal); }
-  .tab.active[data-aba="OBRA"]         { background: var(--aba-obra-light);    color: var(--aba-obra); }
-  .tab.active[data-aba="WORK"]         { background: var(--aba-work-light);    color: var(--aba-work); }
-  .tab.active[data-aba="ODOO PROJETO"] { background: var(--aba-odoo-light);    color: var(--aba-odoo); }
-  .tab.active[data-aba="Projeto Ideias"] { background: var(--aba-ideias-light); color: var(--aba-ideias); }
+  /* Aba selecionada: contorno grosso da mesma cor, deixa óbvio qual está aberta */
+  .tab.active { font-weight: 800; }
+  .tab.active[data-aba="PESSOAL"]      { border-color: var(--aba-pessoal); }
+  .tab.active[data-aba="OBRA"]         { border-color: var(--aba-obra); }
+  .tab.active[data-aba="WORK"]         { border-color: var(--aba-work); }
+  .tab.active[data-aba="ODOO PROJETO"] { border-color: var(--aba-odoo); }
+  .tab.active[data-aba="Projeto Ideias"] { border-color: var(--aba-ideias); }
 
   /* Arrastar abas para reorganizar */
   .tab-wrap {
@@ -149,11 +150,14 @@
 
   /* BUSCA */
   .search-bar {
+    display: flex;
+    gap: 8px;
     padding: 10px 16px 0;
   }
 
   .search-bar input {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     padding: 10px 14px;
     border: 1.5px solid var(--border);
     border-radius: 20px;
@@ -166,43 +170,25 @@
 
   .search-bar input:focus { border-color: var(--primary); }
 
-  /* CONTADORES */
-  .counters {
+  .search-bar .filter-btn { flex-shrink: 0; }
+
+  /* CONTADORES — rodapé pequeno e discreto */
+  .counters-footer {
     display: flex;
-    gap: 8px;
-    padding: 12px 16px;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .counters::-webkit-scrollbar { display: none; }
-
-  .counter-card {
-    flex: 0 0 auto;
-    background: var(--card);
-    border-radius: var(--radius);
-    padding: 10px 14px;
-    text-align: center;
-    box-shadow: var(--shadow);
-    min-width: 80px;
-  }
-
-  .counter-card .num {
-    font-size: 22px;
-    font-weight: 800;
-    line-height: 1;
-  }
-
-  .counter-card .label {
+    justify-content: center;
+    gap: 14px;
+    padding: 10px 16px 90px;
     font-size: 11px;
     color: var(--text-muted);
-    margin-top: 2px;
+    flex-wrap: wrap;
   }
 
-  .counter-card.aberto .num { color: var(--primary); }
-  .counter-card.andamento .num { color: var(--warning); }
-  .counter-card.concluido .num { color: var(--success); }
-  .counter-card.total .num { color: var(--text); }
+  .counters-footer .contador-item { display: flex; align-items: center; gap: 3px; }
+  .counters-footer .contador-item b { font-weight: 700; }
+  .counters-footer .aberto b { color: var(--primary); }
+  .counters-footer .andamento b { color: var(--warning); }
+  .counters-footer .concluido b { color: var(--success); }
+  .counters-footer .total b { color: var(--text); }
 
   /* FILTROS */
   .filters {
@@ -215,6 +201,13 @@
   .filters-break {
     flex-basis: 100%;
     height: 0;
+  }
+
+  .filtro-legenda {
+    flex-basis: 100%;
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 6px 0 2px;
   }
 
   .filter-btn {
@@ -257,8 +250,8 @@
   }
 
   .categoria-title {
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: var(--text-muted);
@@ -380,6 +373,21 @@
   }
   .btn-andamento:active { background: var(--warning); color: white; }
   .btn-andamento:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-desfazer {
+    width: 100%;
+    margin-top: 10px;
+    padding: 10px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .btn-desfazer:active { opacity: 0.85; }
+  .btn-desfazer:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .tarefa-acoes { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
   .tarefa-acoes .btn-concluir,
@@ -624,7 +632,7 @@
 
     .header, .fab, .modal-overlay, .toast, .filters,
     .search-bar, .counters, .tarefa-acoes, .btn-concluir, .btn-excluir,
-    .categoria-toggle { display: none !important; }
+    .btn-desfazer, .categoria-toggle { display: none !important; }
 
     body { background: white; font-size: 9px; }
 
@@ -737,26 +745,30 @@
 </header>
 
 <div class="search-bar">
+  <button class="filter-btn active" data-grupo="todos" onclick="setFilter('todos')" id="btn-todas">Todas</button>
   <input type="search" id="search-input" placeholder="🔎 Buscar tarefa, categoria..." oninput="setSearch(this.value)">
 </div>
 
-<div class="counters" id="counters"></div>
-
 <div class="filters" id="filters">
-  <button class="filter-btn active" data-grupo="todos" onclick="setFilter('todos')">Todas</button>
+  <div class="filtro-legenda">Prioridade</div>
   <button class="filter-btn" data-grupo="prioridade" data-valor="Alta" onclick="setFilter('prioridade','Alta')">🔴 Alta</button>
   <button class="filter-btn" data-grupo="prioridade" data-valor="Média" onclick="setFilter('prioridade','Média')">🟡 Média</button>
   <button class="filter-btn" data-grupo="prioridade" data-valor="Baixa" onclick="setFilter('prioridade','Baixa')">🟢 Baixa</button>
   <div class="filters-break"></div>
+  <div class="filtro-legenda">Status</div>
   <button class="filter-btn" data-grupo="status" data-valor="Aberto" onclick="setFilter('status','Aberto')">Aberto</button>
   <button class="filter-btn" data-grupo="status" data-valor="Em Andamento" onclick="setFilter('status','Em Andamento')">Em andamento</button>
   <button class="filter-btn" data-grupo="status" data-valor="Concluído" onclick="setFilter('status','Concluído')">Concluídas</button>
+  <div class="filters-break"></div>
+  <div class="filtro-legenda">Envolvidos</div>
   <button class="filter-btn" data-grupo="daniel" onclick="setFilter('daniel')">👤 Daniel</button>
 </div>
 
 <main class="main" id="main">
   <div class="loading"><div class="spinner"></div>Carregando tarefas...</div>
 </main>
+
+<footer class="counters-footer" id="counters"></footer>
 
 <div class="fab-group">
   <button class="fab" onclick="window.print()" title="Imprimir">🖨️</button>
@@ -835,6 +847,7 @@ let filtroStatus = '';
 let filtroDaniel = false;
 let searchTerm = '';
 let categoriasColapsadas = new Set();
+let desfazerDisponivel = {}; // { id: statusAnterior } — fica até a pessoa desfazer ou atualizar a tela
 
 // Ordem das abas: salva no próprio celular, cada pessoa pode organizar do seu jeito
 let abaOrdem = [...ABAS];
@@ -993,10 +1006,10 @@ function renderCounters(tarefas) {
   const total = tarefas.length;
 
   document.getElementById('counters').innerHTML = `
-    <div class="counter-card total"><div class="num">${total}</div><div class="label">Total</div></div>
-    <div class="counter-card aberto"><div class="num">${aberto}</div><div class="label">Abertas</div></div>
-    <div class="counter-card andamento"><div class="num">${andamento}</div><div class="label">Andamento</div></div>
-    <div class="counter-card concluido"><div class="num">${concluido}</div><div class="label">Concluídas</div></div>
+    <span class="contador-item total">Total: <b>${total}</b></span>
+    <span class="contador-item aberto">Abertas: <b>${aberto}</b></span>
+    <span class="contador-item andamento">Andamento: <b>${andamento}</b></span>
+    <span class="contador-item concluido">Concluídas: <b>${concluido}</b></span>
   `;
 }
 
@@ -1039,7 +1052,7 @@ function renderTarefas(tarefas) {
     return `
       <div class="categoria-group">
         <div class="categoria-header" onclick="toggleCategoria('${cat}')">
-          <span class="categoria-title">${cat}</span>
+          <span class="categoria-title">📁 ${cat}</span>
           <span class="categoria-count">${items.length}</span>
           <span class="categoria-toggle">${colapsado ? '▶' : '▼'}</span>
         </div>
@@ -1088,6 +1101,9 @@ function cardHtml(t) {
         <span class="badge badge-status-${status.replace(/\s/g,'')}">${status}</span>
       </div>
       ${meta.length ? `<div class="tarefa-meta">${meta.map(m => `<span class="meta-item">${m}</span>`).join('')}</div>` : ''}
+      ${desfazerDisponivel[t.ID] ? `
+        <button class="btn-desfazer" onclick="desfazerStatus('${t.ID}', this, '${t._aba}')">↩️ Desfazer (voltou pra "${desfazerDisponivel[t.ID]}" por engano?)</button>
+      ` : ''}
       <div class="tarefa-acoes">
         ${status === 'Aberto' ? `<button class="btn-andamento" onclick="atualizarStatus('${t.ID}', this, '${t._aba}', 'Em Andamento')" id="btn-and-${t.ID}">▶️ Em andamento</button>` : ''}
         ${!concluido ? `<button class="btn-concluir" onclick="atualizarStatus('${t.ID}', this, '${t._aba}', 'Concluído')" id="btn-${t.ID}">✅ Concluir</button>` : ''}
@@ -1122,6 +1138,7 @@ async function atualizarStatus(id, btn, aba, novoStatus) {
       // Atualiza localmente sem recarregar tudo
       const tarefa = (allData[aba] || []).find(t => String(t.ID) === String(id));
       if (tarefa) {
+        if (!desfazerDisponivel[id]) desfazerDisponivel[id] = tarefa.Status;
         tarefa.Status = novoStatus;
         if (novoStatus === 'Concluído') tarefa['Data conclusão'] = new Date().toLocaleDateString('pt-BR');
       }
@@ -1135,6 +1152,37 @@ async function atualizarStatus(id, btn, aba, novoStatus) {
   } catch (e) {
     btn.disabled = false;
     btn.textContent = textoOriginal;
+    showToast('⚠️ Sem conexão');
+  }
+}
+
+async function desfazerStatus(id, btn, aba) {
+  const statusAnterior = desfazerDisponivel[id];
+  if (!statusAnterior) return;
+  aba = aba || abaAtual;
+  btn.disabled = true;
+  btn.textContent = 'Desfazendo...';
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'updateStatus', aba, id, status: statusAnterior })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      const tarefa = (allData[aba] || []).find(t => String(t.ID) === String(id));
+      if (tarefa) tarefa.Status = statusAnterior;
+      delete desfazerDisponivel[id];
+      render();
+      showToast('↩️ Ação desfeita!');
+    } else {
+      btn.disabled = false;
+      btn.textContent = '↩️ Desfazer';
+      showToast('⚠️ Erro: ' + (data.error || 'tente novamente'));
+    }
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = '↩️ Desfazer';
     showToast('⚠️ Sem conexão');
   }
 }
