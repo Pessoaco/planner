@@ -280,7 +280,7 @@
     transition: all 0.2s;
   }
 
-  .tarefa-card.prioridade-Alta { border-left-color: var(--danger); }
+  .tarefa-card.prioridade-Urgente { border-left-color: var(--danger); }
   .tarefa-card.prioridade-Média { border-left-color: var(--warning); }
   .tarefa-card.prioridade-Baixa { border-left-color: var(--success); }
   .tarefa-card.status-Concluído { opacity: 0.55; }
@@ -317,7 +317,7 @@
     border-radius: 6px;
   }
 
-  .badge-prio-Alta { background: var(--danger-light); color: var(--danger); }
+  .badge-prio-Urgente { background: var(--danger-light); color: var(--danger); }
   .badge-prio-Média { background: var(--warning-light); color: var(--warning); }
   .badge-prio-Baixa { background: var(--success-light); color: var(--success); }
 
@@ -529,7 +529,7 @@
     transition: all 0.15s;
   }
 
-  .prio-btn[data-p="Alta"].sel   { background: var(--danger-light);  border-color: var(--danger);  color: var(--danger); }
+  .prio-btn[data-p="Urgente"].sel   { background: var(--danger-light);  border-color: var(--danger);  color: var(--danger); }
   .prio-btn[data-p="Média"].sel  { background: var(--warning-light); border-color: var(--warning); color: var(--warning); }
   .prio-btn[data-p="Baixa"].sel  { background: var(--success-light); border-color: var(--success); color: var(--success); }
 
@@ -694,7 +694,7 @@
       flex-shrink: 0;
       width: 10px;
     }
-    .tarefa-card.prioridade-Alta::before   { content: 'A'; color: #dc2626; }
+    .tarefa-card.prioridade-Urgente::before   { content: 'U'; color: #dc2626; }
     .tarefa-card.prioridade-Média::before  { content: 'M'; color: #d97706; }
     .tarefa-card.prioridade-Baixa::before  { content: 'B'; color: #16a34a; }
 
@@ -762,7 +762,7 @@
 
 <div class="filters" id="filters">
   <div class="filtro-legenda">Prioridade</div>
-  <button class="filter-btn" data-grupo="prioridade" data-valor="Alta" onclick="setFilter('prioridade','Alta')">🔴 Alta</button>
+  <button class="filter-btn" data-grupo="prioridade" data-valor="Urgente" onclick="setFilter('prioridade','Urgente')">🔴 Urgente</button>
   <button class="filter-btn" data-grupo="prioridade" data-valor="Média" onclick="setFilter('prioridade','Média')">🟡 Média</button>
   <button class="filter-btn" data-grupo="prioridade" data-valor="Baixa" onclick="setFilter('prioridade','Baixa')">🟢 Baixa</button>
   <div class="filters-break"></div>
@@ -821,7 +821,7 @@
     <div class="form-group">
       <label>Prioridade</label>
       <div class="prio-btns">
-        <button class="prio-btn sel" data-p="Alta" onclick="selPrio(this)">🔴 Alta</button>
+        <button class="prio-btn sel" data-p="Urgente" onclick="selPrio(this)">🔴 Urgente</button>
         <button class="prio-btn" data-p="Média" onclick="selPrio(this)">🟡 Média</button>
         <button class="prio-btn" data-p="Baixa" onclick="selPrio(this)">🟢 Baixa</button>
       </div>
@@ -1075,7 +1075,7 @@ function renderTarefas(tarefas) {
     grupos[cat].push(t);
   });
 
-  const priOrd = { 'Alta': 0, 'Média': 1, 'Baixa': 2 };
+  const priOrd = { 'Urgente': 0, 'Média': 1, 'Baixa': 2 };
 
   const html = Object.entries(grupos).sort(([a], [b]) => a.localeCompare(b)).map(([cat, items]) => {
     items.sort((a, b) => (priOrd[a.Prioridade] ?? 1) - (priOrd[b.Prioridade] ?? 1));
@@ -1279,7 +1279,7 @@ async function openAddModal() {
   document.getElementById('f-tarefa').value = '';
   document.getElementById('f-obs').value = '';
   document.getElementById('f-data').value = '';
-  document.querySelectorAll('.prio-btn').forEach(b => b.classList.toggle('sel', b.dataset.p === 'Alta'));
+  document.querySelectorAll('.prio-btn').forEach(b => b.classList.toggle('sel', b.dataset.p === 'Urgente'));
   document.getElementById('modal-add').classList.add('open');
 }
 
