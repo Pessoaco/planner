@@ -728,14 +728,16 @@
     .main { max-width: 700px; margin: 0 auto; }
     .counters-footer { justify-content: center; }
 
-    /* Legenda junto com os botões na mesma linha (tem espaço de sobra no PC) */
-    .filters { max-width: 700px; margin: 0 auto; align-items: center; }
+    /* Tudo numa linha só (tem espaço de sobra no PC) */
+    .filters { justify-content: center; align-items: center; }
+    .filters-break { display: none; }
     .filtro-legenda {
       flex-basis: auto;
-      padding: 0 8px 0 0;
+      padding: 0 8px 0 14px;
       font-weight: 700;
       color: var(--text);
     }
+    .filtro-legenda:first-of-type { padding-left: 0; }
   }
 </style>
 </head>
