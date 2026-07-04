@@ -1040,8 +1040,11 @@ function renderTarefas(tarefas) {
   let filtradas = tarefas;
 
   // Concluídas ficam ocultas por padrão — só aparecem se pedir esse filtro de propósito (relatório)
+  // Exceção: se ainda dá pra desfazer, continua visível até a pessoa decidir
   if (filtroStatus !== 'Concluído') {
-    filtradas = filtradas.filter(t => (t.Status || '').trim().toLowerCase() !== 'concluído');
+    filtradas = filtradas.filter(t =>
+      (t.Status || '').trim().toLowerCase() !== 'concluído' || desfazerDisponivel[t.ID]
+    );
   }
 
   if (filtroPrioridade) filtradas = filtradas.filter(t => t.Prioridade === filtroPrioridade);
