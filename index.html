@@ -858,7 +858,13 @@ let filtroStatus = '';
 let filtroDaniel = false;
 let searchTerm = '';
 let categoriasColapsadas = new Set();
-let desfazerDisponivel = {}; // { id: statusAnterior } — fica até a pessoa desfazer ou atualizar a tela
+// { id: statusAnterior } — fica salvo no celular até a pessoa desfazer, mesmo se fechar o app
+let desfazerDisponivel = {};
+try { desfazerDisponivel = JSON.parse(localStorage.getItem('desfazerDisponivel') || '{}'); } catch (e) {}
+
+function salvarDesfazer() {
+  try { localStorage.setItem('desfazerDisponivel', JSON.stringify(desfazerDisponivel)); } catch (e) {}
+}
 
 // Ordem das abas: salva no próprio celular, cada pessoa pode organizar do seu jeito
 let abaOrdem = [...ABAS];
@@ -1032,6 +1038,12 @@ function renderCounters(tarefas) {
 
 function renderTarefas(tarefas) {
   let filtradas = tarefas;
+
+  // Concluídas ficam ocultas por padrão — só aparecem se pedir esse filtro de propósito (relatório)
+  if (filtroStatus !== 'Concluído') {
+    filtradas = filtradas.filter(t => (t.Status || '').trim().toLowerCase() !== 'concluído');
+  }
+
   if (filtroPrioridade) filtradas = filtradas.filter(t => t.Prioridade === filtroPrioridade);
   if (filtroStatus) filtradas = filtradas.filter(t => (t.Status || '').trim().toLowerCase() === filtroStatus.trim().toLowerCase());
   if (filtroDaniel) filtradas = filtradas.filter(t => (t.Envolvido || '').toLowerCase().includes('daniel'));
@@ -1156,6 +1168,7 @@ async function atualizarStatus(id, btn, aba, novoStatus) {
       const tarefa = (allData[aba] || []).find(t => String(t.ID) === String(id));
       if (tarefa) {
         if (!desfazerDisponivel[id]) desfazerDisponivel[id] = tarefa.Status;
+        salvarDesfazer();
         tarefa.Status = novoStatus;
         if (novoStatus === 'Concluído') tarefa['Data conclusão'] = new Date().toLocaleDateString('pt-BR');
       }
@@ -1190,6 +1203,7 @@ async function desfazerStatus(id, btn, aba) {
       const tarefa = (allData[aba] || []).find(t => String(t.ID) === String(id));
       if (tarefa) tarefa.Status = statusAnterior;
       delete desfazerDisponivel[id];
+      salvarDesfazer();
       render();
       showToast('↩️ Ação desfeita!');
     } else {
