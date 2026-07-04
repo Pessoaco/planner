@@ -1098,6 +1098,27 @@ function renderTarefas(tarefas) {
   mainEl.dataset.aba = abaAtual;
 }
 
+// Evita o bug de new Date() interpretar "10/07/2026" como mês/dia (formato americano)
+function formatarDataBR(dataRaw) {
+  const raw = String(dataRaw).trim();
+
+  // Formato brasileiro dd/MM/yyyy — o mais comum, vindo da planilha
+  const br = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if (br) {
+    const [, dd, mm, yyyy] = br;
+    return `${dd.padStart(2,'0')}/${mm.padStart(2,'0')}/${yyyy.length === 2 ? '20' + yyyy : yyyy}`;
+  }
+
+  // Formato ISO yyyy-MM-dd — vindo do campo de data do formulário
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) {
+    const [, yyyy, mm, dd] = iso;
+    return `${dd}/${mm}/${yyyy}`;
+  }
+
+  return raw;
+}
+
 function cardHtml(t) {
   const prio = t.Prioridade || 'Média';
   const status = t.Status || 'Aberto';
@@ -1106,11 +1127,7 @@ function cardHtml(t) {
   const meta = [];
   if (t['Data Prevista']) {
     const dataRaw = t['Data Prevista'];
-    const dataFmt = (() => {
-      const d = new Date(dataRaw);
-      if (!isNaN(d)) return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'});
-      return dataRaw.includes('/') ? dataRaw.split('T')[0] : dataRaw;
-    })();
+    const dataFmt = formatarDataBR(dataRaw);
     const horaRaw = t.Hora ? t.Hora.trim() : '';
     const horaFmt = (() => {
       if (!horaRaw) return '';
