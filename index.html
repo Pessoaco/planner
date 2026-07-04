@@ -726,7 +726,16 @@
 
   @media (min-width: 640px) {
     .main { max-width: 700px; margin: 0 auto; }
-    .counters { justify-content: center; }
+    .counters-footer { justify-content: center; }
+
+    /* Legenda junto com os botões na mesma linha (tem espaço de sobra no PC) */
+    .filters { max-width: 700px; margin: 0 auto; align-items: center; }
+    .filtro-legenda {
+      flex-basis: auto;
+      padding: 0 8px 0 0;
+      font-weight: 700;
+      color: var(--text);
+    }
   }
 </style>
 </head>
@@ -959,6 +968,12 @@ function switchTab(aba) {
   abaAtual = aba;
   searchTerm = '';
   document.getElementById('search-input').value = '';
+  filtroPrioridade = '';
+  filtroStatus = '';
+  filtroDaniel = false;
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.grupo === 'todos');
+  });
   renderTabs();
   render();
 }
