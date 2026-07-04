@@ -1177,6 +1177,17 @@ async function atualizarStatus(id, btn, aba, novoStatus) {
       }
       render();
       showToast(novoStatus === 'Concluído' ? '✅ Tarefa concluída!' : '▶️ Tarefa em andamento!');
+
+      // Concluída: some da lista sozinha depois de alguns segundos (dá tempo de desfazer antes)
+      if (novoStatus === 'Concluído') {
+        setTimeout(() => {
+          if (desfazerDisponivel[id]) {
+            delete desfazerDisponivel[id];
+            salvarDesfazer();
+            render();
+          }
+        }, 8000);
+      }
     } else {
       btn.disabled = false;
       btn.textContent = textoOriginal;
