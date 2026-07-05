@@ -175,11 +175,19 @@
   /* CONTADORES — rodapé pequeno e discreto */
   .counters-footer {
     display: flex;
-    justify-content: center;
-    gap: 14px;
-    padding: 10px 16px 90px;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    /* padding-right maior pra não ficar embaixo dos botões flutuantes (imprimir/adicionar) */
+    padding: 10px 90px 90px 16px;
     font-size: 11px;
     color: var(--text-muted);
+  }
+
+  .contador-linha {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
     flex-wrap: wrap;
   }
 
@@ -189,6 +197,7 @@
   .counters-footer .andamento b { color: var(--warning); }
   .counters-footer .concluido b { color: var(--success); }
   .counters-footer .total b { color: var(--text); }
+  .counters-footer .urgente b { color: var(--danger); }
 
   /* FILTROS */
   .filters {
@@ -310,6 +319,13 @@
     margin-top: 8px;
   }
 
+  .mini-legenda {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    opacity: 0.8;
+  }
+
   .badge {
     font-size: 11px;
     font-weight: 600;
@@ -419,6 +435,20 @@
   }
   .btn-editar:active { background: var(--primary); color: white; }
 
+  .btn-lembrete {
+    padding: 8px 12px;
+    background: var(--success-light);
+    color: var(--success);
+    border: 1.5px solid var(--success);
+    border-radius: 8px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .btn-lembrete:active { background: var(--success); color: white; }
+  .btn-lembrete:disabled { opacity: 0.6; cursor: not-allowed; }
+
   /* LOADING */
   .loading {
     text-align: center;
@@ -477,8 +507,71 @@
     box-shadow: 0 4px 12px rgba(22,163,74,0.4);
   }
 
+  .fab-select {
+    background: var(--gray);
+    box-shadow: 0 4px 12px rgba(107,114,128,0.4);
+    font-size: 18px;
+  }
+  .fab-select.ativo {
+    background: var(--primary);
+    box-shadow: 0 4px 12px rgba(79,70,229,0.4);
+  }
+
+  /* Checkbox de seleção no card */
+  .check-selecao {
+    width: 22px;
+    height: 22px;
+    margin-right: 8px;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  /* Barra fixa de ações em massa */
+  .selecao-barra {
+    display: none;
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: var(--text);
+    color: white;
+    padding: 12px 16px;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 250;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+  }
+  .selecao-barra.show { display: flex; }
+  .selecao-botoes { display: flex; gap: 8px; }
+  .btn-selecao-concluir, .btn-selecao-excluir {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .btn-selecao-concluir { background: var(--success); color: white; }
+  .btn-selecao-excluir { background: var(--danger); color: white; }
+
   /* MODAL FORM */
   .form-group { margin-bottom: 14px; }
+
+  .form-row { display: flex; gap: 10px; }
+  .form-row .form-group { flex: 1; }
+
+  .btn-lembrete-modal {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    background: var(--success-light);
+    color: var(--success);
+    border: 1.5px solid var(--success);
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-lembrete-modal:active { background: var(--success); color: white; }
+  .btn-lembrete-modal:disabled { opacity: 0.6; cursor: not-allowed; }
 
   .form-group label {
     display: block;
@@ -632,7 +725,8 @@
 
     .header, .fab, .modal-overlay, .toast, .filters,
     .search-bar, .counters, .tarefa-acoes, .btn-concluir, .btn-excluir,
-    .btn-desfazer, .categoria-toggle { display: none !important; }
+    .btn-desfazer, .btn-lembrete, .categoria-toggle,
+    .check-selecao, .selecao-barra { display: none !important; }
 
     body { background: white; font-size: 9px; }
 
@@ -721,7 +815,7 @@
     .meta-item { font-size: 8px; color: #666; }
 
     /* Oculta badges — info já está na linha */
-    .badges { display: none !important; }
+    .badges, .mini-legenda { display: none !important; }
   }
 
   @media (min-width: 640px) {
@@ -783,7 +877,16 @@
 
 <div class="fab-group">
   <button class="fab" onclick="window.print()" title="Imprimir">🖨️</button>
+  <button class="fab fab-select" onclick="toggleModoSelecao()" id="btn-modo-selecao" title="Selecionar várias">☑️</button>
   <button class="fab fab-add" onclick="openAddModal()" title="Nova tarefa">➕</button>
+</div>
+
+<div class="selecao-barra" id="selecao-barra">
+  <span id="selecao-contagem">0 selecionadas</span>
+  <div class="selecao-botoes">
+    <button class="btn-selecao-concluir" onclick="concluirSelecionadas()">✅ Concluir</button>
+    <button class="btn-selecao-excluir" onclick="excluirSelecionadas()">🗑️ Excluir</button>
+  </div>
 </div>
 
 <div class="modal-overlay" id="modal-add" onclick="closeAddModal(event)">
@@ -827,15 +930,32 @@
       </div>
     </div>
 
-    <div class="form-group">
-      <label>Data prevista (opcional)</label>
-      <input type="date" id="f-data">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Data prevista (opcional)</label>
+        <input type="date" id="f-data">
+      </div>
+      <div class="form-group">
+        <label>Hora (opcional)</label>
+        <input type="time" id="f-hora">
+      </div>
+    </div>
+
+    <div class="form-group" id="f-status-group" style="display:none">
+      <label>Status</label>
+      <select id="f-status">
+        <option value="Aberto">Aberto</option>
+        <option value="Em Andamento">Em andamento</option>
+        <option value="Concluído">Concluído</option>
+      </select>
     </div>
 
     <div class="form-group">
       <label>Observação (opcional)</label>
       <textarea id="f-obs" placeholder="Detalhes adicionais..."></textarea>
     </div>
+
+    <button class="btn-lembrete-modal" id="btn-lembrete-modal" onclick="enviarLembreteModal()" style="display:none">🔔 Notificar novamente</button>
 
     <button class="btn-salvar" id="btn-salvar" onclick="salvarTarefa()">Salvar tarefa</button>
     <button class="modal-cancel" onclick="closeAddModal()" style="margin-top:8px">Cancelar</button>
@@ -853,9 +973,13 @@ const ABAS = ['PESSOAL', 'OBRA', 'WORK', 'ODOO PROJETO', 'Projeto Ideias'];
 const ABA_LABEL = { 'PESSOAL': 'Pessoal', 'OBRA': 'Obra', 'WORK': 'Work', 'ODOO PROJETO': 'Odoo', 'Projeto Ideias': 'Ideias' };
 let allData = {};
 let abaAtual = 'PESSOAL';
-let filtroPrioridade = '';
-let filtroStatus = '';
+let filtroPrioridade = new Set(); // multi-seleção: ex. {'Urgente','Média'}
+let filtroStatus = new Set();     // multi-seleção: ex. {'Aberto','Em Andamento'}
 let filtroDaniel = false;
+
+function algumFiltroAtivo() {
+  return filtroPrioridade.size > 0 || filtroStatus.size > 0 || filtroDaniel || !!searchTerm;
+}
 let searchTerm = '';
 let categoriasColapsadas = new Set();
 // { id: statusAnterior } — fica salvo no celular até a pessoa desfazer, mesmo se fechar o app
@@ -864,6 +988,80 @@ try { desfazerDisponivel = JSON.parse(localStorage.getItem('desfazerDisponivel')
 
 function salvarDesfazer() {
   try { localStorage.setItem('desfazerDisponivel', JSON.stringify(desfazerDisponivel)); } catch (e) {}
+}
+
+// ===== SELEÇÃO MÚLTIPLA =====
+let modoSelecao = false;
+let selecionados = new Set(); // chaves "aba::id"
+
+function toggleModoSelecao() {
+  modoSelecao = !modoSelecao;
+  if (!modoSelecao) selecionados.clear();
+  document.getElementById('btn-modo-selecao').classList.toggle('ativo', modoSelecao);
+  atualizarBarraSelecao();
+  render();
+}
+
+function toggleSelecionado(chave, marcado) {
+  if (marcado) selecionados.add(chave); else selecionados.delete(chave);
+  atualizarBarraSelecao();
+}
+
+function atualizarBarraSelecao() {
+  const barra = document.getElementById('selecao-barra');
+  const n = selecionados.size;
+  document.getElementById('selecao-contagem').textContent = `${n} selecionada${n === 1 ? '' : 's'}`;
+  barra.classList.toggle('show', modoSelecao && n > 0);
+}
+
+async function concluirSelecionadas() {
+  if (!selecionados.size) return;
+  if (!confirm(`Marcar ${selecionados.size} tarefa(s) como concluída(s)?`)) return;
+  const itens = [...selecionados].map(chave => {
+    const [aba, id] = chave.split('::');
+    return { aba, id };
+  });
+  await Promise.all(itens.map(({ aba, id }) =>
+    fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'updateStatus', aba, id, status: 'Concluído' })
+    }).catch(() => {})
+  ));
+  itens.forEach(({ aba, id }) => {
+    const tarefa = (allData[aba] || []).find(t => String(t.ID) === String(id));
+    if (tarefa) {
+      tarefa.Status = 'Concluído';
+      tarefa['Data conclusão'] = new Date().toLocaleDateString('pt-BR');
+    }
+  });
+  selecionados.clear();
+  atualizarBarraSelecao();
+  renderMantendoScroll();
+  showToast('✅ Tarefas concluídas!');
+}
+
+async function excluirSelecionadas() {
+  if (!selecionados.size) return;
+  if (!confirm(`Excluir ${selecionados.size} tarefa(s)? Essa ação não tem volta.`)) return;
+  const itens = [...selecionados].map(chave => {
+    const [aba, id] = chave.split('::');
+    return { aba, id };
+  });
+  await Promise.all(itens.map(({ aba, id }) =>
+    fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'deleteTask', aba, id })
+    }).catch(() => {})
+  ));
+  itens.forEach(({ aba, id }) => {
+    allData[aba] = (allData[aba] || []).filter(t => String(t.ID) !== String(id));
+  });
+  selecionados.clear();
+  atualizarBarraSelecao();
+  renderMantendoScroll();
+  showToast('🗑️ Tarefas excluídas!');
 }
 
 // Ordem das abas: salva no próprio celular, cada pessoa pode organizar do seu jeito
@@ -958,6 +1156,8 @@ if ('serviceWorker' in navigator) {
 
 // ===== DADOS =====
 async function loadData() {
+  // Guarda onde a pessoa estava rolando pra não voltar pro topo depois de atualizar
+  const scrollY = window.scrollY;
   showLoading();
   try {
     const res = await fetch(`${API_URL}?action=getAll`, { cache: 'no-store' });
@@ -966,6 +1166,7 @@ async function loadData() {
     const now = new Date().toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     document.getElementById('last-update').textContent = `Atualizado às ${now}`;
     render();
+    requestAnimationFrame(() => window.scrollTo(0, scrollY));
   } catch (e) {
     document.getElementById('main').innerHTML =
       `<div class="empty">⚠️ Erro ao carregar dados. Verifique sua conexão e tente novamente.<br><small>${e.message}</small></div>`;
@@ -976,8 +1177,8 @@ function switchTab(aba) {
   abaAtual = aba;
   searchTerm = '';
   document.getElementById('search-input').value = '';
-  filtroPrioridade = '';
-  filtroStatus = '';
+  filtroPrioridade = new Set();
+  filtroStatus = new Set();
   filtroDaniel = false;
   document.querySelectorAll('.filter-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.grupo === 'todos');
@@ -988,30 +1189,38 @@ function switchTab(aba) {
 
 function setFilter(grupo, valor) {
   if (grupo === 'todos') {
-    filtroPrioridade = '';
-    filtroStatus = '';
+    filtroPrioridade = new Set();
+    filtroStatus = new Set();
     filtroDaniel = false;
   } else if (grupo === 'prioridade') {
-    filtroPrioridade = filtroPrioridade === valor ? '' : valor;
+    if (filtroPrioridade.has(valor)) filtroPrioridade.delete(valor); else filtroPrioridade.add(valor);
   } else if (grupo === 'status') {
-    filtroStatus = filtroStatus === valor ? '' : valor;
+    if (filtroStatus.has(valor)) filtroStatus.delete(valor); else filtroStatus.add(valor);
   } else if (grupo === 'daniel') {
     filtroDaniel = !filtroDaniel;
   }
 
-  const nenhumFiltro = !filtroPrioridade && !filtroStatus && !filtroDaniel;
+  const nenhumFiltro = !algumFiltroAtivo();
   document.querySelectorAll('.filter-btn').forEach(b => {
     if (b.dataset.grupo === 'todos') { b.classList.toggle('active', nenhumFiltro); return; }
-    if (b.dataset.grupo === 'prioridade') { b.classList.toggle('active', b.dataset.valor === filtroPrioridade); return; }
-    if (b.dataset.grupo === 'status') { b.classList.toggle('active', b.dataset.valor === filtroStatus); return; }
+    if (b.dataset.grupo === 'prioridade') { b.classList.toggle('active', filtroPrioridade.has(b.dataset.valor)); return; }
+    if (b.dataset.grupo === 'status') { b.classList.toggle('active', filtroStatus.has(b.dataset.valor)); return; }
     if (b.dataset.grupo === 'daniel') { b.classList.toggle('active', filtroDaniel); return; }
   });
   render();
 }
 
+// Chama render() sem deixar a rolagem pular pro topo (usado ao concluir/desfazer/excluir uma tarefa específica)
+function renderMantendoScroll() {
+  const scrollY = window.scrollY;
+  render();
+  requestAnimationFrame(() => window.scrollTo(0, scrollY));
+}
+
 // ===== RENDER =====
 function render() {
-  if (searchTerm) {
+  // Qualquer filtro ativo (prioridade, status, envolvido ou busca) passa a procurar em todas as abas
+  if (algumFiltroAtivo()) {
     const cruzadas = ABAS.flatMap(aba => (allData[aba] || []).map(t => ({ ...t, _aba: aba })));
     document.getElementById('counters').innerHTML = '';
     renderTarefas(cruzadas);
@@ -1023,16 +1232,22 @@ function render() {
 }
 
 function renderCounters(tarefas) {
+  const urgente = tarefas.filter(t => t.Prioridade === 'Urgente').length;
   const aberto = tarefas.filter(t => t.Status === 'Aberto').length;
   const andamento = tarefas.filter(t => (t.Status || '').trim().toLowerCase() === 'em andamento').length;
   const concluido = tarefas.filter(t => t.Status === 'Concluído').length;
   const total = tarefas.length;
 
   document.getElementById('counters').innerHTML = `
-    <span class="contador-item total">Total: <b>${total}</b></span>
-    <span class="contador-item aberto">Abertas: <b>${aberto}</b></span>
-    <span class="contador-item andamento">Andamento: <b>${andamento}</b></span>
-    <span class="contador-item concluido">Concluídas: <b>${concluido}</b></span>
+    <div class="contador-linha">
+      <span class="contador-item total">Total: <b>${total}</b></span>
+      <span class="contador-item urgente">Urgentes: <b>${urgente}</b></span>
+    </div>
+    <div class="contador-linha">
+      <span class="contador-item aberto">Abertas: <b>${aberto}</b></span>
+      <span class="contador-item andamento">Andamento: <b>${andamento}</b></span>
+      <span class="contador-item concluido">Concluídas: <b>${concluido}</b></span>
+    </div>
   `;
 }
 
@@ -1041,14 +1256,19 @@ function renderTarefas(tarefas) {
 
   // Concluídas ficam ocultas por padrão — só aparecem se pedir esse filtro de propósito (relatório)
   // Exceção: se ainda dá pra desfazer, continua visível até a pessoa decidir
-  if (filtroStatus !== 'Concluído') {
+  if (!filtroStatus.has('Concluído')) {
     filtradas = filtradas.filter(t =>
       (t.Status || '').trim().toLowerCase() !== 'concluído' || desfazerDisponivel[t.ID]
     );
   }
 
-  if (filtroPrioridade) filtradas = filtradas.filter(t => t.Prioridade === filtroPrioridade);
-  if (filtroStatus) filtradas = filtradas.filter(t => (t.Status || '').trim().toLowerCase() === filtroStatus.trim().toLowerCase());
+  if (filtroPrioridade.size) filtradas = filtradas.filter(t => filtroPrioridade.has(t.Prioridade));
+  if (filtroStatus.size) {
+    filtradas = filtradas.filter(t => {
+      const statusTarefa = (t.Status || '').trim().toLowerCase();
+      return [...filtroStatus].some(fs => fs.trim().toLowerCase() === statusTarefa);
+    });
+  }
   if (filtroDaniel) filtradas = filtradas.filter(t => (t.Envolvido || '').toLowerCase().includes('daniel'));
 
   if (searchTerm) {
@@ -1067,10 +1287,11 @@ function renderTarefas(tarefas) {
     return;
   }
 
-  // Agrupar por categoria (+ aba, quando buscando em todas)
+  // Agrupar por categoria (+ aba, quando buscando/filtrando em todas)
+  const cruzado = algumFiltroAtivo();
   const grupos = {};
   filtradas.forEach(t => {
-    const cat = (t.Categoria || 'Sem categoria') + (searchTerm ? ` — ${ABA_LABEL[t._aba]}` : '');
+    const cat = (t.Categoria || 'Sem categoria') + (cruzado ? ` — ${ABA_LABEL[t._aba]}` : '');
     if (!grupos[cat]) grupos[cat] = [];
     grupos[cat].push(t);
   });
@@ -1140,11 +1361,14 @@ function cardHtml(t) {
   if (t.Envolvido) meta.push(`👤 ${t.Envolvido}`);
   if (t.Observação) meta.push(`💬 ${t.Observação}`);
 
+  const chaveSelecao = `${t._aba}::${t.ID}`;
   return `
     <div class="tarefa-card prioridade-${prio} status-${status.replace(/\s/g,'')}" id="card-${t.ID}">
       <div class="tarefa-top">
+        ${modoSelecao ? `<input type="checkbox" class="check-selecao" ${selecionados.has(chaveSelecao) ? 'checked' : ''} onchange="toggleSelecionado('${chaveSelecao}', this.checked)">` : ''}
         <div class="tarefa-nome">${t.Tarefa}</div>
       </div>
+      <div class="mini-legenda">Prioridade e status atual:</div>
       <div class="badges">
         <span class="badge badge-prio-${prio}">${prio}</span>
         <span class="badge badge-status-${status.replace(/\s/g,'')}">${status}</span>
@@ -1153,9 +1377,11 @@ function cardHtml(t) {
       ${desfazerDisponivel[t.ID] ? `
         <button class="btn-desfazer" onclick="desfazerStatus('${t.ID}', this, '${t._aba}')">↩️ Desfazer (se clicou por engano)</button>
       ` : ''}
+      ${(status === 'Aberto' || !concluido) ? '<div class="mini-legenda">Mudar status:</div>' : ''}
       <div class="tarefa-acoes">
         ${status === 'Aberto' ? `<button class="btn-andamento" onclick="atualizarStatus('${t.ID}', this, '${t._aba}', 'Em Andamento')" id="btn-and-${t.ID}">▶️ Em andamento</button>` : ''}
         ${!concluido ? `<button class="btn-concluir" onclick="atualizarStatus('${t.ID}', this, '${t._aba}', 'Concluído')" id="btn-${t.ID}">✅ Concluir</button>` : ''}
+        ${t.Envolvido ? `<button class="btn-lembrete" onclick="enviarLembrete('${t.ID}', '${t._aba}', this)" title="Avisar ${t.Envolvido}">🔔</button>` : ''}
         <button class="btn-editar" onclick='openEditModal(${JSON.stringify(t).replace(/'/g,"&#39;")})'>✏️</button>
         <button class="btn-excluir" onclick="excluir('${t.ID}', '${(t.Tarefa||'').replace(/'/g,"\\'")}', this, '${t._aba}')">🗑️</button>
       </div>
@@ -1192,7 +1418,7 @@ async function atualizarStatus(id, btn, aba, novoStatus) {
         tarefa.Status = novoStatus;
         if (novoStatus === 'Concluído') tarefa['Data conclusão'] = new Date().toLocaleDateString('pt-BR');
       }
-      render();
+      renderMantendoScroll();
       showToast(novoStatus === 'Concluído' ? '✅ Tarefa concluída!' : '▶️ Tarefa em andamento!');
 
       // Concluída: some da lista sozinha depois de alguns segundos (dá tempo de desfazer antes)
@@ -1201,7 +1427,7 @@ async function atualizarStatus(id, btn, aba, novoStatus) {
           if (desfazerDisponivel[id]) {
             delete desfazerDisponivel[id];
             salvarDesfazer();
-            render();
+            renderMantendoScroll();
           }
         }, 8000);
       }
@@ -1235,7 +1461,7 @@ async function desfazerStatus(id, btn, aba) {
       if (tarefa) tarefa.Status = statusAnterior;
       delete desfazerDisponivel[id];
       salvarDesfazer();
-      render();
+      renderMantendoScroll();
       showToast('↩️ Ação desfeita!');
     } else {
       btn.disabled = false;
@@ -1246,6 +1472,30 @@ async function desfazerStatus(id, btn, aba) {
     btn.disabled = false;
     btn.textContent = '↩️ Desfazer';
     showToast('⚠️ Sem conexão');
+  }
+}
+
+async function enviarLembrete(id, aba, btn) {
+  btn.disabled = true;
+  const original = btn.textContent;
+  btn.textContent = '⏳';
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'enviarLembrete', aba, id })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast('🔔 Lembrete enviado!');
+    } else {
+      showToast('⚠️ ' + (data.error || 'Erro ao enviar lembrete'));
+    }
+  } catch (e) {
+    showToast('⚠️ Sem conexão');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = original;
   }
 }
 
@@ -1262,7 +1512,7 @@ async function excluir(id, nome, btn, aba) {
     const data = await res.json();
     if (data.ok) {
       allData[aba] = (allData[aba] || []).filter(t => String(t.ID) !== String(id));
-      render();
+      renderMantendoScroll();
       showToast('🗑️ Tarefa excluída!');
     } else {
       btn.disabled = false;
@@ -1296,6 +1546,9 @@ async function openAddModal() {
   document.getElementById('f-tarefa').value = '';
   document.getElementById('f-obs').value = '';
   document.getElementById('f-data').value = '';
+  document.getElementById('f-hora').value = '';
+  document.getElementById('f-status-group').style.display = 'none';
+  document.getElementById('btn-lembrete-modal').style.display = 'none';
   document.querySelectorAll('.prio-btn').forEach(b => b.classList.toggle('sel', b.dataset.p === 'Urgente'));
   document.getElementById('modal-add').classList.add('open');
 }
@@ -1314,9 +1567,19 @@ async function openEditModal(t) {
   document.getElementById('f-tarefa').value = t.Tarefa || '';
   document.getElementById('f-obs').value = t['Observação'] || '';
   document.getElementById('f-data').value = parseDataParaInput(t['Data Prevista']);
+  document.getElementById('f-hora').value = (t.Hora || '').trim().substring(0, 5);
+  document.getElementById('f-status-group').style.display = 'block';
+  document.getElementById('f-status').value = t.Status || 'Aberto';
+  document.getElementById('btn-lembrete-modal').style.display = t.Envolvido ? 'block' : 'none';
   const prio = t.Prioridade || 'Média';
   document.querySelectorAll('.prio-btn').forEach(b => b.classList.toggle('sel', b.dataset.p === prio));
   document.getElementById('modal-add').classList.add('open');
+}
+
+async function enviarLembreteModal() {
+  if (!editandoId) return;
+  const btn = document.getElementById('btn-lembrete-modal');
+  await enviarLembrete(editandoId, editandoAba, btn);
 }
 
 function parseDataParaInput(dataRaw) {
@@ -1376,6 +1639,7 @@ async function salvarTarefa() {
 
   const prioridade = document.querySelector('.prio-btn.sel')?.dataset.p || 'Média';
   const dataPrevista = document.getElementById('f-data').value;
+  const hora = document.getElementById('f-hora').value;
   const obs = document.getElementById('f-obs').value.trim();
   const editando = !!editandoId;
 
@@ -1389,9 +1653,16 @@ async function salvarTarefa() {
     Categoria: categoria,
     Prioridade: prioridade,
     'Data Prevista': dataPrevista || '',
+    Hora: hora || '',
     'Observação': obs
   };
-  if (!editando) fields.Status = 'Aberto';
+  if (!editando) {
+    fields.Status = 'Aberto';
+  } else {
+    const novoStatus = document.getElementById('f-status').value;
+    fields.Status = novoStatus;
+    if (novoStatus !== 'Concluído') fields['Data conclusão'] = '';
+  }
 
   try {
     const res = await fetch(API_URL, {
@@ -1407,7 +1678,7 @@ async function salvarTarefa() {
       closeAddModal();
       showToast(editando ? '✅ Tarefa atualizada!' : '✅ Tarefa criada!');
       const abaRecarregar = editando ? editandoAba : aba;
-      if (abaRecarregar === abaAtual || searchTerm) await loadData();
+      if (abaRecarregar === abaAtual || algumFiltroAtivo()) await loadData();
     } else {
       showToast('⚠️ Erro: ' + (data.error || 'tente novamente'));
     }
