@@ -152,8 +152,32 @@
   .search-bar {
     display: flex;
     gap: 8px;
-    padding: 10px 16px 0;
+    margin-bottom: 12px;
   }
+
+  .header-botoes { display: flex; gap: 6px; }
+
+  .busca-avancada-toggle {
+    font-size: 12px;
+    color: var(--primary);
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 0 8px;
+    user-select: none;
+  }
+
+  .busca-avancada-painel {
+    display: none;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    background: var(--primary-light);
+    border-radius: 8px;
+  }
+  .busca-avancada-painel.aberto { display: flex; }
+  .busca-avancada-painel .filtro-legenda { flex-basis: 100%; color: var(--primary); }
 
   .search-bar input {
     flex: 1;
@@ -259,11 +283,11 @@
   }
 
   .categoria-title {
-    font-size: 11px;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: var(--text-muted);
+    color: var(--primary);
     flex: 1;
   }
 
@@ -315,7 +339,8 @@
   .badges {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
+    justify-content: center;
+    gap: 16px;
     margin-top: 8px;
   }
 
@@ -327,10 +352,10 @@
   }
 
   .badge {
-    font-size: 11px;
-    font-weight: 600;
-    padding: 3px 8px;
-    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 800;
+    padding: 5px 12px;
+    border-radius: 8px;
   }
 
   .badge-prio-Urgente { background: var(--danger-light); color: var(--danger); }
@@ -359,36 +384,23 @@
   }
 
   /* BOTÃO CONCLUIR */
-  .btn-concluir {
-    margin-top: 10px;
-    width: 100%;
-    padding: 8px;
-    background: var(--success-light);
-    color: var(--success);
-    border: 1.5px solid var(--success);
-    border-radius: 8px;
-    font-size: 13px;
+  /* Links pequenos pra trocar status — pequenos de propósito, pra não parecerem o estado atual */
+  .btn-concluir, .btn-andamento {
+    padding: 4px 10px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    font-size: 11px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    text-decoration: underline;
+    flex: 0 0 auto;
+    width: auto;
   }
-
-  .btn-concluir:active { background: var(--success); color: white; }
-  .btn-concluir:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  .btn-andamento {
-    padding: 8px;
-    background: var(--warning-light);
-    color: var(--warning);
-    border: 1.5px solid var(--warning);
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .btn-andamento:active { background: var(--warning); color: white; }
-  .btn-andamento:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-concluir { color: var(--success); }
+  .btn-andamento { color: var(--warning); }
+  .btn-concluir:active, .btn-andamento:active { opacity: 0.7; }
+  .btn-concluir:disabled, .btn-andamento:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .btn-desfazer {
     width: 100%;
@@ -405,35 +417,69 @@
   .btn-desfazer:active { opacity: 0.85; }
   .btn-desfazer:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  .tarefa-acoes { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
-  .tarefa-acoes .btn-concluir,
-  .tarefa-acoes .btn-andamento { margin-top: 0; flex: 1; }
-  .btn-excluir {
-    padding: 8px 12px;
+  /* Ações no rodapé do card: só sino (opcional) + lixeira, pequenos, no canto direito */
+  .tarefa-acoes { display: flex; gap: 6px; margin-top: 10px; align-items: center; justify-content: flex-end; }
+
+  /* Links pequenos "Trocar Prioridade" / "Trocar Status" */
+  .mudar-status-links { display: flex; justify-content: center; gap: 14px; align-items: center; margin-top: 10px; padding-bottom: 6px; }
+  .link-trocar {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .link-trocar:active { opacity: 0.7; }
+
+  /* Lápis no topo, ao lado do nome da tarefa */
+  .btn-editar-topo {
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 2px 4px;
+    margin-left: auto;
+  }
+  .btn-editar-topo:active { opacity: 0.6; }
+
+  /* Excluir: mesmo visual bonito de antes, só que pequeno, no canto direito do rodapé */
+  .btn-excluir-rodape {
+    padding: 4px 8px;
     background: var(--danger-light);
     color: var(--danger);
     border: 1.5px solid var(--danger);
-    border-radius: 8px;
-    font-size: 15px;
+    border-radius: 6px;
+    font-size: 12px;
     cursor: pointer;
-    transition: all 0.2s;
     flex-shrink: 0;
   }
-  .btn-excluir:active { background: var(--danger); color: white; }
-  .btn-excluir:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-excluir-rodape:active { background: var(--danger); color: white; }
+  .btn-excluir-rodape:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  .btn-editar {
-    padding: 8px 12px;
-    background: var(--primary-light);
-    color: var(--primary);
-    border: 1.5px solid var(--primary);
-    border-radius: 8px;
-    font-size: 15px;
+  /* Marcar como concluída: grande, verde, círculo de vitória */
+  .btn-concluir-grande {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    margin-top: 18px;
+    padding: 12px;
+    background: var(--success-light);
+    color: var(--success);
+    border: 2px solid var(--success);
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.2s;
-    flex-shrink: 0;
   }
-  .btn-editar:active { background: var(--primary); color: white; }
+  .btn-concluir-grande:active { background: var(--success); color: white; }
+  .btn-concluir-grande:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .btn-lembrete {
     padding: 8px 12px;
@@ -551,6 +597,16 @@
   }
   .btn-selecao-concluir { background: var(--success); color: white; }
   .btn-selecao-excluir { background: var(--danger); color: white; }
+  .selecao-status-select {
+    padding: 8px 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    background: white;
+    color: var(--text);
+  }
 
   /* MODAL FORM */
   .form-group { margin-bottom: 14px; }
@@ -724,9 +780,11 @@
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
     .header, .fab, .modal-overlay, .toast, .filters,
-    .search-bar, .counters, .tarefa-acoes, .btn-concluir, .btn-excluir,
-    .btn-desfazer, .btn-lembrete, .categoria-toggle,
-    .check-selecao, .selecao-barra { display: none !important; }
+    .search-bar, .counters, .tarefa-acoes, .btn-concluir-grande, .btn-excluir-rodape,
+    .btn-desfazer, .btn-lembrete, .categoria-toggle, .btn-editar-topo,
+    .check-selecao, .selecao-barra, .btn-nova-inline,
+    .busca-avancada-toggle, .busca-avancada-painel,
+    .mudar-status-links { display: none !important; }
 
     body { background: white; font-size: 9px; }
 
@@ -843,16 +901,39 @@
       <h1>📋 Secretária Virtual</h1>
       <div class="header-subtitle" id="last-update">Carregando...</div>
     </div>
-    <button class="btn-refresh" onclick="loadData()">↻ Atualizar</button>
+    <div class="header-botoes">
+      <button class="btn-refresh" onclick="openAddModal()" title="Nova tarefa">➕ Nova</button>
+      <button class="btn-refresh" onclick="exportarCSV()" title="Exportar para Excel">📊</button>
+      <button class="btn-refresh" onclick="loadData()">↻ Atualizar</button>
+    </div>
   </div>
+
+  <div class="search-bar">
+    <button class="filter-btn active" data-grupo="todos" onclick="setFilter('todos')" id="btn-todas">TODAS</button>
+    <input type="search" id="search-input" placeholder="🔎 Buscar tarefa, categoria..." oninput="setSearch(this.value)">
+  </div>
+
+  <div class="busca-avancada-toggle" onclick="toggleBuscaAvancada()" id="busca-avancada-toggle">
+    🌐 Busca avançada em todas as abas ▾
+  </div>
+  <div class="busca-avancada-painel" id="busca-avancada-painel">
+    <div class="filtro-legenda">Prioridade (todas as abas)</div>
+    <button class="filter-btn" data-grupo="prioridadeG" data-valor="Urgente" onclick="setFilter('prioridadeG','Urgente')">🔴 Urgente</button>
+    <button class="filter-btn" data-grupo="prioridadeG" data-valor="Média" onclick="setFilter('prioridadeG','Média')">🟡 Média</button>
+    <button class="filter-btn" data-grupo="prioridadeG" data-valor="Baixa" onclick="setFilter('prioridadeG','Baixa')">🟢 Baixa</button>
+    <div class="filters-break"></div>
+    <div class="filtro-legenda">Status (todas as abas)</div>
+    <button class="filter-btn" data-grupo="statusG" data-valor="Aberto" onclick="setFilter('statusG','Aberto')">Aberto</button>
+    <button class="filter-btn" data-grupo="statusG" data-valor="Em Andamento" onclick="setFilter('statusG','Em Andamento')">Em andamento</button>
+    <button class="filter-btn" data-grupo="statusG" data-valor="Concluído" onclick="setFilter('statusG','Concluído')">Concluídas</button>
+    <div class="filters-break"></div>
+    <div class="filtro-legenda">Envolvidos (todas as abas)</div>
+    <button class="filter-btn" data-grupo="danielG" onclick="setFilter('danielG')">👤 Daniel</button>
+  </div>
+
   <div class="tabs" id="tabs"></div>
   <div class="tabs-hint">↔️ Segure e arraste uma aba para reorganizar</div>
 </header>
-
-<div class="search-bar">
-  <button class="filter-btn active" data-grupo="todos" onclick="setFilter('todos')" id="btn-todas">Todas</button>
-  <input type="search" id="search-input" placeholder="🔎 Buscar tarefa, categoria..." oninput="setSearch(this.value)">
-</div>
 
 <div class="filters" id="filters">
   <div class="filtro-legenda">Prioridade</div>
@@ -884,6 +965,12 @@
 <div class="selecao-barra" id="selecao-barra">
   <span id="selecao-contagem">0 selecionadas</span>
   <div class="selecao-botoes">
+    <select id="selecao-status" class="selecao-status-select" onchange="trocarStatusSelecionadas(this.value); this.value=''">
+      <option value="">Trocar status…</option>
+      <option value="Aberto">Aberto</option>
+      <option value="Em Andamento">Em andamento</option>
+      <option value="Concluído">Concluído</option>
+    </select>
     <button class="btn-selecao-concluir" onclick="concluirSelecionadas()">✅ Concluir</button>
     <button class="btn-selecao-excluir" onclick="excluirSelecionadas()">🗑️ Excluir</button>
   </div>
@@ -973,12 +1060,32 @@ const ABAS = ['PESSOAL', 'OBRA', 'WORK', 'ODOO PROJETO', 'Projeto Ideias'];
 const ABA_LABEL = { 'PESSOAL': 'Pessoal', 'OBRA': 'Obra', 'WORK': 'Work', 'ODOO PROJETO': 'Odoo', 'Projeto Ideias': 'Ideias' };
 let allData = {};
 let abaAtual = 'PESSOAL';
-let filtroPrioridade = new Set(); // multi-seleção: ex. {'Urgente','Média'}
-let filtroStatus = new Set();     // multi-seleção: ex. {'Aberto','Em Andamento'}
+
+// Filtros LOCAIS — valem só dentro da aba aberta (linha de filtros embaixo das abas)
+let filtroPrioridade = new Set();
+let filtroStatus = new Set();
 let filtroDaniel = false;
 
+// Filtros GLOBAIS — painel "Busca avançada", sempre cruzam todas as abas
+let filtroPrioridadeG = new Set();
+let filtroStatusG = new Set();
+let filtroDanielG = false;
+
 function algumFiltroAtivo() {
-  return filtroPrioridade.size > 0 || filtroStatus.size > 0 || filtroDaniel || !!searchTerm;
+  // Só os filtros GLOBAIS (+ busca por texto) forçam o modo cruzado entre abas
+  return filtroPrioridadeG.size > 0 || filtroStatusG.size > 0 || filtroDanielG || !!searchTerm;
+}
+
+function nenhumFiltroAtivoTotal() {
+  return !algumFiltroAtivo() && filtroPrioridade.size === 0 && filtroStatus.size === 0 && !filtroDaniel;
+}
+
+function toggleBuscaAvancada() {
+  const painel = document.getElementById('busca-avancada-painel');
+  const aberto = painel.classList.toggle('aberto');
+  document.getElementById('busca-avancada-toggle').textContent = aberto
+    ? '🌐 Busca avançada em todas as abas ▴'
+    : '🌐 Busca avançada em todas as abas ▾';
 }
 let searchTerm = '';
 let categoriasColapsadas = new Set();
@@ -1015,8 +1122,13 @@ function atualizarBarraSelecao() {
 }
 
 async function concluirSelecionadas() {
-  if (!selecionados.size) return;
-  if (!confirm(`Marcar ${selecionados.size} tarefa(s) como concluída(s)?`)) return;
+  await trocarStatusSelecionadas('Concluído');
+}
+
+async function trocarStatusSelecionadas(novoStatus) {
+  if (!novoStatus || !selecionados.size) return;
+  const rotulo = { 'Aberto': 'Aberto', 'Em Andamento': 'Em andamento', 'Concluído': 'Concluído' }[novoStatus] || novoStatus;
+  if (!confirm(`Trocar ${selecionados.size} tarefa(s) para "${rotulo}"?`)) return;
   const itens = [...selecionados].map(chave => {
     const [aba, id] = chave.split('::');
     return { aba, id };
@@ -1025,20 +1137,20 @@ async function concluirSelecionadas() {
     fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'updateStatus', aba, id, status: 'Concluído' })
+      body: JSON.stringify({ action: 'updateStatus', aba, id, status: novoStatus })
     }).catch(() => {})
   ));
   itens.forEach(({ aba, id }) => {
     const tarefa = (allData[aba] || []).find(t => String(t.ID) === String(id));
     if (tarefa) {
-      tarefa.Status = 'Concluído';
-      tarefa['Data conclusão'] = new Date().toLocaleDateString('pt-BR');
+      tarefa.Status = novoStatus;
+      if (novoStatus === 'Concluído') tarefa['Data conclusão'] = new Date().toLocaleDateString('pt-BR');
     }
   });
   selecionados.clear();
   atualizarBarraSelecao();
   renderMantendoScroll();
-  showToast('✅ Tarefas concluídas!');
+  showToast(`✅ Tarefas atualizadas para "${rotulo}"!`);
 }
 
 async function excluirSelecionadas() {
@@ -1192,20 +1304,32 @@ function setFilter(grupo, valor) {
     filtroPrioridade = new Set();
     filtroStatus = new Set();
     filtroDaniel = false;
+    filtroPrioridadeG = new Set();
+    filtroStatusG = new Set();
+    filtroDanielG = false;
   } else if (grupo === 'prioridade') {
     if (filtroPrioridade.has(valor)) filtroPrioridade.delete(valor); else filtroPrioridade.add(valor);
   } else if (grupo === 'status') {
     if (filtroStatus.has(valor)) filtroStatus.delete(valor); else filtroStatus.add(valor);
   } else if (grupo === 'daniel') {
     filtroDaniel = !filtroDaniel;
+  } else if (grupo === 'prioridadeG') {
+    if (filtroPrioridadeG.has(valor)) filtroPrioridadeG.delete(valor); else filtroPrioridadeG.add(valor);
+  } else if (grupo === 'statusG') {
+    if (filtroStatusG.has(valor)) filtroStatusG.delete(valor); else filtroStatusG.add(valor);
+  } else if (grupo === 'danielG') {
+    filtroDanielG = !filtroDanielG;
   }
 
-  const nenhumFiltro = !algumFiltroAtivo();
+  const nenhumFiltro = nenhumFiltroAtivoTotal();
   document.querySelectorAll('.filter-btn').forEach(b => {
     if (b.dataset.grupo === 'todos') { b.classList.toggle('active', nenhumFiltro); return; }
     if (b.dataset.grupo === 'prioridade') { b.classList.toggle('active', filtroPrioridade.has(b.dataset.valor)); return; }
     if (b.dataset.grupo === 'status') { b.classList.toggle('active', filtroStatus.has(b.dataset.valor)); return; }
     if (b.dataset.grupo === 'daniel') { b.classList.toggle('active', filtroDaniel); return; }
+    if (b.dataset.grupo === 'prioridadeG') { b.classList.toggle('active', filtroPrioridadeG.has(b.dataset.valor)); return; }
+    if (b.dataset.grupo === 'statusG') { b.classList.toggle('active', filtroStatusG.has(b.dataset.valor)); return; }
+    if (b.dataset.grupo === 'danielG') { b.classList.toggle('active', filtroDanielG); return; }
   });
   render();
 }
@@ -1251,25 +1375,33 @@ function renderCounters(tarefas) {
   `;
 }
 
-function renderTarefas(tarefas) {
+// Aplica todos os filtros ativos numa lista de tarefas (usado no render e na exportação)
+function filtrarTarefas(tarefas) {
+  // Em modo cruzado (busca avançada ou texto ativos), usa os filtros GLOBAIS.
+  // Senão, usa os filtros LOCAIS (só dentro da aba aberta).
+  const cruzado = algumFiltroAtivo();
+  const prioridadeAtiva = cruzado ? filtroPrioridadeG : filtroPrioridade;
+  const statusAtivo = cruzado ? filtroStatusG : filtroStatus;
+  const danielAtivo = cruzado ? filtroDanielG : filtroDaniel;
+
   let filtradas = tarefas;
 
   // Concluídas ficam ocultas por padrão — só aparecem se pedir esse filtro de propósito (relatório)
   // Exceção: se ainda dá pra desfazer, continua visível até a pessoa decidir
-  if (!filtroStatus.has('Concluído')) {
+  if (!statusAtivo.has('Concluído')) {
     filtradas = filtradas.filter(t =>
       (t.Status || '').trim().toLowerCase() !== 'concluído' || desfazerDisponivel[t.ID]
     );
   }
 
-  if (filtroPrioridade.size) filtradas = filtradas.filter(t => filtroPrioridade.has(t.Prioridade));
-  if (filtroStatus.size) {
+  if (prioridadeAtiva.size) filtradas = filtradas.filter(t => prioridadeAtiva.has(t.Prioridade));
+  if (statusAtivo.size) {
     filtradas = filtradas.filter(t => {
       const statusTarefa = (t.Status || '').trim().toLowerCase();
-      return [...filtroStatus].some(fs => fs.trim().toLowerCase() === statusTarefa);
+      return [...statusAtivo].some(fs => fs.trim().toLowerCase() === statusTarefa);
     });
   }
-  if (filtroDaniel) filtradas = filtradas.filter(t => (t.Envolvido || '').toLowerCase().includes('daniel'));
+  if (danielAtivo) filtradas = filtradas.filter(t => (t.Envolvido || '').toLowerCase().includes('daniel'));
 
   if (searchTerm) {
     filtradas = filtradas.filter(t =>
@@ -1279,6 +1411,42 @@ function renderTarefas(tarefas) {
       (t.Envolvido || '').toLowerCase().includes(searchTerm)
     );
   }
+
+  return filtradas;
+}
+
+// Pega a lista de tarefas de onde estamos olhando agora (aba atual ou todas cruzadas)
+function tarefasDaTelaAtual() {
+  const origem = algumFiltroAtivo()
+    ? ABAS.flatMap(aba => (allData[aba] || []).map(t => ({ ...t, _aba: aba })))
+    : (allData[abaAtual] || []).map(t => ({ ...t, _aba: abaAtual }));
+  return filtrarTarefas(origem);
+}
+
+function exportarCSV() {
+  const filtradas = tarefasDaTelaAtual();
+  if (!filtradas.length) { showToast('⚠️ Nenhuma tarefa pra exportar'); return; }
+
+  const colunas = ['Tarefa', 'Categoria', 'Prioridade', 'Status', 'Data Prevista', 'Hora', 'Envolvido', 'Observação'];
+  const linhas = [colunas.join(';')];
+  filtradas.forEach(t => {
+    linhas.push(colunas.map(c => `"${String(t[c] || '').replace(/"/g, '""')}"`).join(';'));
+  });
+
+  const bom = String.fromCharCode(0xFEFF); // BOM pro Excel reconhecer acentuação
+  const csv = bom + linhas.join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `tarefas_${abaAtual}_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('📊 Exportado!');
+}
+
+function renderTarefas(tarefas) {
+  const filtradas = filtrarTarefas(tarefas);
 
   if (!filtradas.length) {
     document.getElementById('main').innerHTML = searchTerm
@@ -1362,28 +1530,31 @@ function cardHtml(t) {
   if (t.Observação) meta.push(`💬 ${t.Observação}`);
 
   const chaveSelecao = `${t._aba}::${t.ID}`;
+  const dadosJson = JSON.stringify(t).replace(/'/g,"&#39;");
   return `
     <div class="tarefa-card prioridade-${prio} status-${status.replace(/\s/g,'')}" id="card-${t.ID}">
       <div class="tarefa-top">
         ${modoSelecao ? `<input type="checkbox" class="check-selecao" ${selecionados.has(chaveSelecao) ? 'checked' : ''} onchange="toggleSelecionado('${chaveSelecao}', this.checked)">` : ''}
         <div class="tarefa-nome">${t.Tarefa}</div>
+        <button class="btn-editar-topo" onclick='openEditModal(${dadosJson})' title="Editar tarefa">✏️</button>
       </div>
-      <div class="mini-legenda">Prioridade e status atual:</div>
+      ${meta.length ? `<div class="tarefa-meta">${meta.map(m => `<span class="meta-item">${m}</span>`).join('')}</div>` : ''}
+      <div class="mini-legenda">Prioridade e Status atual:</div>
       <div class="badges">
         <span class="badge badge-prio-${prio}">${prio}</span>
         <span class="badge badge-status-${status.replace(/\s/g,'')}">${status}</span>
       </div>
-      ${meta.length ? `<div class="tarefa-meta">${meta.map(m => `<span class="meta-item">${m}</span>`).join('')}</div>` : ''}
       ${desfazerDisponivel[t.ID] ? `
         <button class="btn-desfazer" onclick="desfazerStatus('${t.ID}', this, '${t._aba}')">↩️ Desfazer (se clicou por engano)</button>
       ` : ''}
-      ${(status === 'Aberto' || !concluido) ? '<div class="mini-legenda">Mudar status:</div>' : ''}
+      <div class="mudar-status-links">
+        <button class="link-trocar" onclick='openEditModal(${dadosJson})'>✏️ Trocar Prioridade</button>
+        <button class="link-trocar" onclick='openEditModal(${dadosJson})'>✏️ Trocar Status</button>
+      </div>
+      ${!concluido ? `<button class="btn-concluir-grande" onclick="atualizarStatus('${t.ID}', this, '${t._aba}', 'Concluído')" id="btn-${t.ID}">✅ Marcar como concluída</button>` : ''}
       <div class="tarefa-acoes">
-        ${status === 'Aberto' ? `<button class="btn-andamento" onclick="atualizarStatus('${t.ID}', this, '${t._aba}', 'Em Andamento')" id="btn-and-${t.ID}">▶️ Em andamento</button>` : ''}
-        ${!concluido ? `<button class="btn-concluir" onclick="atualizarStatus('${t.ID}', this, '${t._aba}', 'Concluído')" id="btn-${t.ID}">✅ Concluir</button>` : ''}
         ${t.Envolvido ? `<button class="btn-lembrete" onclick="enviarLembrete('${t.ID}', '${t._aba}', this)" title="Avisar ${t.Envolvido}">🔔</button>` : ''}
-        <button class="btn-editar" onclick='openEditModal(${JSON.stringify(t).replace(/'/g,"&#39;")})'>✏️</button>
-        <button class="btn-excluir" onclick="excluir('${t.ID}', '${(t.Tarefa||'').replace(/'/g,"\\'")}', this, '${t._aba}')">🗑️</button>
+        <button class="btn-excluir-rodape" onclick="excluir('${t.ID}', '${(t.Tarefa||'').replace(/'/g,"\\'")}', this, '${t._aba}')" title="Excluir">🗑️</button>
       </div>
     </div>
   `;

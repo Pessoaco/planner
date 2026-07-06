@@ -1,4 +1,4 @@
-const CACHE = 'planner-v27';
+const CACHE = 'planner-v34';
 const ASSETS = ['/', '/index.html', '/manifest.json'];
 
 self.addEventListener('install', e => {
