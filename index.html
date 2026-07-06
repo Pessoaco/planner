@@ -162,7 +162,8 @@
     color: var(--primary);
     font-weight: 600;
     cursor: pointer;
-    padding: 4px 0 8px;
+    padding: 6px 0 10px;
+    text-align: right;
     user-select: none;
   }
 
@@ -909,7 +910,7 @@
   </div>
 
   <div class="search-bar">
-    <button class="filter-btn active" data-grupo="todos" onclick="setFilter('todos')" id="btn-todas">TODAS</button>
+    <button class="filter-btn active" data-grupo="todos" onclick="setFilter('todos')" id="btn-todas">🔄 Limpar filtros</button>
     <input type="search" id="search-input" placeholder="🔎 Buscar tarefa, categoria..." oninput="setSearch(this.value)">
   </div>
 
@@ -1188,13 +1189,16 @@ abaAtual = abaOrdem[0];
 
 function setSearch(v) {
   searchTerm = v.trim().toLowerCase();
+  renderTabs();
   render();
 }
 
 function renderTabs() {
+  // Enquanto a busca/filtro cruza todas as abas, nenhuma aba fica com o contorno de "selecionada"
+  const cruzado = algumFiltroAtivo();
   const html = abaOrdem.map((aba, i) => `
     <div class="tab-wrap" data-aba="${aba}" style="order:${i}">
-      <div class="tab ${aba === abaAtual ? 'active' : ''}" data-aba="${aba}">${ABA_LABEL[aba]}</div>
+      <div class="tab ${(!cruzado && aba === abaAtual) ? 'active' : ''}" data-aba="${aba}">${ABA_LABEL[aba]}</div>
     </div>
   `).join('');
   document.getElementById('tabs').innerHTML = html;
@@ -1331,6 +1335,7 @@ function setFilter(grupo, valor) {
     if (b.dataset.grupo === 'statusG') { b.classList.toggle('active', filtroStatusG.has(b.dataset.valor)); return; }
     if (b.dataset.grupo === 'danielG') { b.classList.toggle('active', filtroDanielG); return; }
   });
+  renderTabs();
   render();
 }
 
@@ -1470,10 +1475,12 @@ function renderTarefas(tarefas) {
     items.sort((a, b) => (priOrd[a.Prioridade] ?? 1) - (priOrd[b.Prioridade] ?? 1));
     const colapsado = categoriasColapsadas.has(cat + abaAtual);
     const itemsHtml = colapsado ? '' : items.map(t => cardHtml(t)).join('');
+    // Na busca cruzada, colore a categoria com a cor da aba de origem (tipo etiqueta do fichário)
+    const corAba = cruzado ? `color: var(--aba-${ABA_LABEL[items[0]._aba].toLowerCase()});` : '';
     return `
       <div class="categoria-group">
         <div class="categoria-header" onclick="toggleCategoria('${cat}')">
-          <span class="categoria-title">📁 ${cat}</span>
+          <span class="categoria-title" style="${corAba}">📁 ${cat}</span>
           <span class="categoria-count">${items.length}</span>
           <span class="categoria-toggle">${colapsado ? '▶' : '▼'}</span>
         </div>
