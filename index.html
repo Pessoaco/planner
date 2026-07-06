@@ -244,6 +244,18 @@
     padding: 6px 0 2px;
   }
 
+  .search-local-input {
+    flex-basis: 100%;
+    padding: 8px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    background: var(--card);
+  }
+  .search-local-input:focus { border-color: var(--primary); }
+
   .filter-btn {
     flex: 0 0 auto;
     padding: 6px 10px;
@@ -307,8 +319,8 @@
   .tarefa-card {
     background: var(--card);
     border-radius: var(--radius);
-    padding: 14px;
-    margin-bottom: 8px;
+    padding: 11px;
+    margin-bottom: 6px;
     box-shadow: var(--shadow);
     border-left: 3px solid transparent;
     transition: all 0.2s;
@@ -342,13 +354,13 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: 16px;
-    margin-top: 8px;
+    margin-top: 6px;
   }
 
   .mini-legenda {
     font-size: 10px;
     color: var(--text-muted);
-    margin-top: 6px;
+    margin-top: 4px;
     opacity: 0.8;
   }
 
@@ -373,7 +385,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
-    margin-top: 6px;
+    margin-top: 4px;
   }
 
   .meta-item {
@@ -419,10 +431,10 @@
   .btn-desfazer:disabled { opacity: 0.5; cursor: not-allowed; }
 
   /* Ações no rodapé do card: só sino (opcional) + lixeira, pequenos, no canto direito */
-  .tarefa-acoes { display: flex; gap: 6px; margin-top: 10px; align-items: center; justify-content: flex-end; }
+  .tarefa-acoes { display: flex; gap: 6px; margin-top: 8px; align-items: center; justify-content: flex-end; }
 
   /* Links pequenos "Trocar Prioridade" / "Trocar Status" */
-  .mudar-status-links { display: flex; justify-content: center; gap: 14px; align-items: center; margin-top: 10px; padding-bottom: 6px; }
+  .mudar-status-links { display: flex; justify-content: center; gap: 14px; align-items: center; margin-top: 8px; padding-bottom: 4px; }
   .link-trocar {
     background: none;
     border: none;
@@ -468,8 +480,8 @@
     justify-content: center;
     gap: 6px;
     width: 100%;
-    margin-top: 18px;
-    padding: 12px;
+    margin-top: 14px;
+    padding: 10px;
     background: var(--success-light);
     color: var(--success);
     border: 2px solid var(--success);
@@ -555,8 +567,8 @@
   }
 
   .fab-select {
-    background: var(--gray);
-    box-shadow: 0 4px 12px rgba(107,114,128,0.4);
+    background: var(--warning);
+    box-shadow: 0 4px 12px rgba(217,119,6,0.4);
     font-size: 18px;
   }
   .fab-select.ativo {
@@ -629,6 +641,21 @@
   }
   .btn-lembrete-modal:active { background: var(--success); color: white; }
   .btn-lembrete-modal:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .btn-excluir-modal {
+    width: 100%;
+    padding: 10px;
+    margin-top: 8px;
+    background: var(--danger-light);
+    color: var(--danger);
+    border: 1.5px solid var(--danger);
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-excluir-modal:active { background: var(--danger); color: white; }
+  .btn-excluir-modal:disabled { opacity: 0.6; cursor: not-allowed; }
 
   .form-group label {
     display: block;
@@ -878,8 +905,18 @@
   }
 
   @media (min-width: 640px) {
-    .main { max-width: 700px; margin: 0 auto; }
+    .main { max-width: 1100px; margin: 0 auto; }
     .counters-footer { justify-content: center; }
+
+    /* Cards lado a lado em grade no PC (tem espaço de sobra) */
+    .categoria-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 12px;
+      align-items: start;
+    }
+    .categoria-header { grid-column: 1 / -1; }
+    .categoria-group .tarefa-card { margin-bottom: 0; }
 
     /* Tudo numa linha só (tem espaço de sobra no PC) */
     .filters { justify-content: center; align-items: center; }
@@ -891,6 +928,28 @@
       color: var(--text);
     }
     .filtro-legenda:first-of-type { padding-left: 0; }
+
+    /* Card mais compacto no PC — badges e "Concluir" lado a lado, cabe mais tarefa na tela */
+    /* Card mais compacto no PC — junta badges e "Concluir" numa linha só via order do flexbox,
+       sem mexer na ordem do HTML (que o celular usa normalmente) */
+    .tarefa-card { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .tarefa-card .tarefa-top,
+    .tarefa-card .tarefa-meta,
+    .tarefa-card .mini-legenda,
+    .tarefa-card .btn-desfazer,
+    .tarefa-card .mudar-status-links,
+    .tarefa-card .tarefa-acoes { flex-basis: 100%; }
+    .tarefa-card .tarefa-top { order: 1; }
+    .tarefa-card .tarefa-meta { order: 2; }
+    .tarefa-card .mini-legenda { order: 3; margin-bottom: 0; }
+    .tarefa-card .badges { order: 4; margin-top: 0; justify-content: flex-start; }
+    .tarefa-card .btn-concluir-grande { order: 4; width: auto; margin-top: 0; margin-left: auto; flex-shrink: 0; }
+    .tarefa-card .btn-desfazer { order: 5; }
+    .tarefa-card .mudar-status-links { order: 6; justify-content: flex-start; }
+    .tarefa-card .tarefa-acoes { order: 7; }
+
+    /* Data/hora maior e mais escura, mais fácil de ler */
+    .meta-item { font-size: 14px; color: var(--text); font-weight: 500; }
   }
 </style>
 </head>
@@ -937,6 +996,9 @@
 </header>
 
 <div class="filters" id="filters">
+  <div class="filtro-legenda">Buscar nesta aba</div>
+  <input type="search" id="search-local-input" class="search-local-input" placeholder="🔎 Buscar só na aba atual..." oninput="setSearchLocal(this.value)">
+  <div class="filters-break"></div>
   <div class="filtro-legenda">Prioridade</div>
   <button class="filter-btn" data-grupo="prioridade" data-valor="Urgente" onclick="setFilter('prioridade','Urgente')">🔴 Urgente</button>
   <button class="filter-btn" data-grupo="prioridade" data-valor="Média" onclick="setFilter('prioridade','Média')">🟡 Média</button>
@@ -958,9 +1020,9 @@
 <footer class="counters-footer" id="counters"></footer>
 
 <div class="fab-group">
-  <button class="fab" onclick="window.print()" title="Imprimir">🖨️</button>
-  <button class="fab fab-select" onclick="toggleModoSelecao()" id="btn-modo-selecao" title="Selecionar várias">☑️</button>
   <button class="fab fab-add" onclick="openAddModal()" title="Nova tarefa">➕</button>
+  <button class="fab fab-select" onclick="toggleModoSelecao()" id="btn-modo-selecao" title="Selecionar várias">☑️</button>
+  <button class="fab" onclick="window.print()" title="Imprimir">🖨️</button>
 </div>
 
 <div class="selecao-barra" id="selecao-barra">
@@ -1039,6 +1101,11 @@
     </div>
 
     <div class="form-group">
+      <label>Envolvido (opcional)</label>
+      <input type="text" id="f-envolvido" placeholder="Ex: Daniel" oninput="atualizarBotaoLembreteModal()">
+    </div>
+
+    <div class="form-group">
       <label>Observação (opcional)</label>
       <textarea id="f-obs" placeholder="Detalhes adicionais..."></textarea>
     </div>
@@ -1046,6 +1113,7 @@
     <button class="btn-lembrete-modal" id="btn-lembrete-modal" onclick="enviarLembreteModal()" style="display:none">🔔 Notificar novamente</button>
 
     <button class="btn-salvar" id="btn-salvar" onclick="salvarTarefa()">Salvar tarefa</button>
+    <button class="btn-excluir-modal" id="btn-excluir-modal" onclick="excluirDoModal()" style="display:none">🗑️ Excluir tarefa</button>
     <button class="modal-cancel" onclick="closeAddModal()" style="margin-top:8px">Cancelar</button>
   </div>
 </div>
@@ -1088,8 +1156,14 @@ function toggleBuscaAvancada() {
     ? '🌐 Busca avançada em todas as abas ▴'
     : '🌐 Busca avançada em todas as abas ▾';
 }
-let searchTerm = '';
+let searchTerm = '';       // busca global (barra de cima) — sempre cruza todas as abas
+let searchTermLocal = '';  // busca local (linha de filtros) — só dentro da aba atual
 let categoriasColapsadas = new Set();
+
+function setSearchLocal(v) {
+  searchTermLocal = v.trim().toLowerCase();
+  render();
+}
 // { id: statusAnterior } — fica salvo no celular até a pessoa desfazer, mesmo se fechar o app
 let desfazerDisponivel = {};
 try { desfazerDisponivel = JSON.parse(localStorage.getItem('desfazerDisponivel') || '{}'); } catch (e) {}
@@ -1292,7 +1366,9 @@ async function loadData() {
 function switchTab(aba) {
   abaAtual = aba;
   searchTerm = '';
+  searchTermLocal = '';
   document.getElementById('search-input').value = '';
+  document.getElementById('search-local-input').value = '';
   filtroPrioridade = new Set();
   filtroStatus = new Set();
   filtroDaniel = false;
@@ -1311,6 +1387,8 @@ function setFilter(grupo, valor) {
     filtroPrioridadeG = new Set();
     filtroStatusG = new Set();
     filtroDanielG = false;
+    searchTermLocal = '';
+    document.getElementById('search-local-input').value = '';
   } else if (grupo === 'prioridade') {
     if (filtroPrioridade.has(valor)) filtroPrioridade.delete(valor); else filtroPrioridade.add(valor);
   } else if (grupo === 'status') {
@@ -1414,6 +1492,16 @@ function filtrarTarefas(tarefas) {
       (t.Categoria || '').toLowerCase().includes(searchTerm) ||
       (t.Observação || '').toLowerCase().includes(searchTerm) ||
       (t.Envolvido || '').toLowerCase().includes(searchTerm)
+    );
+  }
+
+  // Busca local (só dentro da aba atual) — só faz sentido quando não estamos no modo cruzado
+  if (!cruzado && searchTermLocal) {
+    filtradas = filtradas.filter(t =>
+      (t.Tarefa || '').toLowerCase().includes(searchTermLocal) ||
+      (t.Categoria || '').toLowerCase().includes(searchTermLocal) ||
+      (t.Observação || '').toLowerCase().includes(searchTermLocal) ||
+      (t.Envolvido || '').toLowerCase().includes(searchTermLocal)
     );
   }
 
@@ -1559,10 +1647,11 @@ function cardHtml(t) {
         <button class="link-trocar" onclick='openEditModal(${dadosJson})'>✏️ Trocar Status</button>
       </div>
       ${!concluido ? `<button class="btn-concluir-grande" onclick="atualizarStatus('${t.ID}', this, '${t._aba}', 'Concluído')" id="btn-${t.ID}">✅ Marcar como concluída</button>` : ''}
-      <div class="tarefa-acoes">
-        ${t.Envolvido ? `<button class="btn-lembrete" onclick="enviarLembrete('${t.ID}', '${t._aba}', this)" title="Avisar ${t.Envolvido}">🔔</button>` : ''}
-        <button class="btn-excluir-rodape" onclick="excluir('${t.ID}', '${(t.Tarefa||'').replace(/'/g,"\\'")}', this, '${t._aba}')" title="Excluir">🗑️</button>
-      </div>
+      ${t.Envolvido ? `
+        <div class="tarefa-acoes">
+          <button class="btn-lembrete" onclick="enviarLembrete('${t.ID}', '${t._aba}', this)" title="Avisar ${t.Envolvido}">🔔</button>
+        </div>
+      ` : ''}
     </div>
   `;
 }
@@ -1679,7 +1768,7 @@ async function enviarLembrete(id, aba, btn) {
 
 async function excluir(id, nome, btn, aba) {
   aba = aba || abaAtual;
-  if (!confirm(`Excluir "${nome}"?`)) return;
+  if (!confirm(`Excluir "${nome}"?`)) return false;
   btn.disabled = true;
   try {
     const res = await fetch(API_URL, {
@@ -1692,13 +1781,16 @@ async function excluir(id, nome, btn, aba) {
       allData[aba] = (allData[aba] || []).filter(t => String(t.ID) !== String(id));
       renderMantendoScroll();
       showToast('🗑️ Tarefa excluída!');
+      return true;
     } else {
       btn.disabled = false;
       showToast('⚠️ Erro: ' + (data.error || 'tente novamente'));
+      return false;
     }
   } catch (e) {
     btn.disabled = false;
     showToast('⚠️ Sem conexão');
+    return false;
   }
 }
 
@@ -1722,11 +1814,13 @@ async function openAddModal() {
   preencherCategorias(abaAtual);
   atualizaLabelTarefa(abaAtual);
   document.getElementById('f-tarefa').value = '';
+  document.getElementById('f-envolvido').value = '';
   document.getElementById('f-obs').value = '';
   document.getElementById('f-data').value = '';
   document.getElementById('f-hora').value = '';
   document.getElementById('f-status-group').style.display = 'none';
   document.getElementById('btn-lembrete-modal').style.display = 'none';
+  document.getElementById('btn-excluir-modal').style.display = 'none';
   document.querySelectorAll('.prio-btn').forEach(b => b.classList.toggle('sel', b.dataset.p === 'Urgente'));
   document.getElementById('modal-add').classList.add('open');
 }
@@ -1743,12 +1837,15 @@ async function openEditModal(t) {
   atualizaLabelTarefa(t._aba);
   document.getElementById('f-categoria').value = t.Categoria || '';
   document.getElementById('f-tarefa').value = t.Tarefa || '';
+  document.getElementById('f-envolvido').value = t.Envolvido || '';
   document.getElementById('f-obs').value = t['Observação'] || '';
   document.getElementById('f-data').value = parseDataParaInput(t['Data Prevista']);
   document.getElementById('f-hora').value = (t.Hora || '').trim().substring(0, 5);
   document.getElementById('f-status-group').style.display = 'block';
   document.getElementById('f-status').value = t.Status || 'Aberto';
-  document.getElementById('btn-lembrete-modal').style.display = t.Envolvido ? 'block' : 'none';
+  atualizarBotaoLembreteModal();
+  document.getElementById('btn-excluir-modal').style.display = 'block';
+  document.getElementById('btn-excluir-modal').dataset.nome = t.Tarefa || '';
   const prio = t.Prioridade || 'Média';
   document.querySelectorAll('.prio-btn').forEach(b => b.classList.toggle('sel', b.dataset.p === prio));
   document.getElementById('modal-add').classList.add('open');
@@ -1758,6 +1855,20 @@ async function enviarLembreteModal() {
   if (!editandoId) return;
   const btn = document.getElementById('btn-lembrete-modal');
   await enviarLembrete(editandoId, editandoAba, btn);
+}
+
+// Mostra o botão de notificar só quando estiver editando E tiver alguém em "Envolvido"
+function atualizarBotaoLembreteModal() {
+  const temEnvolvido = document.getElementById('f-envolvido').value.trim().length > 0;
+  document.getElementById('btn-lembrete-modal').style.display = (editandoId && temEnvolvido) ? 'block' : 'none';
+}
+
+async function excluirDoModal() {
+  if (!editandoId) return;
+  const btn = document.getElementById('btn-excluir-modal');
+  const nome = btn.dataset.nome || 'essa tarefa';
+  const excluiu = await excluir(editandoId, nome, btn, editandoAba);
+  if (excluiu) closeAddModal();
 }
 
 function parseDataParaInput(dataRaw) {
@@ -1816,9 +1927,12 @@ async function salvarTarefa() {
   if (!categoria) { showToast('⚠️ Informe a categoria'); return; }
 
   const prioridade = document.querySelector('.prio-btn.sel')?.dataset.p || 'Média';
-  const dataPrevista = document.getElementById('f-data').value;
+  // Converte de yyyy-mm-dd (input type=date) pro formato brasileiro dd/mm/aaaa antes de salvar na planilha
+  const dataPrevistaRaw = document.getElementById('f-data').value;
+  const dataPrevista = dataPrevistaRaw ? formatarDataBR(dataPrevistaRaw) : '';
   const hora = document.getElementById('f-hora').value;
   const obs = document.getElementById('f-obs').value.trim();
+  const envolvido = document.getElementById('f-envolvido').value.trim();
   const editando = !!editandoId;
 
   const btn = document.getElementById('btn-salvar');
@@ -1832,6 +1946,7 @@ async function salvarTarefa() {
     Prioridade: prioridade,
     'Data Prevista': dataPrevista || '',
     Hora: hora || '',
+    Envolvido: envolvido,
     'Observação': obs
   };
   if (!editando) {
