@@ -643,15 +643,17 @@
   .btn-lembrete-modal:disabled { opacity: 0.6; cursor: not-allowed; }
 
   .btn-excluir-modal {
-    width: 100%;
-    padding: 10px;
-    margin-top: 8px;
-    background: var(--danger-light);
+    display: block;
+    width: auto;
+    margin: 20px auto 0;
+    padding: 5px 12px;
+    background: transparent;
     color: var(--danger);
-    border: 1.5px solid var(--danger);
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
+    border: 1px solid var(--danger-light);
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    opacity: 0.75;
     cursor: pointer;
   }
   .btn-excluir-modal:active { background: var(--danger); color: white; }
@@ -928,25 +930,6 @@
       color: var(--text);
     }
     .filtro-legenda:first-of-type { padding-left: 0; }
-
-    /* Card mais compacto no PC — badges e "Concluir" lado a lado, cabe mais tarefa na tela */
-    /* Card mais compacto no PC — junta badges e "Concluir" numa linha só via order do flexbox,
-       sem mexer na ordem do HTML (que o celular usa normalmente) */
-    .tarefa-card { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-    .tarefa-card .tarefa-top,
-    .tarefa-card .tarefa-meta,
-    .tarefa-card .mini-legenda,
-    .tarefa-card .btn-desfazer,
-    .tarefa-card .mudar-status-links,
-    .tarefa-card .tarefa-acoes { flex-basis: 100%; }
-    .tarefa-card .tarefa-top { order: 1; }
-    .tarefa-card .tarefa-meta { order: 2; }
-    .tarefa-card .mini-legenda { order: 3; margin-bottom: 0; }
-    .tarefa-card .badges { order: 4; margin-top: 0; justify-content: flex-start; }
-    .tarefa-card .btn-concluir-grande { order: 4; width: auto; margin-top: 0; margin-left: auto; flex-shrink: 0; }
-    .tarefa-card .btn-desfazer { order: 5; }
-    .tarefa-card .mudar-status-links { order: 6; justify-content: flex-start; }
-    .tarefa-card .tarefa-acoes { order: 7; }
 
     /* Data/hora maior e mais escura, mais fácil de ler */
     .meta-item { font-size: 14px; color: var(--text); font-weight: 500; }
