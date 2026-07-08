@@ -466,6 +466,19 @@
   }
   .link-trocar:active { opacity: 0.7; }
 
+  /* Botõezinhos que aparecem no lugar do link, ao clicar em "Trocar Prioridade/Status" */
+  .opcoes-inline { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+  .opcao-inline-btn {
+    padding: 5px 10px;
+    border-radius: 14px;
+    border: 1.5px solid var(--border);
+    background: var(--card);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .opcao-inline-btn:active { opacity: 0.7; }
+
   /* Lápis no topo, ao lado do nome da tarefa */
   .btn-editar-topo {
     background: none;
@@ -757,8 +770,6 @@
     z-index: 300;
     align-items: flex-end;
     justify-content: center;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
   }
 
   .modal-overlay.open { display: flex; }
@@ -769,7 +780,9 @@
     padding: 24px 20px 40px;
     width: 100%;
     max-width: 480px;
-    margin-top: 40px;
+    max-height: 88vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
@@ -1740,9 +1753,9 @@ function cardHtml(t) {
       ${desfazerDisponivel[t.ID] ? `
         <button class="btn-desfazer" onclick="desfazerStatus('${t.ID}', this, '${t._aba}')">↩️ Desfazer (se clicou por engano)</button>
       ` : ''}
-      <div class="mudar-status-links">
-        <button class="link-trocar" onclick='openEditModal(${dadosJson})'>✏️ Trocar Prioridade</button>
-        <button class="link-trocar" onclick='openEditModal(${dadosJson})'>✏️ Trocar Status</button>
+      <div class="mudar-status-links" id="links-${t.ID}">
+        <button class="link-trocar" onclick="mostrarOpcoesPrioridade(this, '${t.ID}', '${t._aba}')">✏️ Trocar Prioridade</button>
+        <button class="link-trocar" onclick="mostrarOpcoesStatus(this, '${t.ID}', '${t._aba}')">✏️ Trocar Status</button>
       </div>
       ${!concluido ? `<button class="btn-concluir-grande" onclick="atualizarStatus('${t.ID}', this, '${t._aba}', 'Concluído')" id="btn-${t.ID}">✅ Marcar como concluída</button>` : ''}
       ${t.Envolvido ? `
@@ -1762,6 +1775,47 @@ function toggleCategoria(cat) {
 }
 
 // ===== AÇÕES =====
+function mostrarOpcoesPrioridade(btn, id, aba) {
+  btn.parentElement.innerHTML = `
+    <div class="opcoes-inline">
+      <button class="opcao-inline-btn" onclick="trocarPrioridade('${id}','${aba}','Urgente')">🔴 Urgente</button>
+      <button class="opcao-inline-btn" onclick="trocarPrioridade('${id}','${aba}','Média')">🟡 Média</button>
+      <button class="opcao-inline-btn" onclick="trocarPrioridade('${id}','${aba}','Baixa')">🟢 Baixa</button>
+    </div>
+  `;
+}
+
+function mostrarOpcoesStatus(btn, id, aba) {
+  btn.parentElement.innerHTML = `
+    <div class="opcoes-inline">
+      <button class="opcao-inline-btn" onclick="atualizarStatus('${id}', this, '${aba}', 'Aberto')">Aberto</button>
+      <button class="opcao-inline-btn" onclick="atualizarStatus('${id}', this, '${aba}', 'Em Andamento')">Em andamento</button>
+      <button class="opcao-inline-btn" onclick="atualizarStatus('${id}', this, '${aba}', 'Concluído')">Concluído</button>
+    </div>
+  `;
+}
+
+async function trocarPrioridade(id, aba, novaPrioridade) {
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'editTask', aba, id, fields: { Prioridade: novaPrioridade } })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      const tarefa = (allData[aba] || []).find(t => String(t.ID) === String(id));
+      if (tarefa) tarefa.Prioridade = novaPrioridade;
+      renderMantendoScroll();
+      showToast('✅ Prioridade atualizada!');
+    } else {
+      showToast('⚠️ Erro: ' + (data.error || 'tente novamente'));
+    }
+  } catch (e) {
+    showToast('⚠️ Sem conexão');
+  }
+}
+
 async function atualizarStatus(id, btn, aba, novoStatus) {
   aba = aba || abaAtual;
   const textoOriginal = btn.textContent;
