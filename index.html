@@ -253,8 +253,25 @@
     font-family: inherit;
     outline: none;
     background: var(--card);
+    transition: border-color .15s, background .15s;
   }
   .search-local-input:focus { border-color: var(--primary); }
+
+  /* Barra "Buscar nesta aba" acompanha a cor da aba ativa */
+  .filters[data-aba="PESSOAL"] .search-local-input      { border-color: var(--aba-pessoal); background: var(--aba-pessoal-light); }
+  .filters[data-aba="OBRA"] .search-local-input         { border-color: var(--aba-obra);    background: var(--aba-obra-light); }
+  .filters[data-aba="WORK"] .search-local-input         { border-color: var(--aba-work);    background: var(--aba-work-light); }
+  .filters[data-aba="ODOO PROJETO"] .search-local-input { border-color: var(--aba-odoo);    background: var(--aba-odoo-light); }
+  .filters[data-aba="Projeto Ideias"] .search-local-input { border-color: var(--aba-ideias); background: var(--aba-ideias-light); }
+
+  .legenda-busca-local-rodape {
+    flex-basis: 100%;
+    text-align: center;
+    font-size: 10px;
+    color: var(--text-muted);
+    padding: 2px 0 8px;
+    opacity: 0.75;
+  }
 
   .filter-btn {
     flex: 0 0 auto;
@@ -961,7 +978,7 @@
 
   <div class="search-bar">
     <button class="filter-btn active" data-grupo="todos" onclick="setFilter('todos')" id="btn-todas">🔄 Limpar filtros</button>
-    <input type="search" id="search-input" placeholder="🔎 Buscar tarefa, categoria..." oninput="setSearch(this.value)">
+    <input type="search" id="search-input" placeholder="🌐 Buscar em TODAS as abas..." oninput="setSearch(this.value)">
   </div>
 
   <div class="busca-avancada-toggle" onclick="toggleBuscaAvancada()" id="busca-avancada-toggle">
@@ -987,8 +1004,8 @@
 </header>
 
 <div class="filters" id="filters">
-  <div class="filtro-legenda">Buscar nesta aba</div>
   <input type="search" id="search-local-input" class="search-local-input" placeholder="🔎 Buscar só na aba atual..." oninput="setSearchLocal(this.value)">
+  <div class="legenda-busca-local-rodape" id="legenda-busca-local">Buscar nesta aba</div>
   <div class="filters-break"></div>
   <div class="filtro-legenda">Prioridade</div>
   <button class="filter-btn" data-grupo="prioridade" data-valor="Urgente" onclick="setFilter('prioridade','Urgente')">🔴 Urgente</button>
@@ -1270,6 +1287,7 @@ try {
   }
 } catch (e) { /* localStorage indisponível — usa ordem padrão */ }
 abaAtual = abaOrdem[0];
+document.getElementById('filters').dataset.aba = abaAtual;
 
 function setSearch(v) {
   searchTerm = v.trim().toLowerCase();
@@ -1379,6 +1397,7 @@ function switchTab(aba) {
   searchTermLocal = '';
   document.getElementById('search-input').value = '';
   document.getElementById('search-local-input').value = '';
+  document.getElementById('filters').dataset.aba = aba;
   filtroPrioridade = new Set();
   filtroStatus = new Set();
   filtroDaniel = false;
