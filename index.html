@@ -156,6 +156,8 @@
   }
 
   .header-botoes { display: flex; gap: 6px; }
+  .btn-vista { display: none; }
+  @media (min-width: 640px) { .btn-vista { display: inline-flex; align-items: center; } }
 
   .busca-avancada-toggle {
     font-size: 12px;
@@ -755,6 +757,8 @@
     z-index: 300;
     align-items: flex-end;
     justify-content: center;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .modal-overlay.open { display: flex; }
@@ -765,6 +769,7 @@
     padding: 24px 20px 40px;
     width: 100%;
     max-width: 480px;
+    margin-top: 40px;
   }
 
   .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
@@ -931,12 +936,34 @@
     /* Cards lado a lado em grade no PC (tem espaço de sobra) */
     .categoria-group {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
       gap: 12px;
       align-items: start;
     }
     .categoria-header { grid-column: 1 / -1; }
     .categoria-group .tarefa-card { margin-bottom: 0; }
+
+    /* Vista em lista: uma linha compacta por tarefa, sem grade */
+    #main.vista-lista .categoria-group {
+      display: block;
+    }
+    #main.vista-lista .tarefa-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      margin-bottom: 4px;
+    }
+    #main.vista-lista .tarefa-top { flex: 1; min-width: 0; }
+    #main.vista-lista .tarefa-nome {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #main.vista-lista .badges { display: none; }
+    #main.vista-lista .tarefa-meta { flex-shrink: 0; margin-top: 0; }
+    #main.vista-lista .tarefa-acoes { margin-top: 0; flex-shrink: 0; }
+    #main.vista-lista .btn-concluir-grande { padding: 6px 10px; font-size: 11px; white-space: nowrap; }
 
     /* Tudo numa linha só (tem espaço de sobra no PC) */
     .filters, .busca-avancada-painel { justify-content: center; align-items: center; }
@@ -969,6 +996,7 @@
       <div class="header-subtitle" id="last-update">Carregando...</div>
     </div>
     <div class="header-botoes">
+      <button class="btn-refresh btn-vista" id="btn-vista" onclick="toggleVista()" title="Trocar entre cards e lista">▦ Cards</button>
       <button class="btn-refresh" onclick="openAddModal()" title="Nova tarefa">➕ Nova</button>
       <button class="btn-refresh" onclick="exportarCSV(false)" title="Exportar esta aba/lista para Excel">📊</button>
       <button class="btn-refresh" onclick="exportarCSV(true)" title="Exportar TODAS as abas para Excel">📊🌐</button>
@@ -1389,6 +1417,21 @@ async function loadData() {
     document.getElementById('main').innerHTML =
       `<div class="empty">⚠️ Erro ao carregar dados. Verifique sua conexão e tente novamente.<br><small>${e.message}</small></div>`;
   }
+}
+
+let vistaModo = localStorage.getItem('vistaModo') || 'cards';
+
+function aplicarVista() {
+  const main = document.getElementById('main');
+  const btn = document.getElementById('btn-vista');
+  main.classList.toggle('vista-lista', vistaModo === 'lista');
+  if (btn) btn.textContent = vistaModo === 'lista' ? '▦ Cards' : '☰ Lista';
+}
+
+function toggleVista() {
+  vistaModo = vistaModo === 'lista' ? 'cards' : 'lista';
+  localStorage.setItem('vistaModo', vistaModo);
+  aplicarVista();
 }
 
 function switchTab(aba) {
@@ -2076,6 +2119,7 @@ function showToast(msg) {
 
 // Inicia
 renderTabs();
+aplicarVista();
 loadData();
 </script>
 </body>
