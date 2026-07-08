@@ -186,7 +186,7 @@
     flex: 1;
     min-width: 0;
     padding: 10px 14px;
-    border: 1.5px solid var(--border);
+    border: 1.5px solid var(--primary);
     border-radius: 20px;
     font-size: 14px;
     font-family: inherit;
@@ -249,7 +249,7 @@
   .search-local-input {
     flex-basis: 100%;
     padding: 10px 14px;
-    border: 1.5px solid var(--border);
+    border: 1.5px solid var(--primary);
     border-radius: 20px;
     font-size: 14px;
     font-family: inherit;
@@ -265,7 +265,7 @@
     color: var(--primary);
     font-weight: 600;
     padding: 6px 0 10px;
-    text-align: right;
+    text-align: left;
     user-select: none;
   }
 
@@ -287,6 +287,14 @@
     background: var(--primary);
     border-color: var(--primary);
     color: white;
+  }
+
+  /* Filtros locais (dentro da aba) ativos: contorno colorido, mas letra preta/negrito — não confunde com a busca avançada (cima) */
+  .filters .filter-btn.active {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    color: var(--text);
+    font-weight: 700;
   }
 
   /* MAIN */
