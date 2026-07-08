@@ -248,31 +248,25 @@
 
   .search-local-input {
     flex-basis: 100%;
-    padding: 8px 12px;
+    padding: 10px 14px;
     border: 1.5px solid var(--border);
     border-radius: 20px;
-    font-size: 13px;
+    font-size: 14px;
     font-family: inherit;
     outline: none;
     background: var(--card);
-    transition: border-color .15s, background .15s;
+    box-shadow: var(--shadow);
   }
   .search-local-input:focus { border-color: var(--primary); }
 
-  /* Barra "Buscar nesta aba" acompanha a cor da aba ativa */
-  .filters[data-aba="PESSOAL"] .search-local-input      { border-color: var(--aba-pessoal); background: var(--aba-pessoal-light); }
-  .filters[data-aba="OBRA"] .search-local-input         { border-color: var(--aba-obra);    background: var(--aba-obra-light); }
-  .filters[data-aba="WORK"] .search-local-input         { border-color: var(--aba-work);    background: var(--aba-work-light); }
-  .filters[data-aba="ODOO PROJETO"] .search-local-input { border-color: var(--aba-odoo);    background: var(--aba-odoo-light); }
-  .filters[data-aba="Projeto Ideias"] .search-local-input { border-color: var(--aba-ideias); background: var(--aba-ideias-light); }
-
   .legenda-busca-local-rodape {
     flex-basis: 100%;
-    text-align: center;
-    font-size: 10px;
-    color: var(--text-muted);
-    padding: 2px 0 8px;
-    opacity: 0.75;
+    font-size: 12px;
+    color: var(--primary);
+    font-weight: 600;
+    padding: 6px 0 10px;
+    text-align: right;
+    user-select: none;
   }
 
   .filter-btn {
@@ -478,6 +472,13 @@
     cursor: pointer;
   }
   .opcao-inline-btn:active { opacity: 0.7; }
+  .opcao-inline-cancelar {
+    background: var(--danger-light);
+    color: var(--danger);
+    border-color: var(--danger);
+    font-weight: 700;
+    padding: 5px 9px;
+  }
 
   /* Lápis no topo, ao lado do nome da tarefa */
   .btn-editar-topo {
@@ -943,7 +944,7 @@
   }
 
   @media (min-width: 640px) {
-    .main { max-width: 1100px; margin: 0 auto; }
+    .main { max-width: 1400px; margin: 0 auto; }
     .counters-footer { justify-content: center; }
 
     /* Cards lado a lado em grade no PC (tem espaço de sobra) */
@@ -1018,8 +1019,8 @@
   </div>
 
   <div class="search-bar">
-    <button class="filter-btn active" data-grupo="todos" onclick="setFilter('todos')" id="btn-todas">🔄 Limpar filtros</button>
     <input type="search" id="search-input" placeholder="🌐 Buscar em TODAS as abas..." oninput="setSearch(this.value)">
+    <button class="filter-btn active" data-grupo="todos" onclick="setFilter('todos')" id="btn-todas">🔄 Limpar filtros</button>
   </div>
 
   <div class="busca-avancada-toggle" onclick="toggleBuscaAvancada()" id="busca-avancada-toggle">
@@ -1775,12 +1776,25 @@ function toggleCategoria(cat) {
 }
 
 // ===== AÇÕES =====
+function linksOriginais(id, aba) {
+  return `
+    <button class="link-trocar" onclick="mostrarOpcoesPrioridade(this, '${id}', '${aba}')">✏️ Trocar Prioridade</button>
+    <button class="link-trocar" onclick="mostrarOpcoesStatus(this, '${id}', '${aba}')">✏️ Trocar Status</button>
+  `;
+}
+
+function fecharOpcoesInline(id, aba) {
+  const wrap = document.getElementById('links-' + id);
+  if (wrap) wrap.innerHTML = linksOriginais(id, aba);
+}
+
 function mostrarOpcoesPrioridade(btn, id, aba) {
   btn.parentElement.innerHTML = `
     <div class="opcoes-inline">
       <button class="opcao-inline-btn" onclick="trocarPrioridade('${id}','${aba}','Urgente')">🔴 Urgente</button>
       <button class="opcao-inline-btn" onclick="trocarPrioridade('${id}','${aba}','Média')">🟡 Média</button>
       <button class="opcao-inline-btn" onclick="trocarPrioridade('${id}','${aba}','Baixa')">🟢 Baixa</button>
+      <button class="opcao-inline-btn opcao-inline-cancelar" onclick="fecharOpcoesInline('${id}','${aba}')">✕</button>
     </div>
   `;
 }
@@ -1791,6 +1805,7 @@ function mostrarOpcoesStatus(btn, id, aba) {
       <button class="opcao-inline-btn" onclick="atualizarStatus('${id}', this, '${aba}', 'Aberto')">Aberto</button>
       <button class="opcao-inline-btn" onclick="atualizarStatus('${id}', this, '${aba}', 'Em Andamento')">Em andamento</button>
       <button class="opcao-inline-btn" onclick="atualizarStatus('${id}', this, '${aba}', 'Concluído')">Concluído</button>
+      <button class="opcao-inline-btn opcao-inline-cancelar" onclick="fecharOpcoesInline('${id}','${aba}')">✕</button>
     </div>
   `;
 }
