@@ -562,8 +562,9 @@
   }
 
   .fab-add {
-    background: var(--success);
-    box-shadow: 0 4px 12px rgba(22,163,74,0.4);
+    background: var(--gray-light);
+    color: var(--text);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
   }
 
   .fab-select {
@@ -921,8 +922,14 @@
     .categoria-group .tarefa-card { margin-bottom: 0; }
 
     /* Tudo numa linha só (tem espaço de sobra no PC) */
-    .filters { justify-content: center; align-items: center; }
+    .filters, .busca-avancada-painel { justify-content: center; align-items: center; }
     .filters-break { display: none; }
+    .busca-avancada-painel .filtro-legenda {
+      flex-basis: auto;
+      padding: 0 8px 0 14px;
+      font-weight: 700;
+    }
+    .busca-avancada-painel .filtro-legenda:first-of-type { padding-left: 0; }
     .filtro-legenda {
       flex-basis: auto;
       padding: 0 8px 0 14px;
@@ -946,7 +953,8 @@
     </div>
     <div class="header-botoes">
       <button class="btn-refresh" onclick="openAddModal()" title="Nova tarefa">➕ Nova</button>
-      <button class="btn-refresh" onclick="exportarCSV()" title="Exportar para Excel">📊</button>
+      <button class="btn-refresh" onclick="exportarCSV(false)" title="Exportar esta aba/lista para Excel">📊</button>
+      <button class="btn-refresh" onclick="exportarCSV(true)" title="Exportar TODAS as abas para Excel">📊🌐</button>
       <button class="btn-refresh" onclick="loadData()">↻ Atualizar</button>
     </div>
   </div>
@@ -1076,11 +1084,16 @@
 
     <div class="form-group" id="f-status-group" style="display:none">
       <label>Status</label>
-      <select id="f-status">
+      <select id="f-status" onchange="atualizarCampoDataConclusao()">
         <option value="Aberto">Aberto</option>
         <option value="Em Andamento">Em andamento</option>
         <option value="Concluído">Concluído</option>
       </select>
+    </div>
+
+    <div class="form-group" id="f-data-conclusao-group" style="display:none">
+      <label>Data de conclusão</label>
+      <input type="date" id="f-data-conclusao">
     </div>
 
     <div class="form-group">
@@ -1139,6 +1152,11 @@ function toggleBuscaAvancada() {
     ? '🌐 Busca avançada em todas as abas ▴'
     : '🌐 Busca avançada em todas as abas ▾';
 }
+
+function fecharBuscaAvancada() {
+  document.getElementById('busca-avancada-painel').classList.remove('aberto');
+  document.getElementById('busca-avancada-toggle').textContent = '🌐 Busca avançada em todas as abas ▾';
+}
 let searchTerm = '';       // busca global (barra de cima) — sempre cruza todas as abas
 let searchTermLocal = '';  // busca local (linha de filtros) — só dentro da aba atual
 let categoriasColapsadas = new Set();
@@ -1147,9 +1165,18 @@ function setSearchLocal(v) {
   searchTermLocal = v.trim().toLowerCase();
   render();
 }
-// { id: statusAnterior } — fica salvo no celular até a pessoa desfazer, mesmo se fechar o app
+// { id: { status: statusAnterior, ts: timestamp } } — fica salvo no celular até a pessoa desfazer,
+// mesmo se fechar o app. Expira sozinho depois de alguns minutos pra não ficar "grudado" pra sempre
+// caso o app feche antes do timer de 8s conseguir limpar.
+const DESFAZER_VALIDADE_MS = 5 * 60 * 1000; // 5 minutos
 let desfazerDisponivel = {};
-try { desfazerDisponivel = JSON.parse(localStorage.getItem('desfazerDisponivel') || '{}'); } catch (e) {}
+try {
+  const salvo = JSON.parse(localStorage.getItem('desfazerDisponivel') || '{}');
+  const agora = Date.now();
+  for (const id in salvo) {
+    if (salvo[id] && (agora - salvo[id].ts) < DESFAZER_VALIDADE_MS) desfazerDisponivel[id] = salvo[id];
+  }
+} catch (e) {}
 
 function salvarDesfazer() {
   try { localStorage.setItem('desfazerDisponivel', JSON.stringify(desfazerDisponivel)); } catch (e) {}
@@ -1398,6 +1425,17 @@ function setFilter(grupo, valor) {
   });
   renderTabs();
   render();
+
+  // Confirmação visual de que o filtro foi aplicado (os botões já filtram na hora, sem precisar de Enter)
+  if (grupo === 'todos') {
+    showToast('🔄 Filtros limpos');
+  } else {
+    const total = tarefasDaTelaAtual().length;
+    showToast(total > 0 ? `✅ ${total} tarefa${total === 1 ? '' : 's'} encontrada${total === 1 ? '' : 's'}` : '⚠️ Nenhuma tarefa encontrada');
+  }
+
+  // Escolheu algo na busca avançada (painel de cima) → fecha sozinho, libera espaço pra listagem
+  if (grupo.endsWith('G')) fecharBuscaAvancada();
 }
 
 // Chama render() sem deixar a rolagem pular pro topo (usado ao concluir/desfazer/excluir uma tarefa específica)
@@ -1499,14 +1537,23 @@ function tarefasDaTelaAtual() {
   return filtrarTarefas(origem);
 }
 
-function exportarCSV() {
-  const filtradas = tarefasDaTelaAtual();
+function exportarCSV(tudo) {
+  const filtradas = tudo
+    ? ABAS.flatMap(aba => (allData[aba] || []).map(t => ({ ...t, _aba: aba })))
+    : tarefasDaTelaAtual();
+
   if (!filtradas.length) { showToast('⚠️ Nenhuma tarefa pra exportar'); return; }
 
-  const colunas = ['Tarefa', 'Categoria', 'Prioridade', 'Status', 'Data Prevista', 'Hora', 'Envolvido', 'Observação'];
+  const colunas = tudo
+    ? ['Aba', 'Tarefa', 'Categoria', 'Prioridade', 'Status', 'Data Prevista', 'Hora', 'Envolvido', 'Observação']
+    : ['Tarefa', 'Categoria', 'Prioridade', 'Status', 'Data Prevista', 'Hora', 'Envolvido', 'Observação'];
+
   const linhas = [colunas.join(';')];
   filtradas.forEach(t => {
-    linhas.push(colunas.map(c => `"${String(t[c] || '').replace(/"/g, '""')}"`).join(';'));
+    linhas.push(colunas.map(c => {
+      const valor = c === 'Aba' ? (ABA_LABEL[t._aba] || t._aba) : (t[c] || '');
+      return `"${String(valor).replace(/"/g, '""')}"`;
+    }).join(';'));
   });
 
   const bom = String.fromCharCode(0xFEFF); // BOM pro Excel reconhecer acentuação
@@ -1515,7 +1562,9 @@ function exportarCSV() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `tarefas_${abaAtual}_${new Date().toISOString().split('T')[0]}.csv`;
+  a.download = tudo
+    ? `tarefas_TODAS_${new Date().toISOString().split('T')[0]}.csv`
+    : `tarefas_${abaAtual}_${new Date().toISOString().split('T')[0]}.csv`;
   a.click();
   URL.revokeObjectURL(url);
   showToast('📊 Exportado!');
@@ -1531,11 +1580,15 @@ function renderTarefas(tarefas) {
     return;
   }
 
-  // Agrupar por categoria (+ aba, quando buscando/filtrando em todas)
+  // Agrupar por categoria (+ aba, quando buscando/filtrando em todas).
+  // Quando cruzado, a aba vem PRIMEIRO na chave — assim a ordenação alfabética agrupa
+  // tudo de cada aba junto, em vez de intercalar tarefas de abas diferentes.
   const cruzado = algumFiltroAtivo();
   const grupos = {};
   filtradas.forEach(t => {
-    const cat = (t.Categoria || 'Sem categoria') + (cruzado ? ` — ${ABA_LABEL[t._aba]}` : '');
+    const cat = cruzado
+      ? `${ABA_LABEL[t._aba]} — ${t.Categoria || 'Sem categoria'}`
+      : (t.Categoria || 'Sem categoria');
     if (!grupos[cat]) grupos[cat] = [];
     grupos[cat].push(t);
   });
@@ -1663,7 +1716,7 @@ async function atualizarStatus(id, btn, aba, novoStatus) {
       // Atualiza localmente sem recarregar tudo
       const tarefa = (allData[aba] || []).find(t => String(t.ID) === String(id));
       if (tarefa) {
-        if (!desfazerDisponivel[id]) desfazerDisponivel[id] = tarefa.Status;
+        if (!desfazerDisponivel[id]) desfazerDisponivel[id] = { status: tarefa.Status, ts: Date.now() };
         salvarDesfazer();
         tarefa.Status = novoStatus;
         if (novoStatus === 'Concluído') tarefa['Data conclusão'] = new Date().toLocaleDateString('pt-BR');
@@ -1694,8 +1747,9 @@ async function atualizarStatus(id, btn, aba, novoStatus) {
 }
 
 async function desfazerStatus(id, btn, aba) {
-  const statusAnterior = desfazerDisponivel[id];
-  if (!statusAnterior) return;
+  const registro = desfazerDisponivel[id];
+  if (!registro) return;
+  const statusAnterior = registro.status;
   aba = aba || abaAtual;
   btn.disabled = true;
   btn.textContent = 'Desfazendo...';
@@ -1802,6 +1856,8 @@ async function openAddModal() {
   document.getElementById('f-data').value = '';
   document.getElementById('f-hora').value = '';
   document.getElementById('f-status-group').style.display = 'none';
+  document.getElementById('f-data-conclusao-group').style.display = 'none';
+  document.getElementById('f-data-conclusao').value = '';
   document.getElementById('btn-lembrete-modal').style.display = 'none';
   document.getElementById('btn-excluir-modal').style.display = 'none';
   document.querySelectorAll('.prio-btn').forEach(b => b.classList.toggle('sel', b.dataset.p === 'Urgente'));
@@ -1826,6 +1882,8 @@ async function openEditModal(t) {
   document.getElementById('f-hora').value = (t.Hora || '').trim().substring(0, 5);
   document.getElementById('f-status-group').style.display = 'block';
   document.getElementById('f-status').value = t.Status || 'Aberto';
+  document.getElementById('f-data-conclusao').value = parseDataParaInput(t['Data conclusão']);
+  atualizarCampoDataConclusao();
   atualizarBotaoLembreteModal();
   document.getElementById('btn-excluir-modal').style.display = 'block';
   document.getElementById('btn-excluir-modal').dataset.nome = t.Tarefa || '';
@@ -1844,6 +1902,15 @@ async function enviarLembreteModal() {
 function atualizarBotaoLembreteModal() {
   const temEnvolvido = document.getElementById('f-envolvido').value.trim().length > 0;
   document.getElementById('btn-lembrete-modal').style.display = (editandoId && temEnvolvido) ? 'block' : 'none';
+}
+
+// Só mostra o campo de Data de conclusão quando o Status escolhido for "Concluído"
+function atualizarCampoDataConclusao() {
+  const concluido = document.getElementById('f-status').value === 'Concluído';
+  document.getElementById('f-data-conclusao-group').style.display = concluido ? 'block' : 'none';
+  if (concluido && !document.getElementById('f-data-conclusao').value) {
+    document.getElementById('f-data-conclusao').value = new Date().toISOString().split('T')[0];
+  }
 }
 
 async function excluirDoModal() {
@@ -1937,7 +2004,14 @@ async function salvarTarefa() {
   } else {
     const novoStatus = document.getElementById('f-status').value;
     fields.Status = novoStatus;
-    if (novoStatus !== 'Concluído') fields['Data conclusão'] = '';
+    if (novoStatus !== 'Concluído') {
+      fields['Data conclusão'] = '';
+    } else {
+      const dataConclusaoRaw = document.getElementById('f-data-conclusao').value;
+      fields['Data conclusão'] = dataConclusaoRaw
+        ? formatarDataBR(dataConclusaoRaw)
+        : new Date().toLocaleDateString('pt-BR');
+    }
   }
 
   try {
