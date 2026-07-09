@@ -165,7 +165,7 @@
     font-weight: 600;
     cursor: pointer;
     padding: 6px 0 10px;
-    text-align: right;
+    text-align: left;
     user-select: none;
   }
 
@@ -231,7 +231,10 @@
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    padding: 0 16px 12px;
+    padding: 8px 10px 12px;
+    margin: 0 16px 8px;
+    background: var(--primary-light);
+    border-radius: 8px;
   }
 
   .filters-break {
@@ -281,6 +284,7 @@
     cursor: pointer;
     transition: all 0.2s;
     white-space: nowrap;
+    box-shadow: var(--shadow);
   }
 
   .filter-btn.active {
