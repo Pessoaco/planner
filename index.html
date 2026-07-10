@@ -1006,11 +1006,18 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    #main.vista-lista .badges { display: none; }
+    #main.vista-lista .badges, #main.vista-lista .mini-legenda { display: none; }
     #main.vista-lista .tarefa-meta { flex-shrink: 0; margin-top: 0; }
     #main.vista-lista .mudar-status-links { margin-top: 0; flex-basis: auto; }
-    #main.vista-lista .tarefa-acoes { margin-top: 0; flex-shrink: 0; }
-    #main.vista-lista .btn-concluir-grande { padding: 6px 10px; font-size: 11px; white-space: nowrap; }
+    #main.vista-lista .tarefa-acoes { margin-top: 0; flex-shrink: 0; order: 99; }
+    #main.vista-lista .btn-concluir-grande {
+      width: auto;
+      flex: 0 0 auto;
+      margin-top: 0;
+      padding: 6px 10px;
+      font-size: 11px;
+      white-space: nowrap;
+    }
 
     /* Tudo numa linha só (tem espaço de sobra no PC) */
     .filters, .busca-avancada-painel { justify-content: center; align-items: center; }
