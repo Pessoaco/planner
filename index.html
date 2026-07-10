@@ -189,6 +189,18 @@
   .busca-avancada-painel.aberto { display: flex; }
   .busca-avancada-painel .filtro-legenda { flex-basis: 100%; color: var(--primary); }
 
+  .search-input-inline {
+    flex: 1 1 160px;
+    min-width: 120px;
+    padding: 8px 12px;
+    border: 1.5px solid var(--primary);
+    border-radius: 20px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    background: var(--card);
+  }
+
   .search-bar input {
     flex: 1;
     min-width: 0;
@@ -1037,18 +1049,15 @@
       <button class="btn-refresh" onclick="exportarCSV(false)" title="Exportar esta aba/lista para Excel">📊</button>
       <button class="btn-refresh" onclick="exportarCSV(true)" title="Exportar TODAS as abas para Excel">📊🌐</button>
       <button class="btn-refresh" onclick="loadData()">↻ Atualizar</button>
+      <button class="filter-btn active" data-grupo="todos" onclick="setFilter('todos')" id="btn-todas">🔄 Limpar filtros</button>
     </div>
-  </div>
-
-  <div class="search-bar">
-    <input type="search" id="search-input" placeholder="🌐 Buscar em TODAS as abas..." oninput="setSearch(this.value)">
-    <button class="filter-btn active" data-grupo="todos" onclick="setFilter('todos')" id="btn-todas">🔄 Limpar filtros</button>
   </div>
 
   <div class="busca-avancada-toggle" onclick="toggleBuscaAvancada()" id="busca-avancada-toggle">
     🌐 Busca avançada em todas as abas ▾
   </div>
-  <div class="busca-avancada-painel" id="busca-avancada-painel">
+  <div class="busca-avancada-painel aberto" id="busca-avancada-painel">
+    <input type="search" id="search-input" class="search-input-inline" placeholder="🌐 Buscar em TODAS as abas..." oninput="setSearch(this.value)">
     <div class="filtro-legenda">Prioridade (todas as abas)</div>
     <button class="filter-btn" data-grupo="prioridadeG" data-valor="Urgente" onclick="setFilter('prioridadeG','Urgente')">🔴 Urgente</button>
     <button class="filter-btn" data-grupo="prioridadeG" data-valor="Média" onclick="setFilter('prioridadeG','Média')">🟡 Média</button>
@@ -1068,9 +1077,7 @@
 </header>
 
 <div class="filters" id="filters">
-  <input type="search" id="search-local-input" class="search-local-input" placeholder="🔎 Buscar só na aba atual..." oninput="setSearchLocal(this.value)">
-  <div class="legenda-busca-local-rodape" id="legenda-busca-local">Buscar nesta aba</div>
-  <div class="filters-break"></div>
+  <input type="search" id="search-local-input" class="search-input-inline" placeholder="🔎 Buscar só na aba atual..." oninput="setSearchLocal(this.value)">
   <div class="filtro-legenda">Prioridade</div>
   <button class="filter-btn" data-grupo="prioridade" data-valor="Urgente" onclick="setFilter('prioridade','Urgente')">🔴 Urgente</button>
   <button class="filter-btn" data-grupo="prioridade" data-valor="Média" onclick="setFilter('prioridade','Média')">🟡 Média</button>
@@ -1539,9 +1546,6 @@ function setFilter(grupo, valor) {
     const total = tarefasDaTelaAtual().length;
     showToast(total > 0 ? `✅ ${total} tarefa${total === 1 ? '' : 's'} encontrada${total === 1 ? '' : 's'}` : '⚠️ Nenhuma tarefa encontrada');
   }
-
-  // Escolheu algo na busca avançada (painel de cima) → fecha sozinho, libera espaço pra listagem
-  if (grupo.endsWith('G')) fecharBuscaAvancada();
 }
 
 // Chama render() sem deixar a rolagem pular pro topo (usado ao concluir/desfazer/excluir uma tarefa específica)
