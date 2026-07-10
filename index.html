@@ -1052,40 +1052,40 @@
     </div>
     <div class="header-botoes">
       <button class="btn-refresh btn-vista" id="btn-vista" onclick="toggleVista()" title="Trocar entre cards e lista">▦ Cards</button>
-      <button class="btn-refresh" onclick="abrirModalCategorias()" title="Ver categorias já cadastradas nesta aba">📁 Categorias</button>
+      <button class="btn-refresh" onclick="abrirModalCategorias()" title="Ver divisões já cadastradas nesta pasta">📁 Divisões</button>
       <button class="btn-refresh" onclick="openAddModal()" title="Nova tarefa">➕ Nova</button>
-      <button class="btn-refresh" onclick="exportarCSV(false)" title="Exportar esta aba/lista para Excel">📊</button>
-      <button class="btn-refresh" onclick="exportarCSV(true)" title="Exportar TODAS as abas para Excel">📊🌐</button>
+      <button class="btn-refresh" onclick="exportarCSV(false)" title="Exportar esta pasta/lista para Excel">📊</button>
+      <button class="btn-refresh" onclick="exportarCSV(true)" title="Exportar TODAS as pastas para Excel">📊🌐</button>
       <button class="btn-refresh" onclick="loadData()">↻ Atualizar</button>
       <button class="filter-btn active" data-grupo="todos" onclick="setFilter('todos')" id="btn-todas">🔄 Limpar filtros</button>
     </div>
   </div>
 
   <div class="busca-avancada-toggle" onclick="toggleBuscaAvancada()" id="busca-avancada-toggle">
-    🌐 Busca avançada em todas as abas ▾
+    🌐 Busca avançada em todas as pastas ▾
   </div>
   <div class="busca-avancada-painel aberto" id="busca-avancada-painel">
-    <input type="search" id="search-input" class="search-input-inline" placeholder="🌐 Buscar em TODAS as abas..." oninput="setSearch(this.value)">
-    <div class="filtro-legenda">Prioridade (todas as abas)</div>
+    <input type="search" id="search-input" class="search-input-inline" placeholder="🌐 Buscar em TODAS as pastas..." oninput="setSearch(this.value)">
+    <div class="filtro-legenda">Prioridade (todas as pastas)</div>
     <button class="filter-btn" data-grupo="prioridadeG" data-valor="Urgente" onclick="setFilter('prioridadeG','Urgente')">🔴 Urgente</button>
     <button class="filter-btn" data-grupo="prioridadeG" data-valor="Média" onclick="setFilter('prioridadeG','Média')">🟡 Média</button>
     <button class="filter-btn" data-grupo="prioridadeG" data-valor="Baixa" onclick="setFilter('prioridadeG','Baixa')">🟢 Baixa</button>
     <div class="filters-break"></div>
-    <div class="filtro-legenda">Status (todas as abas)</div>
+    <div class="filtro-legenda">Status (todas as pastas)</div>
     <button class="filter-btn" data-grupo="statusG" data-valor="Aberto" onclick="setFilter('statusG','Aberto')">Aberto</button>
     <button class="filter-btn" data-grupo="statusG" data-valor="Em Andamento" onclick="setFilter('statusG','Em Andamento')">Em andamento</button>
     <button class="filter-btn" data-grupo="statusG" data-valor="Concluído" onclick="setFilter('statusG','Concluído')">Concluídas</button>
     <div class="filters-break"></div>
-    <div class="filtro-legenda">Envolvidos (todas as abas)</div>
+    <div class="filtro-legenda">Envolvidos (todas as pastas)</div>
     <button class="filter-btn" data-grupo="danielG" onclick="setFilter('danielG')">👤 Daniel</button>
   </div>
 
   <div class="tabs" id="tabs"></div>
-  <div class="tabs-hint">↔️ Segure e arraste uma aba para reorganizar</div>
+  <div class="tabs-hint">↔️ Segure e arraste uma pasta para reorganizar</div>
 </header>
 
 <div class="filters" id="filters">
-  <input type="search" id="search-local-input" class="search-input-inline" placeholder="🔎 Buscar só na aba atual..." oninput="setSearchLocal(this.value)">
+  <input type="search" id="search-local-input" class="search-input-inline" placeholder="🔎 Buscar só na pasta atual..." oninput="setSearchLocal(this.value)">
   <div class="filtro-legenda">Prioridade</div>
   <button class="filter-btn" data-grupo="prioridade" data-valor="Urgente" onclick="setFilter('prioridade','Urgente')">🔴 Urgente</button>
   <button class="filter-btn" data-grupo="prioridade" data-valor="Média" onclick="setFilter('prioridade','Média')">🟡 Média</button>
@@ -1131,7 +1131,7 @@
     <h3 id="modal-add-title">✏️ Nova tarefa</h3>
 
     <div class="form-group">
-      <label>Aba</label>
+      <label>Pasta</label>
       <select id="f-aba">
         <option value="PESSOAL">Pessoal</option>
         <option value="OBRA">Obra</option>
@@ -1142,15 +1142,15 @@
     </div>
 
     <div class="form-group">
-      <label>Categoria</label>
+      <label>Divisão</label>
       <select id="f-categoria">
         <option value="">Carregando...</option>
       </select>
     </div>
 
     <div class="form-group" id="f-nova-cat-group" style="display:none">
-      <label>Nome da nova categoria</label>
-      <input type="text" id="f-nova-cat" placeholder="Digite a categoria">
+      <label>Nome da nova divisão</label>
+      <input type="text" id="f-nova-cat" placeholder="Digite a divisão">
     </div>
 
     <div class="form-group">
@@ -1212,7 +1212,7 @@
 
 <div class="modal-overlay" id="modal-categorias" onclick="if(event.target===this) fecharModalCategorias()">
   <div class="modal">
-    <h3 id="modal-categorias-title">📁 Categorias</h3>
+    <h3 id="modal-categorias-title">📁 Divisões</h3>
     <div id="lista-categorias"></div>
     <button class="modal-cancel" onclick="fecharModalCategorias()" style="margin-top:8px">Fechar</button>
   </div>
@@ -1253,13 +1253,13 @@ function toggleBuscaAvancada() {
   const painel = document.getElementById('busca-avancada-painel');
   const aberto = painel.classList.toggle('aberto');
   document.getElementById('busca-avancada-toggle').textContent = aberto
-    ? '🌐 Busca avançada em todas as abas ▴'
-    : '🌐 Busca avançada em todas as abas ▾';
+    ? '🌐 Busca avançada em todas as pastas ▴'
+    : '🌐 Busca avançada em todas as pastas ▾';
 }
 
 function fecharBuscaAvancada() {
   document.getElementById('busca-avancada-painel').classList.remove('aberto');
-  document.getElementById('busca-avancada-toggle').textContent = '🌐 Busca avançada em todas as abas ▾';
+  document.getElementById('busca-avancada-toggle').textContent = '🌐 Busca avançada em todas as pastas ▾';
 }
 let searchTerm = '';       // busca global (barra de cima) — sempre cruza todas as abas
 let searchTermLocal = '';  // busca local (linha de filtros) — só dentro da aba atual
@@ -1628,7 +1628,7 @@ function filtrarTarefas(tarefas) {
   if (searchTerm) {
     filtradas = filtradas.filter(t =>
       (t.Tarefa || '').toLowerCase().includes(searchTerm) ||
-      (t.Categoria || '').toLowerCase().includes(searchTerm) ||
+      (t['Divisão'] || '').toLowerCase().includes(searchTerm) ||
       (t.Observação || '').toLowerCase().includes(searchTerm) ||
       (t.Envolvido || '').toLowerCase().includes(searchTerm)
     );
@@ -1638,7 +1638,7 @@ function filtrarTarefas(tarefas) {
   if (!cruzado && searchTermLocal) {
     filtradas = filtradas.filter(t =>
       (t.Tarefa || '').toLowerCase().includes(searchTermLocal) ||
-      (t.Categoria || '').toLowerCase().includes(searchTermLocal) ||
+      (t['Divisão'] || '').toLowerCase().includes(searchTermLocal) ||
       (t.Observação || '').toLowerCase().includes(searchTermLocal) ||
       (t.Envolvido || '').toLowerCase().includes(searchTermLocal)
     );
@@ -1663,13 +1663,13 @@ function exportarCSV(tudo) {
   if (!filtradas.length) { showToast('⚠️ Nenhuma tarefa pra exportar'); return; }
 
   const colunas = tudo
-    ? ['Aba', 'Tarefa', 'Categoria', 'Prioridade', 'Status', 'Data Prevista', 'Hora', 'Envolvido', 'Observação']
-    : ['Tarefa', 'Categoria', 'Prioridade', 'Status', 'Data Prevista', 'Hora', 'Envolvido', 'Observação'];
+    ? ['Pasta', 'Tarefa', 'Divisão', 'Prioridade', 'Status', 'Data Prevista', 'Hora', 'Envolvido', 'Observação']
+    : ['Tarefa', 'Divisão', 'Prioridade', 'Status', 'Data Prevista', 'Hora', 'Envolvido', 'Observação'];
 
   const linhas = [colunas.join(';')];
   filtradas.forEach(t => {
     linhas.push(colunas.map(c => {
-      const valor = c === 'Aba' ? (ABA_LABEL[t._aba] || t._aba) : (t[c] || '');
+      const valor = c === 'Pasta' ? (ABA_LABEL[t._aba] || t._aba) : (t[c] || '');
       return `"${String(valor).replace(/"/g, '""')}"`;
     }).join(';'));
   });
@@ -1705,8 +1705,8 @@ function renderTarefas(tarefas) {
   const grupos = {};
   filtradas.forEach(t => {
     const cat = cruzado
-      ? `${ABA_LABEL[t._aba]} — ${t.Categoria || 'Sem categoria'}`
-      : (t.Categoria || 'Sem categoria');
+      ? `${ABA_LABEL[t._aba]} — ${t['Divisão'] || 'Sem divisão'}`
+      : (t['Divisão'] || 'Sem divisão');
     if (!grupos[cat]) grupos[cat] = [];
     grupos[cat].push(t);
   });
@@ -2013,7 +2013,7 @@ async function openAddModal() {
   editandoAba = null;
   // Garante que os dados (e categorias) já foram carregados
   if (!Object.keys(allData).length) {
-    showToast('⏳ Carregando categorias...');
+    showToast('⏳ Carregando divisões...');
     await loadData();
   }
   document.getElementById('modal-add-title').textContent = '✏️ Nova tarefa';
@@ -2047,7 +2047,7 @@ async function openEditModal(t) {
   document.getElementById('f-aba').disabled = true;
   preencherCategorias(t._aba);
   atualizaLabelTarefa(t._aba);
-  document.getElementById('f-categoria').value = t.Categoria || '';
+  document.getElementById('f-categoria').value = t['Divisão'] || '';
   document.getElementById('f-tarefa').value = t.Tarefa || '';
   document.getElementById('f-envolvido').value = t.Envolvido || '';
   document.getElementById('f-obs').value = t['Observação'] || '';
@@ -2116,15 +2116,15 @@ function atualizaLabelTarefa(aba) {
 
 async function abrirModalCategorias() {
   if (!Object.keys(allData).length) {
-    showToast('⏳ Carregando categorias...');
+    showToast('⏳ Carregando divisões...');
     await loadData();
   }
   const tarefas = allData[abaAtual] || [];
-  const cats = [...new Set(tarefas.map(t => t.Categoria).filter(Boolean))].sort();
-  document.getElementById('modal-categorias-title').textContent = `📁 Categorias — ${ABA_LABEL[abaAtual]}`;
+  const cats = [...new Set(tarefas.map(t => t['Divisão']).filter(Boolean))].sort();
+  document.getElementById('modal-categorias-title').textContent = `📁 Divisões — ${ABA_LABEL[abaAtual]}`;
   document.getElementById('lista-categorias').innerHTML = cats.length
     ? `<ul class="lista-categorias-ul">${cats.map(c => `<li>${c}</li>`).join('')}</ul>`
-    : '<p style="color:var(--text-muted);font-size:13px">Nenhuma categoria cadastrada nesta aba ainda.</p>';
+    : '<p style="color:var(--text-muted);font-size:13px">Nenhuma divisão cadastrada nesta aba ainda.</p>';
   document.getElementById('modal-categorias').classList.add('open');
 }
 
@@ -2134,10 +2134,10 @@ function fecharModalCategorias() {
 
 function preencherCategorias(aba) {
   const tarefas = allData[aba] || [];
-  const cats = [...new Set(tarefas.map(t => t.Categoria).filter(Boolean))].sort();
+  const cats = [...new Set(tarefas.map(t => t['Divisão']).filter(Boolean))].sort();
   const sel = document.getElementById('f-categoria');
   sel.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('') +
-    '<option value="__nova__">+ Nova categoria...</option>';
+    '<option value="__nova__">+ Nova divisão...</option>';
   sel.onchange = () => {
     const novo = sel.value === '__nova__';
     document.getElementById('f-nova-cat-group').style.display = novo ? 'block' : 'none';
@@ -2165,7 +2165,7 @@ async function salvarTarefa() {
   const categoria = catSel === '__nova__'
     ? document.getElementById('f-nova-cat').value.trim()
     : catSel;
-  if (!categoria) { showToast('⚠️ Informe a categoria'); return; }
+  if (!categoria) { showToast('⚠️ Informe a divisão'); return; }
 
   const prioridade = document.querySelector('.prio-btn.sel')?.dataset.p || 'Média';
   // Converte de yyyy-mm-dd (input type=date) pro formato brasileiro dd/mm/aaaa antes de salvar na planilha
@@ -2183,7 +2183,7 @@ async function salvarTarefa() {
 
   const fields = {
     Tarefa: tarefa,
-    Categoria: categoria,
+    'Divisão': categoria,
     Prioridade: prioridade,
     'Data Prevista': dataPrevista || '',
     Hora: hora || '',
