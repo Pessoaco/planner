@@ -156,6 +156,13 @@
   }
 
   .header-botoes { display: flex; gap: 6px; }
+  .lista-categorias-ul { list-style: none; padding: 0; margin: 0; max-height: 55vh; overflow-y: auto; }
+  .lista-categorias-ul li {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .lista-categorias-ul li:last-child { border-bottom: none; }
   .btn-vista { display: none; }
   @media (min-width: 640px) { .btn-vista { display: inline-flex; align-items: center; } }
 
@@ -975,12 +982,13 @@
     }
     #main.vista-lista .tarefa-card {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
-      gap: 10px;
+      gap: 6px 10px;
       padding: 8px 12px;
       margin-bottom: 4px;
     }
-    #main.vista-lista .tarefa-top { flex: 1; min-width: 0; }
+    #main.vista-lista .tarefa-top { flex: 1 1 220px; min-width: 160px; }
     #main.vista-lista .tarefa-nome {
       white-space: nowrap;
       overflow: hidden;
@@ -988,6 +996,7 @@
     }
     #main.vista-lista .badges { display: none; }
     #main.vista-lista .tarefa-meta { flex-shrink: 0; margin-top: 0; }
+    #main.vista-lista .mudar-status-links { margin-top: 0; flex-basis: auto; }
     #main.vista-lista .tarefa-acoes { margin-top: 0; flex-shrink: 0; }
     #main.vista-lista .btn-concluir-grande { padding: 6px 10px; font-size: 11px; white-space: nowrap; }
 
@@ -1023,6 +1032,7 @@
     </div>
     <div class="header-botoes">
       <button class="btn-refresh btn-vista" id="btn-vista" onclick="toggleVista()" title="Trocar entre cards e lista">▦ Cards</button>
+      <button class="btn-refresh" onclick="abrirModalCategorias()" title="Ver categorias já cadastradas nesta aba">📁 Categorias</button>
       <button class="btn-refresh" onclick="openAddModal()" title="Nova tarefa">➕ Nova</button>
       <button class="btn-refresh" onclick="exportarCSV(false)" title="Exportar esta aba/lista para Excel">📊</button>
       <button class="btn-refresh" onclick="exportarCSV(true)" title="Exportar TODAS as abas para Excel">📊🌐</button>
@@ -1182,6 +1192,14 @@
     <button class="btn-salvar" id="btn-salvar" onclick="salvarTarefa()">Salvar tarefa</button>
     <button class="btn-excluir-modal" id="btn-excluir-modal" onclick="excluirDoModal()" style="display:none">🗑️ Excluir tarefa</button>
     <button class="modal-cancel" onclick="closeAddModal()" style="margin-top:8px">Cancelar</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-categorias" onclick="if(event.target===this) fecharModalCategorias()">
+  <div class="modal">
+    <h3 id="modal-categorias-title">📁 Categorias</h3>
+    <div id="lista-categorias"></div>
+    <button class="modal-cancel" onclick="fecharModalCategorias()" style="margin-top:8px">Fechar</button>
   </div>
 </div>
 
@@ -2082,6 +2100,24 @@ function atualizaLabelTarefa(aba) {
   const isIdeias = aba === 'Projeto Ideias';
   document.getElementById('f-tarefa-label').textContent = isIdeias ? 'Ideia *' : 'Tarefa *';
   document.getElementById('f-tarefa').placeholder = isIdeias ? 'Descreva a ideia' : 'Descreva a tarefa';
+}
+
+async function abrirModalCategorias() {
+  if (!Object.keys(allData).length) {
+    showToast('⏳ Carregando categorias...');
+    await loadData();
+  }
+  const tarefas = allData[abaAtual] || [];
+  const cats = [...new Set(tarefas.map(t => t.Categoria).filter(Boolean))].sort();
+  document.getElementById('modal-categorias-title').textContent = `📁 Categorias — ${ABA_LABEL[abaAtual]}`;
+  document.getElementById('lista-categorias').innerHTML = cats.length
+    ? `<ul class="lista-categorias-ul">${cats.map(c => `<li>${c}</li>`).join('')}</ul>`
+    : '<p style="color:var(--text-muted);font-size:13px">Nenhuma categoria cadastrada nesta aba ainda.</p>';
+  document.getElementById('modal-categorias').classList.add('open');
+}
+
+function fecharModalCategorias() {
+  document.getElementById('modal-categorias').classList.remove('open');
 }
 
 function preencherCategorias(aba) {
