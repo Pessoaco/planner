@@ -163,8 +163,39 @@
     font-size: 14px;
   }
   .lista-categorias-ul li:last-child { border-bottom: none; }
-  .btn-vista { display: none; }
-  @media (min-width: 640px) { .btn-vista { display: inline-flex; align-items: center; } }
+  .btn-vista { display: inline-flex; align-items: center; }
+
+  /* Vista em lista: uma linha compacta por tarefa, sem grade — funciona em qualquer tamanho de tela */
+  #main.vista-lista .categoria-group {
+    display: block;
+  }
+  #main.vista-lista .tarefa-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    padding: 8px 12px;
+    margin-bottom: 4px;
+  }
+  #main.vista-lista .tarefa-top { flex: 1 1 160px; min-width: 120px; }
+  #main.vista-lista .tarefa-nome {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #main.vista-lista .mini-legenda { display: none; }
+  #main.vista-lista .badges { flex-shrink: 0; margin-top: 0; }
+  #main.vista-lista .tarefa-meta { flex-shrink: 0; margin-top: 0; }
+  #main.vista-lista .mudar-status-links { margin-top: 0; flex-basis: auto; }
+  #main.vista-lista .tarefa-acoes { margin-top: 0; flex-shrink: 0; order: 99; }
+  #main.vista-lista .btn-concluir-grande {
+    width: auto;
+    flex: 0 0 auto;
+    margin-top: 0;
+    padding: 6px 10px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
 
   .busca-avancada-toggle {
     font-size: 12px;
@@ -503,6 +534,7 @@
     cursor: pointer;
   }
   .opcao-inline-btn:active { opacity: 0.7; }
+  .opcao-inline-btn.sel { background: var(--primary); border-color: var(--primary); color: white; }
   .opcao-inline-cancelar {
     background: var(--danger-light);
     color: var(--danger);
@@ -1077,7 +1109,7 @@
     <button class="filter-btn" data-grupo="statusG" data-valor="Concluído" onclick="setFilter('statusG','Concluído')">Concluídas</button>
     <div class="filters-break"></div>
     <div class="filtro-legenda">Envolvidos (todas as pastas)</div>
-    <button class="filter-btn" data-grupo="danielG" onclick="setFilter('danielG')">👤 Daniel</button>
+    <button class="filter-btn" id="btn-envolvidos-g" onclick="abrirModalEnvolvidos(true)">👤 Envolvidos</button>
   </div>
 
   <div class="tabs" id="tabs"></div>
@@ -1097,7 +1129,7 @@
   <button class="filter-btn" data-grupo="status" data-valor="Concluído" onclick="setFilter('status','Concluído')">Concluídas</button>
   <div class="filters-break"></div>
   <div class="filtro-legenda">Envolvidos</div>
-  <button class="filter-btn" data-grupo="daniel" onclick="setFilter('daniel')">👤 Daniel</button>
+  <button class="filter-btn" id="btn-envolvidos" onclick="abrirModalEnvolvidos(false)">👤 Envolvidos</button>
 </div>
 
 <main class="main" id="main">
@@ -1218,6 +1250,14 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-envolvidos" onclick="if(event.target===this) fecharModalEnvolvidos()">
+  <div class="modal">
+    <h3 id="modal-envolvidos-title">👤 Envolvidos</h3>
+    <div id="lista-envolvidos" class="opcoes-inline" style="justify-content:flex-start"></div>
+    <button class="modal-cancel" onclick="fecharModalEnvolvidos()" style="margin-top:14px">Fechar</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1233,20 +1273,54 @@ let abaAtual = 'PESSOAL';
 // Filtros LOCAIS — valem só dentro da aba aberta (linha de filtros embaixo das abas)
 let filtroPrioridade = new Set();
 let filtroStatus = new Set();
-let filtroDaniel = false;
+let filtroEnvolvido = new Set();
 
 // Filtros GLOBAIS — painel "Busca avançada", sempre cruzam todas as abas
 let filtroPrioridadeG = new Set();
 let filtroStatusG = new Set();
-let filtroDanielG = false;
+let filtroEnvolvidoG = new Set();
 
 function algumFiltroAtivo() {
   // Só os filtros GLOBAIS (+ busca por texto) forçam o modo cruzado entre abas
-  return filtroPrioridadeG.size > 0 || filtroStatusG.size > 0 || filtroDanielG || !!searchTerm;
+  return filtroPrioridadeG.size > 0 || filtroStatusG.size > 0 || filtroEnvolvidoG.size > 0 || !!searchTerm;
 }
 
 function nenhumFiltroAtivoTotal() {
-  return !algumFiltroAtivo() && filtroPrioridade.size === 0 && filtroStatus.size === 0 && !filtroDaniel;
+  return !algumFiltroAtivo() && filtroPrioridade.size === 0 && filtroStatus.size === 0 && filtroEnvolvido.size === 0;
+}
+
+// Atualiza o texto dos botões "Envolvidos" com a contagem de selecionados (ex: "Envolvidos (2)")
+function popularBotoesEnvolvidos() {
+  const btnLocal = document.getElementById('btn-envolvidos');
+  if (btnLocal) btnLocal.textContent = `👤 Envolvidos${filtroEnvolvido.size ? ` (${filtroEnvolvido.size})` : ''}`;
+  const btnGlobal = document.getElementById('btn-envolvidos-g');
+  if (btnGlobal) btnGlobal.textContent = `👤 Envolvidos${filtroEnvolvidoG.size ? ` (${filtroEnvolvidoG.size})` : ''}`;
+}
+
+// Popup de seleção de Envolvidos — evita empilhar um botão por pessoa quando a lista crescer
+function abrirModalEnvolvidos(global) {
+  const nomes = global
+    ? [...new Set(ABAS.flatMap(aba => allData[aba] || []).map(t => (t.Envolvido || '').trim()).filter(Boolean))].sort()
+    : [...new Set((allData[abaAtual] || []).map(t => (t.Envolvido || '').trim()).filter(Boolean))].sort();
+
+  document.getElementById('modal-envolvidos-title').textContent = global ? '👤 Envolvidos (todas as pastas)' : '👤 Envolvidos';
+  document.getElementById('lista-envolvidos').innerHTML = nomes.length
+    ? nomes.map(n => {
+        const ativo = (global ? filtroEnvolvidoG : filtroEnvolvido).has(n);
+        return `<button class="opcao-inline-btn${ativo ? ' sel' : ''}" onclick="selecionarEnvolvido('${n.replace(/'/g,"\\'")}', ${global})">👤 ${n}</button>`;
+      }).join('')
+    : '<p style="color:var(--text-muted);font-size:13px">Nenhum envolvido cadastrado ainda.</p>';
+  document.getElementById('modal-envolvidos').dataset.global = global;
+  document.getElementById('modal-envolvidos').classList.add('open');
+}
+
+function selecionarEnvolvido(nome, global) {
+  setFilter(global ? 'envolvidoG' : 'envolvido', nome);
+  abrirModalEnvolvidos(global); // reabre a lista já atualizada, sem fechar o popup
+}
+
+function fecharModalEnvolvidos() {
+  document.getElementById('modal-envolvidos').classList.remove('open');
 }
 
 function toggleBuscaAvancada() {
@@ -1470,6 +1544,7 @@ async function loadData() {
     allData = JSON.parse(text);
     const now = new Date().toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     document.getElementById('last-update').textContent = `Atualizado às ${now}`;
+    popularBotoesEnvolvidos();
     render();
     requestAnimationFrame(() => window.scrollTo(0, scrollY));
   } catch (e) {
@@ -1502,11 +1577,12 @@ function switchTab(aba) {
   document.getElementById('filters').dataset.aba = aba;
   filtroPrioridade = new Set();
   filtroStatus = new Set();
-  filtroDaniel = false;
+  filtroEnvolvido = new Set();
   document.querySelectorAll('.filter-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.grupo === 'todos');
   });
   renderTabs();
+  popularBotoesEnvolvidos();
   render();
 }
 
@@ -1514,24 +1590,24 @@ function setFilter(grupo, valor) {
   if (grupo === 'todos') {
     filtroPrioridade = new Set();
     filtroStatus = new Set();
-    filtroDaniel = false;
+    filtroEnvolvido = new Set();
     filtroPrioridadeG = new Set();
     filtroStatusG = new Set();
-    filtroDanielG = false;
+    filtroEnvolvidoG = new Set();
     searchTermLocal = '';
     document.getElementById('search-local-input').value = '';
   } else if (grupo === 'prioridade') {
     if (filtroPrioridade.has(valor)) filtroPrioridade.delete(valor); else filtroPrioridade.add(valor);
   } else if (grupo === 'status') {
     if (filtroStatus.has(valor)) filtroStatus.delete(valor); else filtroStatus.add(valor);
-  } else if (grupo === 'daniel') {
-    filtroDaniel = !filtroDaniel;
+  } else if (grupo === 'envolvido') {
+    if (filtroEnvolvido.has(valor)) filtroEnvolvido.delete(valor); else filtroEnvolvido.add(valor);
   } else if (grupo === 'prioridadeG') {
     if (filtroPrioridadeG.has(valor)) filtroPrioridadeG.delete(valor); else filtroPrioridadeG.add(valor);
   } else if (grupo === 'statusG') {
     if (filtroStatusG.has(valor)) filtroStatusG.delete(valor); else filtroStatusG.add(valor);
-  } else if (grupo === 'danielG') {
-    filtroDanielG = !filtroDanielG;
+  } else if (grupo === 'envolvidoG') {
+    if (filtroEnvolvidoG.has(valor)) filtroEnvolvidoG.delete(valor); else filtroEnvolvidoG.add(valor);
   }
 
   const nenhumFiltro = nenhumFiltroAtivoTotal();
@@ -1539,11 +1615,12 @@ function setFilter(grupo, valor) {
     if (b.dataset.grupo === 'todos') { b.classList.toggle('active', nenhumFiltro); return; }
     if (b.dataset.grupo === 'prioridade') { b.classList.toggle('active', filtroPrioridade.has(b.dataset.valor)); return; }
     if (b.dataset.grupo === 'status') { b.classList.toggle('active', filtroStatus.has(b.dataset.valor)); return; }
-    if (b.dataset.grupo === 'daniel') { b.classList.toggle('active', filtroDaniel); return; }
+    if (b.dataset.grupo === 'envolvido') { b.classList.toggle('active', filtroEnvolvido.has(b.dataset.valor)); return; }
     if (b.dataset.grupo === 'prioridadeG') { b.classList.toggle('active', filtroPrioridadeG.has(b.dataset.valor)); return; }
     if (b.dataset.grupo === 'statusG') { b.classList.toggle('active', filtroStatusG.has(b.dataset.valor)); return; }
-    if (b.dataset.grupo === 'danielG') { b.classList.toggle('active', filtroDanielG); return; }
+    if (b.dataset.grupo === 'envolvidoG') { b.classList.toggle('active', filtroEnvolvidoG.has(b.dataset.valor)); return; }
   });
+  popularBotoesEnvolvidos();
   renderTabs();
   render();
 
@@ -1604,7 +1681,7 @@ function filtrarTarefas(tarefas) {
   const cruzado = algumFiltroAtivo();
   const prioridadeAtiva = cruzado ? filtroPrioridadeG : filtroPrioridade;
   const statusAtivo = cruzado ? filtroStatusG : filtroStatus;
-  const danielAtivo = cruzado ? filtroDanielG : filtroDaniel;
+  const envolvidoAtivo = cruzado ? filtroEnvolvidoG : filtroEnvolvido;
 
   let filtradas = tarefas;
 
@@ -1623,7 +1700,9 @@ function filtrarTarefas(tarefas) {
       return [...statusAtivo].some(fs => fs.trim().toLowerCase() === statusTarefa);
     });
   }
-  if (danielAtivo) filtradas = filtradas.filter(t => (t.Envolvido || '').toLowerCase().includes('daniel'));
+  if (envolvidoAtivo.size) {
+    filtradas = filtradas.filter(t => envolvidoAtivo.has((t.Envolvido || '').trim()));
+  }
 
   if (searchTerm) {
     filtradas = filtradas.filter(t =>
