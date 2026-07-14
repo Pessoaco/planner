@@ -240,6 +240,13 @@
     font-size: 14px;
   }
   .lista-categorias-ul li:last-child { border-bottom: none; }
+  .lista-categorias-grupo {
+    background: var(--gray-light);
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--primary);
+    padding: 8px 12px !important;
+  }
   .btn-vista { display: inline-flex; align-items: center; }
 
   /* Vista em lista: uma linha compacta por tarefa, sem grade — funciona em qualquer tamanho de tela */
@@ -1156,13 +1163,11 @@
 <header class="header">
   <div class="header-top">
     <div>
-      <div class="header-titulo-linha">
-        <h1>📋 Secretária Virtual</h1>
-        <button class="btn-refresh quick-urgentes" id="btn-urgentes" onclick="atalhoUrgentes()">🔥 Urgentes</button>
-      </div>
+      <h1>📋 Secretária Virtual</h1>
       <div class="header-subtitle" id="last-update">Carregando...</div>
     </div>
     <div class="header-botoes">
+      <button class="btn-refresh quick-urgentes" id="btn-urgentes" onclick="atalhoUrgentes()">🔥 Urgentes</button>
       <button class="btn-refresh btn-vista" id="btn-vista" onclick="toggleVista()" title="Trocar entre cards e lista">▦ Cards</button>
       <button class="btn-refresh" onclick="openAddModal()" title="Nova tarefa">➕ Nova</button>
       <button class="btn-refresh" onclick="loadData()">↻ Atualizar</button>
@@ -1340,7 +1345,9 @@
 <div class="modal-overlay" id="modal-categorias" onclick="if(event.target===this) fecharModalCategorias()">
   <div class="modal">
     <h3 id="modal-categorias-title">📁 Divisões</h3>
+    <button class="menu-mais-item" id="btn-categorias-alternar" onclick="abrirModalCategorias(true)">🌐 Ver todas as pastas</button>
     <div id="lista-categorias"></div>
+    <button class="menu-mais-item" onclick="imprimirDivisoes()" style="margin-top:8px">🖨️ Imprimir esta lista</button>
     <button class="modal-cancel" onclick="fecharModalCategorias()" style="margin-top:8px">Fechar</button>
   </div>
 </div>
@@ -1708,6 +1715,7 @@ function toggleVista() {
 
 function switchTab(aba) {
   abaAtual = aba;
+  // Trocar de pasta limpa qualquer filtro ativo (local ou geral, tipo Urgentes) — evita confusão de achar que ainda tá filtrado
   searchTerm = '';
   searchTermLocal = '';
   document.getElementById('search-input').value = '';
@@ -1715,6 +1723,9 @@ function switchTab(aba) {
   filtroPrioridade = new Set();
   filtroStatus = new Set();
   filtroEnvolvido = new Set();
+  filtroPrioridadeG = new Set();
+  filtroStatusG = new Set();
+  filtroEnvolvidoG = new Set();
   atualizarBotoesFiltro();
   renderTabs();
   popularBotoesEnvolvidos();
@@ -2355,18 +2366,62 @@ function atualizaLabelTarefa(aba) {
   document.getElementById('f-tarefa').placeholder = isIdeias ? 'Descreva a ideia' : 'Descreva a tarefa';
 }
 
-async function abrirModalCategorias() {
+async function abrirModalCategorias(global) {
   if (!Object.keys(allData).length) {
     showToast('⏳ Carregando divisões...');
     await loadData();
   }
-  const tarefas = allData[abaAtual] || [];
-  const cats = [...new Set(tarefas.map(t => t['Divisão']).filter(Boolean))].sort();
-  document.getElementById('modal-categorias-title').textContent = `📁 Divisões — ${ABA_LABEL[abaAtual]}`;
-  document.getElementById('lista-categorias').innerHTML = cats.length
-    ? `<ul class="lista-categorias-ul">${cats.map(c => `<li>${iconeCategoria(c)} ${c}</li>`).join('')}</ul>`
-    : '<p style="color:var(--text-muted);font-size:13px">Nenhuma divisão cadastrada nesta aba ainda.</p>';
+
+  let itensHtml;
+  if (global) {
+    document.getElementById('modal-categorias-title').textContent = '📁 Divisões — todas as pastas';
+    itensHtml = ABAS.map(aba => {
+      const cats = [...new Set((allData[aba] || []).map(t => t['Divisão']).filter(Boolean))].sort();
+      if (!cats.length) return '';
+      return `<li class="lista-categorias-grupo">${ABA_LABEL[aba]}</li>` +
+        cats.map(c => `<li>${iconeCategoria(c)} ${c}</li>`).join('');
+    }).join('');
+  } else {
+    document.getElementById('modal-categorias-title').textContent = `📁 Divisões — ${ABA_LABEL[abaAtual]}`;
+    const cats = [...new Set((allData[abaAtual] || []).map(t => t['Divisão']).filter(Boolean))].sort();
+    itensHtml = cats.map(c => `<li>${iconeCategoria(c)} ${c}</li>`).join('');
+  }
+
+  document.getElementById('lista-categorias').innerHTML = itensHtml
+    ? `<ul class="lista-categorias-ul">${itensHtml}</ul>`
+    : '<p style="color:var(--text-muted);font-size:13px">Nenhuma divisão cadastrada ainda.</p>';
+  document.getElementById('btn-categorias-alternar').textContent = global
+    ? '📍 Ver só desta pasta'
+    : '🌐 Ver todas as pastas';
+  document.getElementById('btn-categorias-alternar').onclick = () => abrirModalCategorias(!global);
   document.getElementById('modal-categorias').classList.add('open');
+}
+
+function imprimirDivisoes() {
+  const titulo = document.getElementById('modal-categorias-title').textContent;
+  const conteudo = document.getElementById('lista-categorias').innerHTML;
+  const janela = window.open('', '_blank');
+  janela.document.write(`
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>${titulo}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 24px; }
+          h1 { font-size: 18px; }
+          ul { list-style: none; padding: 0; }
+          li { padding: 8px 0; border-bottom: 1px solid #ddd; font-size: 14px; }
+        </style>
+      </head>
+      <body>
+        <h1>${titulo}</h1>
+        ${conteudo}
+      </body>
+    </html>
+  `);
+  janela.document.close();
+  janela.focus();
+  janela.print();
 }
 
 function fecharModalCategorias() {
