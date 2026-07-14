@@ -156,6 +156,83 @@
   }
 
   .header-botoes { display: flex; gap: 6px; }
+
+  .btn-filtro-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 20px;
+    border: 1.5px solid var(--primary);
+    background: var(--card);
+    color: var(--primary);
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .btn-filtro-pill:active { background: var(--primary-light); }
+
+  .menu-mais-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 12px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    margin-bottom: 8px;
+  }
+  .menu-mais-item:active { background: var(--primary-light); border-color: var(--primary); }
+
+  .header-titulo-linha { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .header-titulo-linha .quick-urgentes { padding: 6px 10px; font-size: 12px; }
+
+  /* Barra compacta: busca da pasta + atalhos, sempre visível mas enxuta */
+  .quick-bar { display: flex; gap: 6px; align-items: center; margin: 6px 0; }
+  .quick-bar .search-input-inline { flex: 1 1 auto; min-width: 0; }
+  .quick-bar .btn-refresh { flex-shrink: 0; white-space: nowrap; }
+  .quick-urgentes { background: var(--danger-light); color: var(--danger); font-weight: 700; }
+  .quick-urgentes:active { background: var(--danger); color: white; }
+
+  /* Resumo dos filtros ativos, uma linha pequena abaixo da busca */
+  .chips-ativos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding-bottom: 4px;
+    font-size: 11px;
+  }
+  .chip-ativo {
+    background: var(--primary-light);
+    color: var(--primary);
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+
+  #modal-filtros .modal {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+  #modal-filtros .modal h3 { flex-basis: 100%; }
+
+  .filtros-divisor {
+    flex-basis: 100%;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1.5px dashed var(--border);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--primary);
+  }
   .lista-categorias-ul { list-style: none; padding: 0; margin: 0; max-height: 55vh; overflow-y: auto; }
   .lista-categorias-ul li {
     padding: 10px 12px;
@@ -255,8 +332,8 @@
     flex-direction: column;
     align-items: center;
     gap: 4px;
-    /* padding-right maior pra não ficar embaixo dos botões flutuantes (imprimir/adicionar) */
-    padding: 10px 90px 90px 16px;
+    /* padding-bottom maior pra não ficar embaixo do rodapé fixo (Em massa/Nova/Mais) */
+    padding: 10px 16px 90px;
     font-size: 11px;
     color: var(--text-muted);
   }
@@ -630,48 +707,48 @@
     font-size: 14px;
   }
 
-  /* FABs */
-  .fab-group {
+  /* Rodapé fixo: Selecionar | + Nova Tarefa | Mais — os 3 com a mesma cara de pílula */
+  .bottom-nav {
     position: fixed;
-    bottom: 24px;
-    right: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    align-items: center;
-    z-index: 200;
-  }
-
-  .fab {
-    background: var(--primary);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 52px;
-    height: 52px;
-    font-size: 20px;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(79,70,229,0.4);
+    bottom: 0;
+    left: 0;
+    right: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 10px;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    padding: 6px 16px calc(6px + env(safe-area-inset-bottom));
+    z-index: 200;
   }
 
-  .fab-add {
+  .bottom-nav-item {
+    flex: 1;
+    max-width: 160px;
     background: var(--gray-light);
+    border: none;
+    border-radius: 18px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
     color: var(--text);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    font-family: inherit;
+    cursor: pointer;
+    padding: 8px 10px;
   }
+  .bottom-nav-item .bottom-nav-icone { font-size: 14px; }
+  .bottom-nav-item.ativo { background: var(--primary-light); color: var(--primary); }
 
-  .fab-select {
-    background: var(--warning);
-    box-shadow: 0 4px 12px rgba(217,119,6,0.4);
-    font-size: 18px;
+  .bottom-nav-central {
+    background: var(--primary-light);
+    color: var(--primary);
   }
-  .fab-select.ativo {
-    background: var(--primary);
-    box-shadow: 0 4px 12px rgba(79,70,229,0.4);
-  }
+  .bottom-nav-central:active { background: #dde0fb; }
 
   /* Checkbox de seleção no card */
   .check-selecao {
@@ -1079,24 +1156,52 @@
 <header class="header">
   <div class="header-top">
     <div>
-      <h1>📋 Secretária Virtual</h1>
+      <div class="header-titulo-linha">
+        <h1>📋 Secretária Virtual</h1>
+        <button class="btn-refresh quick-urgentes" id="btn-urgentes" onclick="atalhoUrgentes()">🔥 Urgentes</button>
+      </div>
       <div class="header-subtitle" id="last-update">Carregando...</div>
     </div>
     <div class="header-botoes">
       <button class="btn-refresh btn-vista" id="btn-vista" onclick="toggleVista()" title="Trocar entre cards e lista">▦ Cards</button>
-      <button class="btn-refresh" onclick="abrirModalCategorias()" title="Ver divisões já cadastradas nesta pasta">📁 Divisões</button>
       <button class="btn-refresh" onclick="openAddModal()" title="Nova tarefa">➕ Nova</button>
-      <button class="btn-refresh" onclick="exportarCSV(false)" title="Exportar esta pasta/lista para Excel">📊</button>
-      <button class="btn-refresh" onclick="exportarCSV(true)" title="Exportar TODAS as pastas para Excel">📊🌐</button>
       <button class="btn-refresh" onclick="loadData()">↻ Atualizar</button>
-      <button class="filter-btn active" data-grupo="todos" onclick="setFilter('todos')" id="btn-todas">🔄 Limpar filtros</button>
     </div>
   </div>
 
-  <div class="busca-avancada-toggle" onclick="toggleBuscaAvancada()" id="busca-avancada-toggle">
-    🌐 Busca avançada em todas as pastas ▾
+  <div class="quick-bar">
+    <input type="search" id="search-local-input" class="search-input-inline" placeholder="🔎 Buscar só na pasta atual..." oninput="setSearchLocal(this.value)">
+    <button class="btn-filtro-pill" id="btn-abrir-filtros" onclick="abrirModalFiltros()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 4 20 4 14 13 14 20 10 20 10 13"/></svg>
+      Filtros
+    </button>
+    <button class="btn-refresh" onclick="setFilter('todos')">🔄 Limpar</button>
   </div>
-  <div class="busca-avancada-painel aberto" id="busca-avancada-painel">
+  <div class="chips-ativos" id="chips-ativos"></div>
+
+  <div class="tabs" id="tabs"></div>
+  <div class="tabs-hint">↔️ Segure e arraste uma pasta para reorganizar</div>
+</header>
+
+<div class="modal-overlay" id="modal-filtros" onclick="if(event.target===this) fecharModalFiltros()">
+  <div class="modal">
+    <h3>🔽 Filtros</h3>
+
+    <div class="filtro-legenda">Prioridade</div>
+    <button class="filter-btn" data-grupo="prioridade" data-valor="Urgente" onclick="setFilter('prioridade','Urgente')">🔴 Urgente</button>
+    <button class="filter-btn" data-grupo="prioridade" data-valor="Média" onclick="setFilter('prioridade','Média')">🟡 Média</button>
+    <button class="filter-btn" data-grupo="prioridade" data-valor="Baixa" onclick="setFilter('prioridade','Baixa')">🟢 Baixa</button>
+    <div class="filters-break"></div>
+    <div class="filtro-legenda">Status</div>
+    <button class="filter-btn" data-grupo="status" data-valor="Aberto" onclick="setFilter('status','Aberto')">Aberto</button>
+    <button class="filter-btn" data-grupo="status" data-valor="Em Andamento" onclick="setFilter('status','Em Andamento')">Em andamento</button>
+    <button class="filter-btn" data-grupo="status" data-valor="Concluído" onclick="setFilter('status','Concluído')">Concluídas</button>
+    <div class="filters-break"></div>
+    <div class="filtro-legenda">Envolvidos</div>
+    <button class="filter-btn" id="btn-envolvidos" onclick="abrirModalEnvolvidos(false)">👤 Envolvidos</button>
+
+    <div class="filtros-divisor">🌐 Em TODAS as pastas</div>
+
     <input type="search" id="search-input" class="search-input-inline" placeholder="🌐 Buscar em TODAS as pastas..." oninput="setSearch(this.value)">
     <div class="filtro-legenda">Prioridade (todas as pastas)</div>
     <button class="filter-btn" data-grupo="prioridadeG" data-valor="Urgente" onclick="setFilter('prioridadeG','Urgente')">🔴 Urgente</button>
@@ -1110,27 +1215,11 @@
     <div class="filters-break"></div>
     <div class="filtro-legenda">Envolvidos (todas as pastas)</div>
     <button class="filter-btn" id="btn-envolvidos-g" onclick="abrirModalEnvolvidos(true)">👤 Envolvidos</button>
+
+    <button class="filter-btn active" data-grupo="todos" onclick="setFilter('todos')" id="btn-todas" style="width:100%;justify-content:center;margin-top:16px">🔄 Limpar todos os filtros</button>
+    <button class="modal-cancel" onclick="fecharModalFiltros()" style="margin-top:8px">Fechar</button>
   </div>
-
-  <div class="tabs" id="tabs"></div>
-  <div class="tabs-hint">↔️ Segure e arraste uma pasta para reorganizar</div>
-
-<div class="filters" id="filters">
-  <input type="search" id="search-local-input" class="search-input-inline" placeholder="🔎 Buscar só na pasta atual..." oninput="setSearchLocal(this.value)">
-  <div class="filtro-legenda">Prioridade</div>
-  <button class="filter-btn" data-grupo="prioridade" data-valor="Urgente" onclick="setFilter('prioridade','Urgente')">🔴 Urgente</button>
-  <button class="filter-btn" data-grupo="prioridade" data-valor="Média" onclick="setFilter('prioridade','Média')">🟡 Média</button>
-  <button class="filter-btn" data-grupo="prioridade" data-valor="Baixa" onclick="setFilter('prioridade','Baixa')">🟢 Baixa</button>
-  <div class="filters-break"></div>
-  <div class="filtro-legenda">Status</div>
-  <button class="filter-btn" data-grupo="status" data-valor="Aberto" onclick="setFilter('status','Aberto')">Aberto</button>
-  <button class="filter-btn" data-grupo="status" data-valor="Em Andamento" onclick="setFilter('status','Em Andamento')">Em andamento</button>
-  <button class="filter-btn" data-grupo="status" data-valor="Concluído" onclick="setFilter('status','Concluído')">Concluídas</button>
-  <div class="filters-break"></div>
-  <div class="filtro-legenda">Envolvidos</div>
-  <button class="filter-btn" id="btn-envolvidos" onclick="abrirModalEnvolvidos(false)">👤 Envolvidos</button>
 </div>
-</header>
 
 <main class="main" id="main">
   <div class="loading"><div class="spinner"></div>Carregando tarefas...</div>
@@ -1138,11 +1227,17 @@
 
 <footer class="counters-footer" id="counters"></footer>
 
-<div class="fab-group">
-  <button class="fab fab-add" onclick="openAddModal()" title="Nova tarefa">➕</button>
-  <button class="fab fab-select" onclick="toggleModoSelecao()" id="btn-modo-selecao" title="Selecionar várias">☑️</button>
-  <button class="fab" onclick="window.print()" title="Imprimir">🖨️</button>
-</div>
+<nav class="bottom-nav">
+  <button class="bottom-nav-item" onclick="toggleModoSelecao()" id="btn-modo-selecao" title="Selecionar várias tarefas de uma vez">
+    <span class="bottom-nav-icone">☑️</span>Selecionar
+  </button>
+  <button class="bottom-nav-item bottom-nav-central" onclick="openAddModal()" title="Nova tarefa">
+    <span class="bottom-nav-icone">➕</span>Nova Tarefa
+  </button>
+  <button class="bottom-nav-item" onclick="abrirModalMais()" title="Mais opções">
+    <span class="bottom-nav-icone">⋯</span>Mais
+  </button>
+</nav>
 
 <div class="selecao-barra" id="selecao-barra">
   <span id="selecao-contagem">0 selecionadas</span>
@@ -1258,6 +1353,17 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-mais" onclick="if(event.target===this) fecharModalMais()">
+  <div class="modal">
+    <h3>⋯ Mais opções</h3>
+    <button class="menu-mais-item" onclick="fecharModalMais(); abrirModalCategorias()">📁 Ver divisões desta pasta</button>
+    <button class="menu-mais-item" onclick="fecharModalMais(); exportarCSV(false)">📊 Exportar esta pasta para Excel</button>
+    <button class="menu-mais-item" onclick="fecharModalMais(); exportarCSV(true)">📊🌐 Exportar TODAS as pastas para Excel</button>
+    <button class="menu-mais-item" onclick="fecharModalMais(); window.print()">🖨️ Imprimir</button>
+    <button class="modal-cancel" onclick="fecharModalMais()" style="margin-top:14px">Fechar</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1323,17 +1429,50 @@ function fecharModalEnvolvidos() {
   document.getElementById('modal-envolvidos').classList.remove('open');
 }
 
-function toggleBuscaAvancada() {
-  const painel = document.getElementById('busca-avancada-painel');
-  const aberto = painel.classList.toggle('aberto');
-  document.getElementById('busca-avancada-toggle').textContent = aberto
-    ? '🌐 Busca avançada em todas as pastas ▴'
-    : '🌐 Busca avançada em todas as pastas ▾';
+function abrirModalMais() {
+  document.getElementById('modal-mais').classList.add('open');
 }
 
-function fecharBuscaAvancada() {
-  document.getElementById('busca-avancada-painel').classList.remove('aberto');
-  document.getElementById('busca-avancada-toggle').textContent = '🌐 Busca avançada em todas as pastas ▾';
+function fecharModalMais() {
+  document.getElementById('modal-mais').classList.remove('open');
+}
+
+function abrirModalFiltros() {
+  document.getElementById('modal-filtros').classList.add('open');
+}
+
+function fecharModalFiltros() {
+  document.getElementById('modal-filtros').classList.remove('open');
+}
+
+// Atalho de um toque: mostra só as Urgentes, de todas as pastas
+function atalhoUrgentes() {
+  filtroPrioridadeG = new Set(['Urgente']);
+  filtroStatusG = new Set();
+  filtroEnvolvidoG = new Set();
+  searchTerm = '';
+  const si = document.getElementById('search-input');
+  if (si) si.value = '';
+  atualizarBotoesFiltro();
+  popularBotoesEnvolvidos();
+  renderTabs();
+  render();
+  showToast('🔥 Mostrando urgentes de todas as pastas');
+}
+
+// Resume os filtros ativos numa linha de chips, pra sempre saber o que está filtrado
+function atualizarChipsAtivos() {
+  const cruzado = algumFiltroAtivo();
+  const chips = [];
+  if (cruzado) chips.push('🌐 Todas as pastas');
+  const prio = cruzado ? filtroPrioridadeG : filtroPrioridade;
+  const stat = cruzado ? filtroStatusG : filtroStatus;
+  const env = cruzado ? filtroEnvolvidoG : filtroEnvolvido;
+  prio.forEach(v => chips.push(`${{Urgente:'🔴',Média:'🟡',Baixa:'🟢'}[v] || ''} ${v}`));
+  stat.forEach(v => chips.push(v));
+  env.forEach(v => chips.push(`👤 ${v}`));
+  const el = document.getElementById('chips-ativos');
+  if (el) el.innerHTML = chips.map(c => `<span class="chip-ativo">${c}</span>`).join('');
 }
 let searchTerm = '';       // busca global (barra de cima) — sempre cruza todas as abas
 let searchTermLocal = '';  // busca local (linha de filtros) — só dentro da aba atual
@@ -1448,7 +1587,6 @@ try {
   }
 } catch (e) { /* localStorage indisponível — usa ordem padrão */ }
 abaAtual = abaOrdem[0];
-document.getElementById('filters').dataset.aba = abaAtual;
 
 function setSearch(v) {
   searchTerm = v.trim().toLowerCase();
@@ -1574,16 +1712,27 @@ function switchTab(aba) {
   searchTermLocal = '';
   document.getElementById('search-input').value = '';
   document.getElementById('search-local-input').value = '';
-  document.getElementById('filters').dataset.aba = aba;
   filtroPrioridade = new Set();
   filtroStatus = new Set();
   filtroEnvolvido = new Set();
-  document.querySelectorAll('.filter-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.grupo === 'todos');
-  });
+  atualizarBotoesFiltro();
   renderTabs();
   popularBotoesEnvolvidos();
   render();
+}
+
+function atualizarBotoesFiltro() {
+  const nenhumFiltro = nenhumFiltroAtivoTotal();
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    if (b.dataset.grupo === 'todos') { b.classList.toggle('active', nenhumFiltro); return; }
+    if (b.dataset.grupo === 'prioridade') { b.classList.toggle('active', filtroPrioridade.has(b.dataset.valor)); return; }
+    if (b.dataset.grupo === 'status') { b.classList.toggle('active', filtroStatus.has(b.dataset.valor)); return; }
+    if (b.dataset.grupo === 'envolvido') { b.classList.toggle('active', filtroEnvolvido.has(b.dataset.valor)); return; }
+    if (b.dataset.grupo === 'prioridadeG') { b.classList.toggle('active', filtroPrioridadeG.has(b.dataset.valor)); return; }
+    if (b.dataset.grupo === 'statusG') { b.classList.toggle('active', filtroStatusG.has(b.dataset.valor)); return; }
+    if (b.dataset.grupo === 'envolvidoG') { b.classList.toggle('active', filtroEnvolvidoG.has(b.dataset.valor)); return; }
+  });
+  atualizarChipsAtivos();
 }
 
 function setFilter(grupo, valor) {
@@ -1610,16 +1759,7 @@ function setFilter(grupo, valor) {
     if (filtroEnvolvidoG.has(valor)) filtroEnvolvidoG.delete(valor); else filtroEnvolvidoG.add(valor);
   }
 
-  const nenhumFiltro = nenhumFiltroAtivoTotal();
-  document.querySelectorAll('.filter-btn').forEach(b => {
-    if (b.dataset.grupo === 'todos') { b.classList.toggle('active', nenhumFiltro); return; }
-    if (b.dataset.grupo === 'prioridade') { b.classList.toggle('active', filtroPrioridade.has(b.dataset.valor)); return; }
-    if (b.dataset.grupo === 'status') { b.classList.toggle('active', filtroStatus.has(b.dataset.valor)); return; }
-    if (b.dataset.grupo === 'envolvido') { b.classList.toggle('active', filtroEnvolvido.has(b.dataset.valor)); return; }
-    if (b.dataset.grupo === 'prioridadeG') { b.classList.toggle('active', filtroPrioridadeG.has(b.dataset.valor)); return; }
-    if (b.dataset.grupo === 'statusG') { b.classList.toggle('active', filtroStatusG.has(b.dataset.valor)); return; }
-    if (b.dataset.grupo === 'envolvidoG') { b.classList.toggle('active', filtroEnvolvidoG.has(b.dataset.valor)); return; }
-  });
+  atualizarBotoesFiltro();
   popularBotoesEnvolvidos();
   renderTabs();
   render();
@@ -1801,7 +1941,7 @@ function renderTarefas(tarefas) {
     return `
       <div class="categoria-group">
         <div class="categoria-header" onclick="toggleCategoria('${cat}')">
-          <span class="categoria-title" style="${corAba}">📁 ${cat}</span>
+          <span class="categoria-title" style="${corAba}">${iconeCategoria(cat)} ${cat}</span>
           <span class="categoria-count">${items.length}</span>
           <span class="categoria-toggle">${colapsado ? '▶' : '▼'}</span>
         </div>
@@ -1887,6 +2027,28 @@ function cardHtml(t) {
       ` : ''}
     </div>
   `;
+}
+
+// Ícone da divisão pelo nome/palavra-chave — evita o 📁 genérico que confunde com "Pasta"
+function iconeCategoria(nome) {
+  const n = String(nome || '').toLowerCase();
+  const regras = [
+    [/bens|obriga|conta|pagamento|document|contrato|boleto/, '🏠'],
+    [/financ|orçamento|orcamento/, '💰'],
+    [/reuni[aã]o|comercial/, '👥'],
+    [/compra|mercado/, '🛒'],
+    [/projeto/, '📦'],
+    [/corpo|saúde|saude|médic|medic|dentista|fisio/, '❤️'],
+    [/filho|escola|estudo/, '🎒'],
+    [/casa|lavander|cozinha|lavabo|quarto|suite|garagem|banheiro|sala|closet|área|area/, '🏠'],
+    [/viagem/, '✈️'],
+    [/rua/, '🚗'],
+    [/pintura|marcenaria|marmoraria|acabamento|hidraul|el[eé]tric|paisag|pisos|piscina/, '🛠️'],
+    [/tecnologia|script|agente|sistema|odoo|implanta|configura|treinamento|suporte|teste|aprova[cç][aã]o/, '💻'],
+    [/conteúdo|conteudo|ecommerce/, '📢'],
+  ];
+  for (const [re, emoji] of regras) if (re.test(n)) return emoji;
+  return '🔹';
 }
 
 function toggleCategoria(cat) {
@@ -2202,7 +2364,7 @@ async function abrirModalCategorias() {
   const cats = [...new Set(tarefas.map(t => t['Divisão']).filter(Boolean))].sort();
   document.getElementById('modal-categorias-title').textContent = `📁 Divisões — ${ABA_LABEL[abaAtual]}`;
   document.getElementById('lista-categorias').innerHTML = cats.length
-    ? `<ul class="lista-categorias-ul">${cats.map(c => `<li>${c}</li>`).join('')}</ul>`
+    ? `<ul class="lista-categorias-ul">${cats.map(c => `<li>${iconeCategoria(c)} ${c}</li>`).join('')}</ul>`
     : '<p style="color:var(--text-muted);font-size:13px">Nenhuma divisão cadastrada nesta aba ainda.</p>';
   document.getElementById('modal-categorias').classList.add('open');
 }
