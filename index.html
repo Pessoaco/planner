@@ -298,6 +298,8 @@
   #main.vista-lista .tarefa-acoes-topo { display: flex; gap: 2px; flex-shrink: 0; }
   #main.vista-lista .badges { flex-shrink: 0; margin-top: 0; display: flex; gap: 4px; }
   #main.vista-lista .mudar-status-links { margin-top: 0; flex-basis: auto; flex-shrink: 0; gap: 4px; display: flex; }
+  /* Junta o badge (Urgente/Em andamento) com o linkzinho de trocar dele, lado a lado */
+  #main.vista-lista .campo-inline { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
   #main.vista-lista .tarefa-acoes { margin-top: 0; flex-shrink: 0; }
 
   /* Textos curtos só aparecem na vista em lista, pra economizar espaço */
@@ -2166,10 +2168,21 @@ function cardHtml(t) {
     <button class="btn-desfazer" onclick="desfazerStatus('${t.ID}', this, '${t._aba}')">↩️ Desfazer (se clicou por engano)</button>
   ` : '';
   const linksHtml = `
-    <div class="mudar-status-links" id="links-${t.ID}">
-      <button class="link-trocar" onclick="mostrarOpcoesPrioridade(this, '${t.ID}', '${t._aba}')" title="Trocar Prioridade"><span class="link-trocar-txt-completo">✏️ Trocar Prioridade</span><span class="link-trocar-txt-curto">✏️ Prior.</span></button>
-      <button class="link-trocar" onclick="mostrarOpcoesStatus(this, '${t.ID}', '${t._aba}')" title="Trocar Status"><span class="link-trocar-txt-completo">✏️ Trocar Status</span><span class="link-trocar-txt-curto">✏️ Status</span></button>
+    <div class="mudar-status-links">
+      <span id="links-prioridade-${t.ID}">${linkPrioridadeOriginal(t.ID, t._aba)}</span>
+      <span id="links-status-${t.ID}">${linkStatusOriginal(t.ID, t._aba)}</span>
     </div>
+  `;
+  // Vista em lista: junta cada badge com o link de trocar dela, lado a lado (Urgente + Prior. / Em Andamento + Status)
+  const camposParesHtml = `
+    <span class="campo-inline">
+      <span class="badge badge-prio-${prio}">${prio}</span>
+      <span id="links-prioridade-${t.ID}">${linkPrioridadeOriginal(t.ID, t._aba)}</span>
+    </span>
+    <span class="campo-inline">
+      <span class="badge badge-status-${status.replace(/\s/g,'')}">${status}</span>
+      <span id="links-status-${t.ID}">${linkStatusOriginal(t.ID, t._aba)}</span>
+    </span>
   `;
   const concluirHtml = !concluido ? `<button class="btn-concluir-grande" onclick="atualizarStatus('${t.ID}', this, '${t._aba}', 'Concluído')" id="btn-${t.ID}"><span class="link-trocar-txt-completo">✅ Marcar como concluída</span><span class="link-trocar-txt-curto">✅ Concluir</span></button>` : '';
   const bellHtml = t.Envolvido ? `
@@ -2188,9 +2201,8 @@ function cardHtml(t) {
         ${metaHtml}
         <div class="tarefa-lista-direita">
           <div class="tarefa-acoes-topo">${botoesTopo}</div>
-          ${badgesHtml}
+          ${camposParesHtml}
           ${desfazerHtml}
-          ${linksHtml}
           ${bellHtml}
           ${concluirHtml}
         </div>
@@ -2246,16 +2258,18 @@ function toggleCategoria(cat) {
 }
 
 // ===== AÇÕES =====
-function linksOriginais(id, aba) {
-  return `
-    <button class="link-trocar" onclick="mostrarOpcoesPrioridade(this, '${id}', '${aba}')">✏️ Trocar Prioridade</button>
-    <button class="link-trocar" onclick="mostrarOpcoesStatus(this, '${id}', '${aba}')">✏️ Trocar Status</button>
-  `;
+function linkPrioridadeOriginal(id, aba) {
+  return `<button class="link-trocar" onclick="mostrarOpcoesPrioridade(this, '${id}', '${aba}')" title="Trocar Prioridade"><span class="link-trocar-txt-completo">✏️ Trocar Prioridade</span><span class="link-trocar-txt-curto">✏️ Prior.</span></button>`;
 }
 
-function fecharOpcoesInline(id, aba) {
-  const wrap = document.getElementById('links-' + id);
-  if (wrap) wrap.innerHTML = linksOriginais(id, aba);
+function linkStatusOriginal(id, aba) {
+  return `<button class="link-trocar" onclick="mostrarOpcoesStatus(this, '${id}', '${aba}')" title="Trocar Status"><span class="link-trocar-txt-completo">✏️ Trocar Status</span><span class="link-trocar-txt-curto">✏️ Status</span></button>`;
+}
+
+function fecharOpcoesInline(id, aba, campo) {
+  const wrap = document.getElementById(`links-${campo}-${id}`);
+  if (!wrap) return;
+  wrap.innerHTML = campo === 'prioridade' ? linkPrioridadeOriginal(id, aba) : linkStatusOriginal(id, aba);
 }
 
 function mostrarOpcoesPrioridade(btn, id, aba) {
@@ -2264,7 +2278,7 @@ function mostrarOpcoesPrioridade(btn, id, aba) {
       <button class="opcao-inline-btn" onclick="trocarPrioridade('${id}','${aba}','Urgente')">🔴 Urgente</button>
       <button class="opcao-inline-btn" onclick="trocarPrioridade('${id}','${aba}','Média')">🟡 Média</button>
       <button class="opcao-inline-btn" onclick="trocarPrioridade('${id}','${aba}','Baixa')">🟢 Baixa</button>
-      <button class="opcao-inline-btn opcao-inline-cancelar" onclick="fecharOpcoesInline('${id}','${aba}')">✕</button>
+      <button class="opcao-inline-btn opcao-inline-cancelar" onclick="fecharOpcoesInline('${id}','${aba}','prioridade')">✕</button>
     </div>
   `;
 }
@@ -2279,7 +2293,7 @@ function mostrarOpcoesStatus(btn, id, aba) {
       <button class="opcao-inline-btn" onclick="atualizarStatus('${id}', this, '${aba}', 'Feito')">✔️ Feito</button>
       <button class="opcao-inline-btn" onclick="atualizarStatus('${id}', this, '${aba}', 'Aguardando')">🕓 Aguardando</button>
       <button class="opcao-inline-btn" onclick="atualizarStatus('${id}', this, '${aba}', 'Concluído')">Concluído</button>
-      <button class="opcao-inline-btn opcao-inline-cancelar" onclick="fecharOpcoesInline('${id}','${aba}')">✕</button>
+      <button class="opcao-inline-btn opcao-inline-cancelar" onclick="fecharOpcoesInline('${id}','${aba}','status')">✕</button>
     </div>
   `;
 }
