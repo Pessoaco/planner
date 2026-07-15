@@ -579,6 +579,10 @@
   .badge-status-Aberto { background: var(--primary-light); color: var(--primary); }
   .badge-status-EmAndamento { background: var(--warning-light); color: var(--warning); }
   .badge-status-Concluído { background: var(--success-light); color: var(--success); }
+  .badge-status-Aguardando { background: #f3e8ff; color: #9333ea; }
+  .badge-status-Iniciado { background: #e0f2fe; color: #0284c7; }
+  .badge-status-Aconferir { background: #fff7ed; color: #ea580c; }
+  .badge-status-Feito { background: #ecfccb; color: #4d7c0f; }
 
   .badge-info { background: var(--gray-light); color: var(--gray); }
 
@@ -1241,6 +1245,10 @@
     <div class="filtro-legenda">Status</div>
     <button class="filter-btn" data-grupo="status" data-valor="Aberto" onclick="setFilter('status','Aberto')">Aberto</button>
     <button class="filter-btn" data-grupo="status" data-valor="Em Andamento" onclick="setFilter('status','Em Andamento')">Em andamento</button>
+    <button class="filter-btn" data-grupo="status" data-valor="Iniciado" onclick="setFilter('status','Iniciado')">▶️ Iniciado</button>
+    <button class="filter-btn" data-grupo="status" data-valor="A conferir" onclick="setFilter('status','A conferir')">🔍 A conferir</button>
+    <button class="filter-btn" data-grupo="status" data-valor="Feito" onclick="setFilter('status','Feito')">✔️ Feito</button>
+    <button class="filter-btn" data-grupo="status" data-valor="Aguardando" onclick="setFilter('status','Aguardando')">🕓 Aguardando</button>
     <button class="filter-btn" data-grupo="status" data-valor="Concluído" onclick="setFilter('status','Concluído')">Concluídas</button>
     <div class="filters-break"></div>
     <div class="filtro-legenda">Envolvidos</div>
@@ -1257,6 +1265,10 @@
     <div class="filtro-legenda">Status (todas as pastas)</div>
     <button class="filter-btn" data-grupo="statusG" data-valor="Aberto" onclick="setFilter('statusG','Aberto')">Aberto</button>
     <button class="filter-btn" data-grupo="statusG" data-valor="Em Andamento" onclick="setFilter('statusG','Em Andamento')">Em andamento</button>
+    <button class="filter-btn" data-grupo="statusG" data-valor="Iniciado" onclick="setFilter('statusG','Iniciado')">▶️ Iniciado</button>
+    <button class="filter-btn" data-grupo="statusG" data-valor="A conferir" onclick="setFilter('statusG','A conferir')">🔍 A conferir</button>
+    <button class="filter-btn" data-grupo="statusG" data-valor="Feito" onclick="setFilter('statusG','Feito')">✔️ Feito</button>
+    <button class="filter-btn" data-grupo="statusG" data-valor="Aguardando" onclick="setFilter('statusG','Aguardando')">🕓 Aguardando</button>
     <button class="filter-btn" data-grupo="statusG" data-valor="Concluído" onclick="setFilter('statusG','Concluído')">Concluídas</button>
     <div class="filters-break"></div>
     <div class="filtro-legenda">Envolvidos (todas as pastas)</div>
@@ -1292,6 +1304,10 @@
       <option value="">Trocar status…</option>
       <option value="Aberto">Aberto</option>
       <option value="Em Andamento">Em andamento</option>
+      <option value="Iniciado">Iniciado (terceiros)</option>
+      <option value="A conferir">A conferir (terceiros)</option>
+      <option value="Feito">Feito (terceiros)</option>
+      <option value="Aguardando">Aguardando (preciso esperar algo)</option>
       <option value="Concluído">Concluído</option>
     </select>
     <button class="btn-selecao-concluir" onclick="concluirSelecionadas()">✅ Concluir</button>
@@ -1360,6 +1376,10 @@
       <select id="f-status" onchange="atualizarCampoDataConclusao()">
         <option value="Aberto">Aberto</option>
         <option value="Em Andamento">Em andamento</option>
+        <option value="Iniciado">Iniciado (terceiros)</option>
+        <option value="A conferir">A conferir (terceiros)</option>
+        <option value="Feito">Feito (terceiros)</option>
+        <option value="Aguardando">Aguardando (preciso esperar algo)</option>
         <option value="Concluído">Concluído</option>
       </select>
     </div>
@@ -1412,6 +1432,10 @@
     <button class="menu-mais-item" onclick="fecharModalMais(); exportarCSV(false)">📊 Exportar esta pasta para Excel</button>
     <button class="menu-mais-item" onclick="fecharModalMais(); exportarCSV(true)">📊🌐 Exportar TODAS as pastas para Excel</button>
     <button class="menu-mais-item" onclick="fecharModalMais(); window.print()">🖨️ Imprimir</button>
+    <label class="menu-mais-item" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+      <input type="checkbox" id="chk-esconder-aguardando" onchange="alternarEsconderAguardando(this.checked)">
+      🕓 "🔥 Urgentes" esconde "Iniciado" e "Aguardando" (não é sua vez de agir ainda)
+    </label>
     <button class="modal-cancel" onclick="fecharModalMais()" style="margin-top:14px">Fechar</button>
   </div>
 </div>
@@ -1482,6 +1506,7 @@ function fecharModalEnvolvidos() {
 }
 
 function abrirModalMais() {
+  document.getElementById('chk-esconder-aguardando').checked = esconderAguardandoDosUrgentes;
   document.getElementById('modal-mais').classList.add('open');
 }
 
@@ -1497,8 +1522,19 @@ function fecharModalFiltros() {
   document.getElementById('modal-filtros').classList.remove('open');
 }
 
+// Se marcado, o atalho Urgentes esconde tarefas com Status "Aguardando" (não depende mais da pessoa agora)
+let esconderAguardandoDosUrgentes = JSON.parse(localStorage.getItem('esconderAguardandoDosUrgentes') || 'true');
+let modoUrgentesAtivo = false;
+
+function alternarEsconderAguardando(marcado) {
+  esconderAguardandoDosUrgentes = marcado;
+  localStorage.setItem('esconderAguardandoDosUrgentes', JSON.stringify(marcado));
+  if (modoUrgentesAtivo) render();
+}
+
 // Atalho de um toque: mostra só as Urgentes, de todas as pastas
 function atalhoUrgentes() {
+  modoUrgentesAtivo = true;
   filtroPrioridadeG = new Set(['Urgente']);
   filtroStatusG = new Set();
   filtroEnvolvidoG = new Set();
@@ -1546,6 +1582,7 @@ function setSearchLocal(v) {
   const termo = normalizarBusca(v.trim());
   // Digitar uma busca rápida assume que a pessoa quer ver isso agora — some com filtros de prioridade/status/envolvido antigos
   if (termo) {
+    modoUrgentesAtivo = false;
     filtroPrioridade = new Set();
     filtroStatus = new Set();
     filtroEnvolvido = new Set();
@@ -1621,7 +1658,7 @@ async function concluirSelecionadas() {
 
 async function trocarStatusSelecionadas(novoStatus) {
   if (!novoStatus || !selecionados.size) return;
-  const rotulo = { 'Aberto': 'Aberto', 'Em Andamento': 'Em andamento', 'Concluído': 'Concluído' }[novoStatus] || novoStatus;
+  const rotulo = { 'Aberto': 'Aberto', 'Em Andamento': 'Em andamento', 'Iniciado': 'Iniciado', 'A conferir': 'A conferir', 'Feito': 'Feito', 'Aguardando': 'Aguardando', 'Concluído': 'Concluído' }[novoStatus] || novoStatus;
   if (!confirm(`Trocar ${selecionados.size} tarefa(s) para "${rotulo}"?`)) return;
   const itens = [...selecionados].map(chave => {
     const [aba, id] = chave.split('::');
@@ -1800,6 +1837,7 @@ function toggleVista() {
 
 function switchTab(aba) {
   abaAtual = aba;
+  modoUrgentesAtivo = false;
   // Trocar de pasta limpa qualquer filtro ativo (local ou geral, tipo Urgentes) — evita confusão de achar que ainda tá filtrado
   searchTerm = '';
   searchTermLocal = '';
@@ -1832,6 +1870,7 @@ function atualizarBotoesFiltro() {
 }
 
 function setFilter(grupo, valor) {
+  modoUrgentesAtivo = false;
   if (grupo === 'todos') {
     filtroPrioridade = new Set();
     filtroStatus = new Set();
@@ -1938,6 +1977,12 @@ function filtrarTarefas(tarefas) {
   }
   if (envolvidoAtivo.size) {
     filtradas = filtradas.filter(t => envolvidoAtivo.has((t.Envolvido || '').trim()));
+  }
+
+  // Atalho "Urgentes": some "Iniciado" (terceiro começou, ainda não é sua vez) e "Aguardando" (esperando algo externo)
+  // Mantém "A conferir" e "Feito" porque aí é você quem precisa agir (conferir e dar baixa/concluir)
+  if (modoUrgentesAtivo && esconderAguardandoDosUrgentes) {
+    filtradas = filtradas.filter(t => !['Iniciado', 'Aguardando'].includes((t.Status || '').trim()));
   }
 
   if (searchTerm) {
@@ -2229,6 +2274,10 @@ function mostrarOpcoesStatus(btn, id, aba) {
     <div class="opcoes-inline">
       <button class="opcao-inline-btn" onclick="atualizarStatus('${id}', this, '${aba}', 'Aberto')">Aberto</button>
       <button class="opcao-inline-btn" onclick="atualizarStatus('${id}', this, '${aba}', 'Em Andamento')">Em andamento</button>
+      <button class="opcao-inline-btn" onclick="atualizarStatus('${id}', this, '${aba}', 'Iniciado')">▶️ Iniciado</button>
+      <button class="opcao-inline-btn" onclick="atualizarStatus('${id}', this, '${aba}', 'A conferir')">🔍 A conferir</button>
+      <button class="opcao-inline-btn" onclick="atualizarStatus('${id}', this, '${aba}', 'Feito')">✔️ Feito</button>
+      <button class="opcao-inline-btn" onclick="atualizarStatus('${id}', this, '${aba}', 'Aguardando')">🕓 Aguardando</button>
       <button class="opcao-inline-btn" onclick="atualizarStatus('${id}', this, '${aba}', 'Concluído')">Concluído</button>
       <button class="opcao-inline-btn opcao-inline-cancelar" onclick="fecharOpcoesInline('${id}','${aba}')">✕</button>
     </div>
