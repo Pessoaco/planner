@@ -270,12 +270,22 @@
   }
   #main.vista-lista .mini-legenda { display: none; }
   #main.vista-lista .badges { flex-shrink: 0; margin-top: 0; }
-  #main.vista-lista .tarefa-meta { flex-shrink: 0; margin-top: 0; }
-  #main.vista-lista .mudar-status-links { margin-top: 0; flex-basis: auto; }
-  #main.vista-lista .tarefa-acoes { margin-top: 0; flex-shrink: 0; order: 99; }
+  #main.vista-lista .tarefa-meta { flex-shrink: 1; min-width: 0; margin-top: 0; overflow: hidden; }
+  #main.vista-lista .meta-obs {
+    display: inline-block;
+    max-width: 220px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    vertical-align: bottom;
+  }
+  #main.vista-lista .mudar-status-links { margin-top: 0; flex-basis: auto; flex-shrink: 0; }
+  #main.vista-lista .tarefa-acoes { margin-top: 0; flex-shrink: 0; order: 90; }
   #main.vista-lista .btn-concluir-grande {
     width: auto;
     flex: 0 0 auto;
+    order: 100;
+    margin-left: auto;
     margin-top: 0;
     padding: 6px 10px;
     font-size: 11px;
@@ -1502,7 +1512,12 @@ function atualizarChipsAtivos() {
   stat.forEach(v => chips.push(v));
   env.forEach(v => chips.push(`👤 ${v}`));
   const el = document.getElementById('chips-ativos');
-  if (el) el.innerHTML = chips.map(c => `<span class="chip-ativo">${c}</span>`).join('');
+  if (el) {
+    el.innerHTML = chips.map(c => `<span class="chip-ativo">${c}</span>`).join('');
+    // Alinha o chip embaixo da aba atual (aproximado, já que as abas têm largura igual)
+    const idx = Math.max(0, abaOrdem.indexOf(abaAtual));
+    el.style.marginLeft = chips.length ? `calc((100% / ${ABAS.length}) * ${idx})` : '0';
+  }
 }
 let searchTerm = '';       // busca global (barra de cima) — sempre cruza todas as abas
 let searchTermLocal = '';  // busca local (linha de filtros) — só dentro da aba atual
@@ -2058,7 +2073,7 @@ function cardHtml(t) {
     meta.push(horaFmt ? `📅 ${dataFmt} às ${horaFmt}` : `📅 ${dataFmt}`);
   }
   if (t.Envolvido) meta.push(`👤 ${t.Envolvido}`);
-  if (t.Observação) meta.push(`💬 ${t.Observação}`);
+  const observacaoHtml = t.Observação ? `<span class="meta-item meta-obs">💬 ${t.Observação}</span>` : '';
 
   const chaveSelecao = `${t._aba}::${t.ID}`;
   const dadosJson = JSON.stringify(t).replace(/'/g,"&#39;");
@@ -2069,7 +2084,7 @@ function cardHtml(t) {
         <div class="tarefa-nome">${t.Tarefa}</div>
         <button class="btn-editar-topo" onclick='openEditModal(${dadosJson})' title="Editar tarefa">✏️</button>
       </div>
-      ${meta.length ? `<div class="tarefa-meta">${meta.map(m => `<span class="meta-item">${m}</span>`).join('')}</div>` : ''}
+      ${meta.length || observacaoHtml ? `<div class="tarefa-meta">${meta.map(m => `<span class="meta-item">${m}</span>`).join('')}${observacaoHtml}</div>` : ''}
       <div class="mini-legenda">Prioridade e Status atual:</div>
       <div class="badges">
         <span class="badge badge-prio-${prio}">${prio}</span>
