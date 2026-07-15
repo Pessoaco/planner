@@ -174,6 +174,7 @@
     white-space: nowrap;
   }
   .btn-filtro-pill:active { background: var(--primary-light); }
+  .btn-filtro-pill.ativo { background: var(--primary); color: white; }
 
   .menu-mais-item {
     display: block;
@@ -499,7 +500,8 @@
   .tarefa-nome {
     flex: 1;
     font-size: 15px;
-    font-weight: 600;
+    font-weight: 700;
+    color: var(--text);
     line-height: 1.3;
   }
 
@@ -935,6 +937,23 @@
 
   .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
 
+  .modal-titulo-linha { display: flex; align-items: center; justify-content: space-between; }
+  .modal-titulo-linha h3 { margin-bottom: 16px; }
+  .modal-fechar-x {
+    background: var(--gray-light);
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-top: -6px;
+  }
+  .modal-fechar-x:active { background: var(--border); }
+
   .print-option {
     display: flex;
     align-items: center;
@@ -1176,15 +1195,16 @@
 
   <div class="quick-bar">
     <input type="search" id="search-local-input" class="search-input-inline" placeholder="🔎 Buscar só na pasta atual..." oninput="setSearchLocal(this.value)">
+    <button class="btn-filtro-pill" id="btn-busca-escopo" onclick="toggleBuscaEscopo()">🌐 Todas as pastas</button>
     <button class="btn-filtro-pill" id="btn-abrir-filtros" onclick="abrirModalFiltros()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 4 20 4 14 13 14 20 10 20 10 13"/></svg>
       Filtros
     </button>
     <button class="btn-refresh" onclick="setFilter('todos')">🔄 Limpar</button>
   </div>
-  <div class="chips-ativos" id="chips-ativos"></div>
 
   <div class="tabs" id="tabs"></div>
+  <div class="chips-ativos" id="chips-ativos"></div>
   <div class="tabs-hint">↔️ Segure e arraste uma pasta para reorganizar</div>
 </header>
 
@@ -1260,7 +1280,10 @@
 
 <div class="modal-overlay" id="modal-add" onclick="closeAddModal(event)">
   <div class="modal">
-    <h3 id="modal-add-title">✏️ Nova tarefa</h3>
+    <div class="modal-titulo-linha">
+      <h3 id="modal-add-title">✏️ Nova tarefa</h3>
+      <button class="modal-fechar-x" onclick="closeAddModal()" title="Fechar sem salvar">✕</button>
+    </div>
 
     <div class="form-group">
       <label>Pasta</label>
@@ -1484,10 +1507,39 @@ function atualizarChipsAtivos() {
 let searchTerm = '';       // busca global (barra de cima) — sempre cruza todas as abas
 let searchTermLocal = '';  // busca local (linha de filtros) — só dentro da aba atual
 let categoriasColapsadas = new Set();
+let buscaTodasPastas = false; // liga/desliga o alcance da busca rápida da quick-bar
 
 function setSearchLocal(v) {
-  searchTermLocal = v.trim().toLowerCase();
+  const termo = v.trim().toLowerCase();
+  // Digitar uma busca rápida assume que a pessoa quer ver isso agora — some com filtros de prioridade/status/envolvido antigos
+  if (termo) {
+    filtroPrioridade = new Set();
+    filtroStatus = new Set();
+    filtroEnvolvido = new Set();
+    filtroPrioridadeG = new Set();
+    filtroStatusG = new Set();
+    filtroEnvolvidoG = new Set();
+    atualizarBotoesFiltro();
+  }
+  if (buscaTodasPastas) {
+    searchTerm = termo;
+    searchTermLocal = '';
+  } else {
+    searchTermLocal = termo;
+    searchTerm = '';
+  }
+  renderTabs();
   render();
+}
+
+function toggleBuscaEscopo() {
+  buscaTodasPastas = !buscaTodasPastas;
+  const btn = document.getElementById('btn-busca-escopo');
+  const input = document.getElementById('search-local-input');
+  btn.classList.toggle('ativo', buscaTodasPastas);
+  input.placeholder = buscaTodasPastas ? '🔎 Buscar em TODAS as pastas...' : '🔎 Buscar só na pasta atual...';
+  // Reaplica o termo já digitado no novo alcance
+  setSearchLocal(input.value);
 }
 // { id: { status: statusAnterior, ts: timestamp } } — fica salvo no celular até a pessoa desfazer,
 // mesmo se fechar o app. Expira sozinho depois de alguns minutos pra não ficar "grudado" pra sempre
