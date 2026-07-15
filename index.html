@@ -255,33 +255,50 @@
     display: block;
   }
   #main.vista-lista .tarefa-card {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    column-gap: 12px;
     align-items: center;
-    gap: 6px 10px;
     padding: 8px 12px;
     margin-bottom: 4px;
   }
-  #main.vista-lista .tarefa-top { flex: 1 1 160px; min-width: 120px; }
-  #main.vista-lista .tarefa-acoes-topo { display: flex; gap: 2px; flex-shrink: 0; }
+  #main.vista-lista .tarefa-top { grid-column: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
   #main.vista-lista .tarefa-nome {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   #main.vista-lista .mini-legenda { display: none; }
-  #main.vista-lista .badges { flex-shrink: 0; margin-top: 0; }
-  #main.vista-lista .tarefa-meta { flex-shrink: 1; min-width: 0; margin-top: 0; overflow: hidden; }
+  #main.vista-lista .tarefa-meta {
+    grid-column: 2;
+    min-width: 0;
+    margin-top: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
   #main.vista-lista .meta-obs {
     display: inline-block;
-    max-width: 140px;
+    max-width: 100%;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
     vertical-align: bottom;
   }
-  #main.vista-lista .mudar-status-links { margin-top: 0; flex-basis: auto; flex-shrink: 0; gap: 4px; }
-  #main.vista-lista .tarefa-acoes { margin-top: 0; flex-shrink: 0; order: 90; }
+
+  /* Grupo fixo à direita: duplicar/lápis, prioridade/status, sino e concluir — nunca se mexe de lugar */
+  #main.vista-lista .tarefa-lista-direita {
+    grid-column: 3;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    justify-self: end;
+  }
+  #main.vista-lista .tarefa-acoes-topo { display: flex; gap: 2px; flex-shrink: 0; }
+  #main.vista-lista .badges { flex-shrink: 0; margin-top: 0; display: flex; gap: 4px; }
+  #main.vista-lista .mudar-status-links { margin-top: 0; flex-basis: auto; flex-shrink: 0; gap: 4px; display: flex; }
+  #main.vista-lista .tarefa-acoes { margin-top: 0; flex-shrink: 0; }
 
   /* Textos curtos só aparecem na vista em lista, pra economizar espaço */
   .link-trocar-txt-curto { display: none; }
@@ -298,9 +315,7 @@
   }
   #main.vista-lista .btn-concluir-grande {
     width: auto;
-    flex: 0 0 auto;
-    order: 100;
-    margin-left: auto;
+    flex-shrink: 0;
     margin-top: 0;
     padding: 6px 10px;
     font-size: 11px;
@@ -1148,38 +1163,6 @@
     .categoria-header { grid-column: 1 / -1; }
     .categoria-group .tarefa-card { margin-bottom: 0; }
 
-    /* Vista em lista: uma linha compacta por tarefa, sem grade */
-    #main.vista-lista .categoria-group {
-      display: block;
-    }
-    #main.vista-lista .tarefa-card {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 6px 10px;
-      padding: 8px 12px;
-      margin-bottom: 4px;
-    }
-    #main.vista-lista .tarefa-top { flex: 1 1 220px; min-width: 160px; }
-    #main.vista-lista .tarefa-nome {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    #main.vista-lista .mini-legenda { display: none; }
-    #main.vista-lista .badges { flex-shrink: 0; margin-top: 0; }
-    #main.vista-lista .tarefa-meta { flex-shrink: 0; margin-top: 0; }
-    #main.vista-lista .mudar-status-links { margin-top: 0; flex-basis: auto; }
-    #main.vista-lista .tarefa-acoes { margin-top: 0; flex-shrink: 0; order: 99; }
-    #main.vista-lista .btn-concluir-grande {
-      width: auto;
-      flex: 0 0 auto;
-      margin-top: 0;
-      padding: 6px 10px;
-      font-size: 11px;
-      white-space: nowrap;
-    }
-
     /* Tudo numa linha só (tem espaço de sobra no PC) */
     .filters, .busca-avancada-painel { justify-content: center; align-items: center; }
     .filters-break { display: none; }
@@ -1228,7 +1211,7 @@
   </div>
 
   <div class="quick-bar">
-    <input type="search" id="search-local-input" class="search-input-inline" placeholder="🔎 Buscar só na pasta atual..." oninput="setSearchLocal(this.value)">
+    <input type="search" id="search-local-input" class="search-input-inline" placeholder="🔎 Pesquisar só na pasta atual..." oninput="setSearchLocal(this.value)">
     <button class="btn-filtro-pill" id="btn-busca-escopo" onclick="toggleBuscaEscopo()">🌐 Todas as pastas</button>
     <button class="btn-filtro-pill" id="btn-abrir-filtros" onclick="abrirModalFiltros()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 4 20 4 14 13 14 20 10 20 10 13"/></svg>
@@ -1249,7 +1232,7 @@
       <button class="modal-fechar-x" onclick="fecharModalFiltros()" title="Fechar">✕</button>
     </div>
 
-    <div class="filtros-divisor" style="margin-top:0;padding-top:0;border-top:none">📍 Buscar na pasta selecionada</div>
+    <div class="filtros-divisor" style="margin-top:0;padding-top:0;border-top:none">📍 Pesquisar na pasta selecionada</div>
     <div class="filtro-legenda">Prioridade</div>
     <button class="filter-btn" data-grupo="prioridade" data-valor="Urgente" onclick="setFilter('prioridade','Urgente')">🔴 Urgente</button>
     <button class="filter-btn" data-grupo="prioridade" data-valor="Média" onclick="setFilter('prioridade','Média')">🟡 Média</button>
@@ -1265,7 +1248,7 @@
 
     <div class="filtros-divisor">🌐 EM TODAS AS PASTAS</div>
 
-    <input type="search" id="search-input" class="search-input-inline" placeholder="🌐 Buscar em TODAS as pastas..." oninput="setSearch(this.value)">
+    <input type="search" id="search-input" class="search-input-inline" placeholder="🌐 Pesquisar em TODAS as pastas..." oninput="setSearch(this.value)">
     <div class="filtro-legenda">Prioridade (todas as pastas)</div>
     <button class="filter-btn" data-grupo="prioridadeG" data-valor="Urgente" onclick="setFilter('prioridadeG','Urgente')">🔴 Urgente</button>
     <button class="filter-btn" data-grupo="prioridadeG" data-valor="Média" onclick="setFilter('prioridadeG','Média')">🟡 Média</button>
@@ -1553,8 +1536,14 @@ let searchTermLocal = '';  // busca local (linha de filtros) — só dentro da a
 let categoriasColapsadas = new Set();
 let buscaTodasPastas = false; // liga/desliga o alcance da busca rápida da quick-bar
 
+// Tira acentos pra pesquisa não fazer diferença entre "farmacia" e "farmácia"
+const MAPA_ACENTOS = { á:'a', à:'a', â:'a', ã:'a', ä:'a', é:'e', è:'e', ê:'e', ë:'e', í:'i', ì:'i', î:'i', ï:'i', ó:'o', ò:'o', ô:'o', õ:'o', ö:'o', ú:'u', ù:'u', û:'u', ü:'u', ç:'c' };
+function normalizarBusca(s) {
+  return String(s || '').toLowerCase().split('').map(ch => MAPA_ACENTOS[ch] || ch).join('');
+}
+
 function setSearchLocal(v) {
-  const termo = v.trim().toLowerCase();
+  const termo = normalizarBusca(v.trim());
   // Digitar uma busca rápida assume que a pessoa quer ver isso agora — some com filtros de prioridade/status/envolvido antigos
   if (termo) {
     filtroPrioridade = new Set();
@@ -1581,7 +1570,7 @@ function toggleBuscaEscopo() {
   const btn = document.getElementById('btn-busca-escopo');
   const input = document.getElementById('search-local-input');
   btn.classList.toggle('ativo', buscaTodasPastas);
-  input.placeholder = buscaTodasPastas ? '🔎 Buscar em TODAS as pastas...' : '🔎 Buscar só na pasta atual...';
+  input.placeholder = buscaTodasPastas ? '🔎 Pesquisar em TODAS as pastas...' : '🔎 Pesquisar só na pasta atual...';
   // Reaplica o termo já digitado no novo alcance
   setSearchLocal(input.value);
 }
@@ -1692,7 +1681,7 @@ try {
 abaAtual = abaOrdem[0];
 
 function setSearch(v) {
-  searchTerm = v.trim().toLowerCase();
+  searchTerm = normalizarBusca(v.trim());
   renderTabs();
   render();
 }
@@ -1953,20 +1942,20 @@ function filtrarTarefas(tarefas) {
 
   if (searchTerm) {
     filtradas = filtradas.filter(t =>
-      (t.Tarefa || '').toLowerCase().includes(searchTerm) ||
-      (t['Divisão'] || '').toLowerCase().includes(searchTerm) ||
-      (t.Observação || '').toLowerCase().includes(searchTerm) ||
-      (t.Envolvido || '').toLowerCase().includes(searchTerm)
+      normalizarBusca(t.Tarefa).includes(searchTerm) ||
+      normalizarBusca(t['Divisão']).includes(searchTerm) ||
+      normalizarBusca(t.Observação).includes(searchTerm) ||
+      normalizarBusca(t.Envolvido).includes(searchTerm)
     );
   }
 
   // Busca local (só dentro da aba atual) — só faz sentido quando não estamos no modo cruzado
   if (!cruzado && searchTermLocal) {
     filtradas = filtradas.filter(t =>
-      (t.Tarefa || '').toLowerCase().includes(searchTermLocal) ||
-      (t['Divisão'] || '').toLowerCase().includes(searchTermLocal) ||
-      (t.Observação || '').toLowerCase().includes(searchTermLocal) ||
-      (t.Envolvido || '').toLowerCase().includes(searchTermLocal)
+      normalizarBusca(t.Tarefa).includes(searchTermLocal) ||
+      normalizarBusca(t['Divisão']).includes(searchTermLocal) ||
+      normalizarBusca(t.Observação).includes(searchTermLocal) ||
+      normalizarBusca(t.Envolvido).includes(searchTermLocal)
     );
   }
 
@@ -2102,7 +2091,6 @@ function cardHtml(t) {
     meta.push(horaFmt ? `📅 ${dataFmt} às ${horaFmt}` : `📅 ${dataFmt}`);
   }
   if (t.Envolvido) meta.push(`👤 ${t.Envolvido}`);
-  const observacaoHtml = t.Observação ? `<span class="meta-item meta-obs">💬 ${t.Observação}</span>` : '';
 
   const chaveSelecao = `${t._aba}::${t.ID}`;
   const dadosJson = JSON.stringify(t).replace(/'/g,"&#39;");
@@ -2110,38 +2098,75 @@ function cardHtml(t) {
     <button class="btn-editar-topo" onclick='duplicarTarefa(${dadosJson})' title="Duplicar tarefa">📄</button>
     <button class="btn-editar-topo" onclick='openEditModal(${dadosJson})' title="Editar tarefa">✏️</button>
   `;
+  const emLista = vistaModo === 'lista';
+
+  // Corta por quantidade de caracteres (não só por pixel) — nome até 55, observação até 90 na lista
+  const cortar = (txt, max) => txt && txt.length > max ? txt.slice(0, max).trimEnd() + '…' : txt;
+  const nomeExibido = emLista ? cortar(t.Tarefa, 55) : t.Tarefa;
+  const observacaoHtml = t.Observação
+    ? `<span class="meta-item meta-obs">💬 ${emLista ? cortar(t.Observação, 90) : t.Observação}</span>`
+    : '';
+
   const metaHtml = meta.length || observacaoHtml
     ? `<div class="tarefa-meta">${meta.map(m => `<span class="meta-item">${m}</span>`).join('')}${observacaoHtml}</div>`
     : '';
-  const emLista = vistaModo === 'lista';
+
+  const badgesHtml = `
+    <div class="badges">
+      <span class="badge badge-prio-${prio}">${prio}</span>
+      <span class="badge badge-status-${status.replace(/\s/g,'')}">${status}</span>
+    </div>
+  `;
+  const desfazerHtml = desfazerDisponivel[t.ID] ? `
+    <button class="btn-desfazer" onclick="desfazerStatus('${t.ID}', this, '${t._aba}')">↩️ Desfazer (se clicou por engano)</button>
+  ` : '';
+  const linksHtml = `
+    <div class="mudar-status-links" id="links-${t.ID}">
+      <button class="link-trocar" onclick="mostrarOpcoesPrioridade(this, '${t.ID}', '${t._aba}')" title="Trocar Prioridade"><span class="link-trocar-txt-completo">✏️ Trocar Prioridade</span><span class="link-trocar-txt-curto">✏️ Prior.</span></button>
+      <button class="link-trocar" onclick="mostrarOpcoesStatus(this, '${t.ID}', '${t._aba}')" title="Trocar Status"><span class="link-trocar-txt-completo">✏️ Trocar Status</span><span class="link-trocar-txt-curto">✏️ Status</span></button>
+    </div>
+  `;
+  const concluirHtml = !concluido ? `<button class="btn-concluir-grande" onclick="atualizarStatus('${t.ID}', this, '${t._aba}', 'Concluído')" id="btn-${t.ID}"><span class="link-trocar-txt-completo">✅ Marcar como concluída</span><span class="link-trocar-txt-curto">✅ Concluir</span></button>` : '';
+  const bellHtml = t.Envolvido ? `
+    <div class="tarefa-acoes">
+      <button class="btn-lembrete" onclick="enviarLembrete('${t.ID}', '${t._aba}', this)" title="Avisar ${t.Envolvido}">🔔</button>
+    </div>
+  ` : '';
+
+  if (emLista) {
+    return `
+      <div class="tarefa-card prioridade-${prio} status-${status.replace(/\s/g,'')}" id="card-${t.ID}">
+        <div class="tarefa-top">
+          ${modoSelecao ? `<input type="checkbox" class="check-selecao" ${selecionados.has(chaveSelecao) ? 'checked' : ''} onchange="toggleSelecionado('${chaveSelecao}', this.checked)">` : ''}
+          <div class="tarefa-nome" title="${t.Tarefa}">${nomeExibido}</div>
+        </div>
+        ${metaHtml}
+        <div class="tarefa-lista-direita">
+          <div class="tarefa-acoes-topo">${botoesTopo}</div>
+          ${badgesHtml}
+          ${desfazerHtml}
+          ${linksHtml}
+          ${bellHtml}
+          ${concluirHtml}
+        </div>
+      </div>
+    `;
+  }
+
   return `
     <div class="tarefa-card prioridade-${prio} status-${status.replace(/\s/g,'')}" id="card-${t.ID}">
       <div class="tarefa-top">
         ${modoSelecao ? `<input type="checkbox" class="check-selecao" ${selecionados.has(chaveSelecao) ? 'checked' : ''} onchange="toggleSelecionado('${chaveSelecao}', this.checked)">` : ''}
-        <div class="tarefa-nome">${t.Tarefa}</div>
-        ${emLista ? '' : botoesTopo}
+        <div class="tarefa-nome" title="${t.Tarefa}">${nomeExibido}</div>
+        ${botoesTopo}
       </div>
-      ${emLista ? metaHtml : ''}
-      ${emLista ? `<div class="tarefa-acoes-topo">${botoesTopo}</div>` : ''}
-      ${emLista ? '' : metaHtml}
+      ${metaHtml}
       <div class="mini-legenda">Prioridade e Status atual:</div>
-      <div class="badges">
-        <span class="badge badge-prio-${prio}">${prio}</span>
-        <span class="badge badge-status-${status.replace(/\s/g,'')}">${status}</span>
-      </div>
-      ${desfazerDisponivel[t.ID] ? `
-        <button class="btn-desfazer" onclick="desfazerStatus('${t.ID}', this, '${t._aba}')">↩️ Desfazer (se clicou por engano)</button>
-      ` : ''}
-      <div class="mudar-status-links" id="links-${t.ID}">
-        <button class="link-trocar" onclick="mostrarOpcoesPrioridade(this, '${t.ID}', '${t._aba}')" title="Trocar Prioridade"><span class="link-trocar-txt-completo">✏️ Trocar Prioridade</span><span class="link-trocar-txt-curto">✏️ Prior.</span></button>
-        <button class="link-trocar" onclick="mostrarOpcoesStatus(this, '${t.ID}', '${t._aba}')" title="Trocar Status"><span class="link-trocar-txt-completo">✏️ Trocar Status</span><span class="link-trocar-txt-curto">✏️ Status</span></button>
-      </div>
-      ${!concluido ? `<button class="btn-concluir-grande" onclick="atualizarStatus('${t.ID}', this, '${t._aba}', 'Concluído')" id="btn-${t.ID}"><span class="link-trocar-txt-completo">✅ Marcar como concluída</span><span class="link-trocar-txt-curto">✅ Concluir</span></button>` : ''}
-      ${t.Envolvido ? `
-        <div class="tarefa-acoes">
-          <button class="btn-lembrete" onclick="enviarLembrete('${t.ID}', '${t._aba}', this)" title="Avisar ${t.Envolvido}">🔔</button>
-        </div>
-      ` : ''}
+      ${badgesHtml}
+      ${desfazerHtml}
+      ${linksHtml}
+      ${concluirHtml}
+      ${bellHtml}
     </div>
   `;
 }
