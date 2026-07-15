@@ -273,14 +273,22 @@
   #main.vista-lista .tarefa-meta { flex-shrink: 1; min-width: 0; margin-top: 0; overflow: hidden; }
   #main.vista-lista .meta-obs {
     display: inline-block;
-    max-width: 220px;
+    max-width: 140px;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
     vertical-align: bottom;
   }
-  #main.vista-lista .mudar-status-links { margin-top: 0; flex-basis: auto; flex-shrink: 0; }
+  #main.vista-lista .mudar-status-links { margin-top: 0; flex-basis: auto; flex-shrink: 0; gap: 4px; }
   #main.vista-lista .tarefa-acoes { margin-top: 0; flex-shrink: 0; order: 90; }
+
+  /* Textos curtos só aparecem na vista em lista, pra economizar espaço */
+  .link-trocar-txt-curto { display: none; }
+  #main.vista-lista .link-trocar-txt-completo { display: none; }
+  #main.vista-lista .link-trocar-txt-curto { display: inline; }
+  #main.vista-lista .link-trocar { padding: 4px 6px; font-size: 10px; }
+  #main.vista-lista .badge { font-size: 10px; padding: 3px 7px; }
+
   #main.vista-lista .btn-concluir-grande {
     width: auto;
     flex: 0 0 auto;
@@ -2094,10 +2102,10 @@ function cardHtml(t) {
         <button class="btn-desfazer" onclick="desfazerStatus('${t.ID}', this, '${t._aba}')">↩️ Desfazer (se clicou por engano)</button>
       ` : ''}
       <div class="mudar-status-links" id="links-${t.ID}">
-        <button class="link-trocar" onclick="mostrarOpcoesPrioridade(this, '${t.ID}', '${t._aba}')">✏️ Trocar Prioridade</button>
-        <button class="link-trocar" onclick="mostrarOpcoesStatus(this, '${t.ID}', '${t._aba}')">✏️ Trocar Status</button>
+        <button class="link-trocar" onclick="mostrarOpcoesPrioridade(this, '${t.ID}', '${t._aba}')" title="Trocar Prioridade"><span class="link-trocar-txt-completo">✏️ Trocar Prioridade</span><span class="link-trocar-txt-curto">✏️ Prior.</span></button>
+        <button class="link-trocar" onclick="mostrarOpcoesStatus(this, '${t.ID}', '${t._aba}')" title="Trocar Status"><span class="link-trocar-txt-completo">✏️ Trocar Status</span><span class="link-trocar-txt-curto">✏️ Status</span></button>
       </div>
-      ${!concluido ? `<button class="btn-concluir-grande" onclick="atualizarStatus('${t.ID}', this, '${t._aba}', 'Concluído')" id="btn-${t.ID}">✅ Marcar como concluída</button>` : ''}
+      ${!concluido ? `<button class="btn-concluir-grande" onclick="atualizarStatus('${t.ID}', this, '${t._aba}', 'Concluído')" id="btn-${t.ID}"><span class="link-trocar-txt-completo">✅ Marcar como concluída</span><span class="link-trocar-txt-curto">✅ Concluir</span></button>` : ''}
       ${t.Envolvido ? `
         <div class="tarefa-acoes">
           <button class="btn-lembrete" onclick="enviarLembrete('${t.ID}', '${t._aba}', this)" title="Avisar ${t.Envolvido}">🔔</button>
