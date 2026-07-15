@@ -223,7 +223,7 @@
     gap: 6px;
     align-items: center;
   }
-  #modal-filtros .modal h3 { flex-basis: 100%; }
+  #modal-filtros .modal-titulo-linha { flex-basis: 100%; }
 
   .filtros-divisor {
     flex-basis: 100%;
@@ -289,6 +289,12 @@
   #main.vista-lista .link-trocar { padding: 4px 6px; font-size: 10px; }
   #main.vista-lista .badge { font-size: 10px; padding: 3px 7px; }
 
+  #main.vista-lista .btn-lembrete {
+    padding: 6px 10px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+  }
   #main.vista-lista .btn-concluir-grande {
     width: auto;
     flex: 0 0 auto;
@@ -1190,6 +1196,15 @@
     }
     .filtro-legenda:first-of-type { padding-left: 0; }
 
+    /* O painel de Filtros (modal) sempre quebra linha por seção, não compacta como as barras antigas */
+    #modal-filtros .filtro-legenda {
+      flex-basis: 100% !important;
+      padding: 10px 0 2px !important;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    #modal-filtros .filters-break { display: block !important; }
+
     /* Data/hora maior e mais escura, mais fácil de ler */
     .meta-item { font-size: 14px; color: var(--text); font-weight: 500; }
   }
@@ -1228,8 +1243,12 @@
 
 <div class="modal-overlay" id="modal-filtros" onclick="if(event.target===this) fecharModalFiltros()">
   <div class="modal">
-    <h3>🔽 Filtros</h3>
+    <div class="modal-titulo-linha">
+      <h3>🔽 Filtros</h3>
+      <button class="modal-fechar-x" onclick="fecharModalFiltros()" title="Fechar">✕</button>
+    </div>
 
+    <div class="filtros-divisor" style="margin-top:0;padding-top:0;border-top:none">📍 Buscar na pasta selecionada</div>
     <div class="filtro-legenda">Prioridade</div>
     <button class="filter-btn" data-grupo="prioridade" data-valor="Urgente" onclick="setFilter('prioridade','Urgente')">🔴 Urgente</button>
     <button class="filter-btn" data-grupo="prioridade" data-valor="Média" onclick="setFilter('prioridade','Média')">🟡 Média</button>
@@ -1243,7 +1262,7 @@
     <div class="filtro-legenda">Envolvidos</div>
     <button class="filter-btn" id="btn-envolvidos" onclick="abrirModalEnvolvidos(false)">👤 Envolvidos</button>
 
-    <div class="filtros-divisor">🌐 Em TODAS as pastas</div>
+    <div class="filtros-divisor">🌐 EM TODAS AS PASTAS</div>
 
     <input type="search" id="search-input" class="search-input-inline" placeholder="🌐 Buscar em TODAS as pastas..." oninput="setSearch(this.value)">
     <div class="filtro-legenda">Prioridade (todas as pastas)</div>
@@ -1306,6 +1325,7 @@
     <div class="form-group">
       <label>Pasta</label>
       <select id="f-aba">
+        <option value="" disabled>Selecione a pasta...</option>
         <option value="PESSOAL">Pessoal</option>
         <option value="OBRA">Obra</option>
         <option value="WORK">Work</option>
@@ -2090,6 +2110,7 @@ function cardHtml(t) {
       <div class="tarefa-top">
         ${modoSelecao ? `<input type="checkbox" class="check-selecao" ${selecionados.has(chaveSelecao) ? 'checked' : ''} onchange="toggleSelecionado('${chaveSelecao}', this.checked)">` : ''}
         <div class="tarefa-nome">${t.Tarefa}</div>
+        <button class="btn-editar-topo" onclick='duplicarTarefa(${dadosJson})' title="Duplicar tarefa">📄</button>
         <button class="btn-editar-topo" onclick='openEditModal(${dadosJson})' title="Editar tarefa">✏️</button>
       </div>
       ${meta.length || observacaoHtml ? `<div class="tarefa-meta">${meta.map(m => `<span class="meta-item">${m}</span>`).join('')}${observacaoHtml}</div>` : ''}
@@ -2346,10 +2367,11 @@ async function openAddModal() {
   document.getElementById('modal-add-title').textContent = '✏️ Nova tarefa';
   document.getElementById('btn-salvar').textContent = 'Salvar tarefa';
   document.getElementById('f-aba').disabled = false;
-  // Sincroniza aba selecionada com a aba atual
-  document.getElementById('f-aba').value = abaAtual;
-  preencherCategorias(abaAtual);
-  atualizaLabelTarefa(abaAtual);
+  // Fica em branco de propósito — obriga a pessoa a escolher a pasta e a divisão conscientemente,
+  // em vez de salvar sem querer na aba/divisão que veio marcada sozinha
+  document.getElementById('f-aba').value = '';
+  document.getElementById('f-categoria').innerHTML = '<option value="" disabled selected>Escolha a pasta primeiro...</option>';
+  document.getElementById('f-tarefa-label').textContent = 'Tarefa *';
   document.getElementById('f-tarefa').value = '';
   document.getElementById('f-envolvido').value = '';
   document.getElementById('f-obs').value = '';
@@ -2362,6 +2384,36 @@ async function openAddModal() {
   document.getElementById('btn-excluir-modal').style.display = 'none';
   document.querySelectorAll('.prio-btn').forEach(b => b.classList.toggle('sel', b.dataset.p === 'Urgente'));
   document.getElementById('modal-add').classList.add('open');
+}
+
+// Cria uma cópia da tarefa (mesma divisão/prioridade/status/envolvido) e já abre pra renomear
+async function duplicarTarefa(t) {
+  showToast('📄 Duplicando tarefa...');
+  const fields = {
+    Tarefa: t.Tarefa,
+    'Divisão': t['Divisão'] || '',
+    Prioridade: t.Prioridade || 'Média',
+    Status: t.Status || 'Aberto',
+    Envolvido: t.Envolvido || '',
+    'Data Prevista': t['Data Prevista'] || '',
+    Hora: t.Hora || '',
+    'Observação': t['Observação'] || ''
+  };
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'addTask', aba: t._aba, fields })
+    });
+    const data = await res.json();
+    if (!data.ok) { showToast('⚠️ Erro: ' + (data.error || 'tente novamente')); return; }
+    await loadData();
+    const nova = (allData[t._aba] || []).find(x => String(x.ID) === String(data.id));
+    if (nova) openEditModal({ ...nova, _aba: t._aba });
+    showToast('✅ Tarefa duplicada — troca o nome e salva!');
+  } catch (e) {
+    showToast('⚠️ Sem conexão');
+  }
 }
 
 async function openEditModal(t) {
@@ -2503,11 +2555,12 @@ function fecharModalCategorias() {
   document.getElementById('modal-categorias').classList.remove('open');
 }
 
-function preencherCategorias(aba) {
+function preencherCategorias(aba, comPlaceholder) {
   const tarefas = allData[aba] || [];
   const cats = [...new Set(tarefas.map(t => t['Divisão']).filter(Boolean))].sort();
   const sel = document.getElementById('f-categoria');
-  sel.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('') +
+  sel.innerHTML = (comPlaceholder ? '<option value="" disabled selected>Selecione a divisão...</option>' : '') +
+    cats.map(c => `<option value="${c}">${c}</option>`).join('') +
     '<option value="__nova__">+ Nova divisão...</option>';
   sel.onchange = () => {
     const novo = sel.value === '__nova__';
@@ -2518,7 +2571,7 @@ function preencherCategorias(aba) {
 
 // Muda categorias ao trocar de aba no formulário
 document.getElementById('f-aba').addEventListener('change', function() {
-  preencherCategorias(this.value);
+  preencherCategorias(this.value, true);
   atualizaLabelTarefa(this.value);
 });
 
@@ -2528,10 +2581,12 @@ function selPrio(btn) {
 }
 
 async function salvarTarefa() {
+  const aba = document.getElementById('f-aba').value;
+  if (!aba) { showToast('⚠️ Escolha a pasta'); return; }
+
   const tarefa = document.getElementById('f-tarefa').value.trim();
   if (!tarefa) { showToast('⚠️ Digite o nome da tarefa'); return; }
 
-  const aba = document.getElementById('f-aba').value;
   const catSel = document.getElementById('f-categoria').value;
   const categoria = catSel === '__nova__'
     ? document.getElementById('f-nova-cat').value.trim()
