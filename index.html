@@ -263,6 +263,7 @@
     margin-bottom: 4px;
   }
   #main.vista-lista .tarefa-top { flex: 1 1 160px; min-width: 120px; }
+  #main.vista-lista .tarefa-acoes-topo { display: flex; gap: 2px; flex-shrink: 0; }
   #main.vista-lista .tarefa-nome {
     white-space: nowrap;
     overflow: hidden;
@@ -2105,15 +2106,24 @@ function cardHtml(t) {
 
   const chaveSelecao = `${t._aba}::${t.ID}`;
   const dadosJson = JSON.stringify(t).replace(/'/g,"&#39;");
+  const botoesTopo = `
+    <button class="btn-editar-topo" onclick='duplicarTarefa(${dadosJson})' title="Duplicar tarefa">📄</button>
+    <button class="btn-editar-topo" onclick='openEditModal(${dadosJson})' title="Editar tarefa">✏️</button>
+  `;
+  const metaHtml = meta.length || observacaoHtml
+    ? `<div class="tarefa-meta">${meta.map(m => `<span class="meta-item">${m}</span>`).join('')}${observacaoHtml}</div>`
+    : '';
+  const emLista = vistaModo === 'lista';
   return `
     <div class="tarefa-card prioridade-${prio} status-${status.replace(/\s/g,'')}" id="card-${t.ID}">
       <div class="tarefa-top">
         ${modoSelecao ? `<input type="checkbox" class="check-selecao" ${selecionados.has(chaveSelecao) ? 'checked' : ''} onchange="toggleSelecionado('${chaveSelecao}', this.checked)">` : ''}
         <div class="tarefa-nome">${t.Tarefa}</div>
-        <button class="btn-editar-topo" onclick='duplicarTarefa(${dadosJson})' title="Duplicar tarefa">📄</button>
-        <button class="btn-editar-topo" onclick='openEditModal(${dadosJson})' title="Editar tarefa">✏️</button>
+        ${emLista ? '' : botoesTopo}
       </div>
-      ${meta.length || observacaoHtml ? `<div class="tarefa-meta">${meta.map(m => `<span class="meta-item">${m}</span>`).join('')}${observacaoHtml}</div>` : ''}
+      ${emLista ? metaHtml : ''}
+      ${emLista ? `<div class="tarefa-acoes-topo">${botoesTopo}</div>` : ''}
+      ${emLista ? '' : metaHtml}
       <div class="mini-legenda">Prioridade e Status atual:</div>
       <div class="badges">
         <span class="badge badge-prio-${prio}">${prio}</span>
