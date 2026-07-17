@@ -292,7 +292,8 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
+    justify-content: flex-end;
     justify-self: end;
   }
   #main.vista-lista .tarefa-acoes-topo { display: flex; gap: 2px; flex-shrink: 0; }
@@ -854,6 +855,20 @@
   .form-group { margin-bottom: 14px; }
 
   .form-row { display: flex; gap: 10px; }
+  .campo-com-limpar { display: flex; gap: 6px; align-items: center; }
+  .campo-com-limpar input { flex: 1; min-width: 0; }
+  .btn-limpar-campo {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: var(--gray-light);
+    color: var(--text-muted);
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .btn-limpar-campo:active { background: var(--danger-light); color: var(--danger); }
   .form-row .form-group { flex: 1; }
 
   .btn-lembrete-modal {
@@ -1217,8 +1232,8 @@
   </div>
 
   <div class="quick-bar">
-    <input type="search" id="search-local-input" class="search-input-inline" placeholder="🔎 Pesquisar só na pasta atual..." oninput="setSearchLocal(this.value)">
-    <button class="btn-filtro-pill" id="btn-busca-escopo" onclick="toggleBuscaEscopo()">🌐 Todas as pastas</button>
+    <input type="search" id="search-local-input" class="search-input-inline" placeholder="🔎 Pesquisar em TODAS as pastas..." oninput="setSearchLocal(this.value)">
+    <button class="btn-filtro-pill" id="btn-busca-escopo" onclick="toggleBuscaEscopo()">📍 Restringir a esta pasta</button>
     <button class="btn-filtro-pill" id="btn-abrir-filtros" onclick="abrirModalFiltros()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 4 20 4 14 13 14 20 10 20 10 13"/></svg>
       Filtros
@@ -1365,11 +1380,17 @@
     <div class="form-row">
       <div class="form-group">
         <label>Data prevista (opcional)</label>
-        <input type="date" id="f-data">
+        <div class="campo-com-limpar">
+          <input type="date" id="f-data">
+          <button type="button" class="btn-limpar-campo" onclick="document.getElementById('f-data').value=''" title="Apagar data">✕</button>
+        </div>
       </div>
       <div class="form-group">
         <label>Hora (opcional)</label>
-        <input type="time" id="f-hora">
+        <div class="campo-com-limpar">
+          <input type="time" id="f-hora">
+          <button type="button" class="btn-limpar-campo" onclick="document.getElementById('f-hora').value=''" title="Apagar hora">✕</button>
+        </div>
       </div>
     </div>
 
@@ -1572,7 +1593,7 @@ function atualizarChipsAtivos() {
 let searchTerm = '';       // busca global (barra de cima) — sempre cruza todas as abas
 let searchTermLocal = '';  // busca local (linha de filtros) — só dentro da aba atual
 let categoriasColapsadas = new Set();
-let buscaTodasPastas = false; // liga/desliga o alcance da busca rápida da quick-bar
+let buscaTodasPastas = true; // liga/desliga o alcance da busca rápida da quick-bar — nasce ligado (pesquisa em tudo), assim ninguém acha "não existe" por estar na pasta errada
 
 // Tira acentos pra pesquisa não fazer diferença entre "farmacia" e "farmácia"
 const MAPA_ACENTOS = { á:'a', à:'a', â:'a', ã:'a', ä:'a', é:'e', è:'e', ê:'e', ë:'e', í:'i', ì:'i', î:'i', ï:'i', ó:'o', ò:'o', ô:'o', õ:'o', ö:'o', ú:'u', ù:'u', û:'u', ü:'u', ç:'c' };
@@ -1608,7 +1629,7 @@ function toggleBuscaEscopo() {
   buscaTodasPastas = !buscaTodasPastas;
   const btn = document.getElementById('btn-busca-escopo');
   const input = document.getElementById('search-local-input');
-  btn.classList.toggle('ativo', buscaTodasPastas);
+  btn.classList.toggle('ativo', !buscaTodasPastas);
   input.placeholder = buscaTodasPastas ? '🔎 Pesquisar em TODAS as pastas...' : '🔎 Pesquisar só na pasta atual...';
   // Reaplica o termo já digitado no novo alcance
   setSearchLocal(input.value);
@@ -2193,10 +2214,10 @@ function cardHtml(t) {
 
   if (emLista) {
     return `
-      <div class="tarefa-card prioridade-${prio} status-${status.replace(/\s/g,'')}" id="card-${t.ID}">
+      <div class="tarefa-card prioridade-${prio} status-${status.replace(/\s/g,'')}" id="card-${t.ID}" title="${t.Tarefa}">
         <div class="tarefa-top">
           ${modoSelecao ? `<input type="checkbox" class="check-selecao" ${selecionados.has(chaveSelecao) ? 'checked' : ''} onchange="toggleSelecionado('${chaveSelecao}', this.checked)">` : ''}
-          <div class="tarefa-nome" title="${t.Tarefa}">${nomeExibido}</div>
+          <div class="tarefa-nome">${nomeExibido}</div>
         </div>
         ${metaHtml}
         <div class="tarefa-lista-direita">
