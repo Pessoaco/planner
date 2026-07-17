@@ -267,6 +267,15 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    cursor: pointer;
+  }
+  #main.vista-lista .tarefa-nome.expandido {
+    white-space: normal;
+    overflow: visible;
+    background: var(--primary-light);
+    border-radius: 6px;
+    padding: 2px 6px;
+    margin: -2px -6px;
   }
   #main.vista-lista .mini-legenda { display: none; }
   #main.vista-lista .tarefa-meta {
@@ -2213,11 +2222,13 @@ function cardHtml(t) {
   ` : '';
 
   if (emLista) {
+    const nomeAttr = String(t.Tarefa || '').replace(/"/g, '&quot;');
+    const nomeCurtoAttr = String(nomeExibido || '').replace(/"/g, '&quot;');
     return `
-      <div class="tarefa-card prioridade-${prio} status-${status.replace(/\s/g,'')}" id="card-${t.ID}" title="${t.Tarefa}">
+      <div class="tarefa-card prioridade-${prio} status-${status.replace(/\s/g,'')}" id="card-${t.ID}">
         <div class="tarefa-top">
           ${modoSelecao ? `<input type="checkbox" class="check-selecao" ${selecionados.has(chaveSelecao) ? 'checked' : ''} onchange="toggleSelecionado('${chaveSelecao}', this.checked)">` : ''}
-          <div class="tarefa-nome">${nomeExibido}</div>
+          <div class="tarefa-nome" data-full="${nomeAttr}" data-curto="${nomeCurtoAttr}" onclick="this.classList.toggle('expandido'); this.textContent = this.classList.contains('expandido') ? this.dataset.full : this.dataset.curto;">${nomeExibido}</div>
         </div>
         ${metaHtml}
         <div class="tarefa-lista-direita">
