@@ -1241,8 +1241,8 @@
   </div>
 
   <div class="quick-bar">
-    <input type="search" id="search-local-input" class="search-input-inline" placeholder="🔎 Pesquisar em TODAS as pastas..." oninput="setSearchLocal(this.value)">
-    <button class="btn-filtro-pill" id="btn-busca-escopo" onclick="toggleBuscaEscopo()">📍 Restringir a esta pasta</button>
+    <input type="search" id="search-local-input" class="search-input-inline" placeholder="🔎 PESQUISAR EM TODAS AS PASTAS..." oninput="setSearchLocal(this.value)">
+    <button class="btn-filtro-pill" id="btn-busca-escopo" onclick="toggleBuscaEscopo()">📍 Pesquisar somente na pasta selecionada</button>
     <button class="btn-filtro-pill" id="btn-abrir-filtros" onclick="abrirModalFiltros()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 4 20 4 14 13 14 20 10 20 10 13"/></svg>
       Filtros
@@ -1639,7 +1639,7 @@ function toggleBuscaEscopo() {
   const btn = document.getElementById('btn-busca-escopo');
   const input = document.getElementById('search-local-input');
   btn.classList.toggle('ativo', !buscaTodasPastas);
-  input.placeholder = buscaTodasPastas ? '🔎 Pesquisar em TODAS as pastas...' : '🔎 Pesquisar só na pasta atual...';
+  input.placeholder = buscaTodasPastas ? '🔎 PESQUISAR EM TODAS AS PASTAS...' : '🔎 Pesquisar só na pasta atual...';
   // Reaplica o termo já digitado no novo alcance
   setSearchLocal(input.value);
 }
