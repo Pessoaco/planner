@@ -538,6 +538,20 @@
     user-select: none;
   }
 
+  .btn-nova-na-divisao {
+    background: var(--primary-light);
+    color: var(--primary);
+    border: none;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .btn-nova-na-divisao:active { background: var(--primary); color: white; }
+
   .categoria-title {
     font-size: 13px;
     font-weight: 800;
@@ -2200,6 +2214,7 @@ function renderTarefas(tarefas) {
       <div class="categoria-group">
         <div class="categoria-header" onclick="toggleCategoria('${cat}')">
           <span class="categoria-title" style="${corAba}">${iconeCategoria(cat)} ${cat}</span>
+          <button class="btn-nova-na-divisao" onclick="event.stopPropagation(); abrirNovaTarefaNaDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').replace(/'/g,"\\'")}')" title="Nova tarefa nesta divisão">➕</button>
           <span class="categoria-count">${items.length}</span>
           <span class="categoria-toggle">${colapsado ? '▶' : '▼'}</span>
         </div>
@@ -2632,6 +2647,16 @@ async function openAddModal() {
   document.getElementById('btn-excluir-modal').style.display = 'none';
   document.querySelectorAll('.prio-btn').forEach(b => b.classList.toggle('sel', b.dataset.p === 'Urgente'));
   document.getElementById('modal-add').classList.add('open');
+}
+
+// Abre "Nova tarefa" já com a Pasta e a Divisão escolhidas — usado pelo "➕" ao lado do nome da divisão na listagem
+async function abrirNovaTarefaNaDivisao(aba, divisao) {
+  await openAddModal();
+  document.getElementById('f-aba').value = aba;
+  preencherCategorias(aba);
+  atualizaLabelTarefa(aba);
+  document.getElementById('f-categoria').value = divisao;
+  document.getElementById('f-tarefa').focus();
 }
 
 // Cria uma cópia da tarefa (mesma divisão/prioridade/status/envolvido) e já abre pra renomear
