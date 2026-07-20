@@ -222,6 +222,8 @@
   .quick-bar .btn-refresh { flex-shrink: 0; white-space: nowrap; }
   .quick-urgentes { background: var(--danger-light); color: var(--danger); font-weight: 700; }
   .quick-urgentes:active { background: var(--danger); color: white; }
+  .quick-agenda { background: var(--primary-light); color: var(--primary); font-weight: 700; }
+  .quick-agenda:active { background: var(--primary); color: white; }
 
   /* Resumo dos filtros ativos, uma linha pequena abaixo da busca */
   .chips-ativos {
@@ -1263,6 +1265,8 @@
     </div>
     <div class="header-botoes">
       <button class="btn-refresh quick-urgentes" id="btn-urgentes" onclick="atalhoUrgentes()">🔥 Urgentes</button>
+      <button class="btn-refresh quick-agenda" onclick="atalhoAgenda('hoje')">📅 Hoje</button>
+      <button class="btn-refresh quick-agenda" onclick="atalhoAgenda('semana')">🗓️ Semana</button>
       <button class="btn-refresh btn-vista" id="btn-vista" onclick="toggleVista()" title="Trocar entre cards e lista">▦ Cards</button>
       <button class="btn-refresh" onclick="openAddModal()" title="Nova tarefa">➕ Nova</button>
       <button class="btn-refresh" onclick="loadData()">↻ Atualizar</button>
@@ -1277,7 +1281,7 @@
       </button>
     </div>
     <div class="search-com-filtro">
-      <input type="search" id="search-local-input" class="search-input-inline" placeholder="📍 ESTA PASTA..." oninput="setSearchLocal(this.value)">
+      <input type="search" id="search-local-input" class="search-input-inline" placeholder="📍 PESQUISAR NA PASTA ATUAL..." oninput="setSearchLocal(this.value)">
       <button class="btn-filtro-icone" onclick="abrirModalFiltros('local')" title="Filtros desta pasta">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 4 20 4 14 13 14 20 10 20 10 13"/></svg>
       </button>
@@ -1535,7 +1539,7 @@ let filtroEnvolvidoG = new Set();
 
 function algumFiltroAtivo() {
   // Só os filtros GLOBAIS (+ busca por texto) forçam o modo cruzado entre abas
-  return filtroPrioridadeG.size > 0 || filtroStatusG.size > 0 || filtroEnvolvidoG.size > 0 || !!searchTerm;
+  return filtroPrioridadeG.size > 0 || filtroStatusG.size > 0 || filtroEnvolvidoG.size > 0 || !!searchTerm || !!modoAgendaPeriodo;
 }
 
 function nenhumFiltroAtivoTotal() {
@@ -1612,6 +1616,7 @@ function fecharModalFiltros() {
 // Se marcado, o atalho Urgentes esconde tarefas com Status "Aguardando" (não depende mais da pessoa agora)
 let esconderAguardandoDosUrgentes = JSON.parse(localStorage.getItem('esconderAguardandoDosUrgentes') || 'true');
 let modoUrgentesAtivo = false;
+let modoAgendaPeriodo = null; // null | 'hoje' | 'semana' — mostra o que tem Data Prevista nesse período + tudo que é Urgente
 
 function alternarEsconderAguardando(marcado) {
   esconderAguardandoDosUrgentes = marcado;
@@ -1619,8 +1624,14 @@ function alternarEsconderAguardando(marcado) {
   if (modoUrgentesAtivo) render();
 }
 
+function limparModosAtalho() {
+  modoUrgentesAtivo = false;
+  modoAgendaPeriodo = null;
+}
+
 // Atalho de um toque: mostra só as Urgentes, de todas as pastas
 function atalhoUrgentes() {
+  limparModosAtalho();
   modoUrgentesAtivo = true;
   filtroPrioridadeG = new Set(['Urgente']);
   filtroStatusG = new Set();
@@ -1633,6 +1644,23 @@ function atalhoUrgentes() {
   renderTabs();
   render();
   showToast('🔥 Mostrando urgentes de todas as pastas');
+}
+
+// Atalho: mostra o que está agendado (Data Prevista) pra hoje/semana, MAIS tudo que é Urgente (não importa a data)
+function atalhoAgenda(periodo) {
+  limparModosAtalho();
+  modoAgendaPeriodo = periodo;
+  filtroPrioridadeG = new Set();
+  filtroStatusG = new Set();
+  filtroEnvolvidoG = new Set();
+  searchTerm = '';
+  const si = document.getElementById('search-input');
+  if (si) si.value = '';
+  atualizarBotoesFiltro();
+  popularBotoesEnvolvidos();
+  renderTabs();
+  render();
+  showToast(periodo === 'hoje' ? '📅 Mostrando o de hoje + urgentes' : '🗓️ Mostrando a semana + urgentes');
 }
 
 // Resume os filtros ativos numa linha de chips, pra sempre saber o que está filtrado
@@ -1667,6 +1695,7 @@ function normalizarBusca(s) {
 // Digitar uma busca rápida assume que a pessoa quer ver isso agora — some com filtros de prioridade/status/envolvido antigos
 function limparFiltrosAoDigitar() {
   modoUrgentesAtivo = false;
+  modoAgendaPeriodo = null;
   filtroPrioridade = new Set();
   filtroStatus = new Set();
   filtroEnvolvido = new Set();
@@ -1913,6 +1942,7 @@ function toggleVista() {
 function switchTab(aba) {
   abaAtual = aba;
   modoUrgentesAtivo = false;
+  modoAgendaPeriodo = null;
   // Trocar de pasta limpa qualquer filtro ativo (local ou geral, tipo Urgentes) — evita confusão de achar que ainda tá filtrado
   searchTerm = '';
   searchTermLocal = '';
@@ -1946,6 +1976,7 @@ function atualizarBotoesFiltro() {
 
 function setFilter(grupo, valor) {
   modoUrgentesAtivo = false;
+  modoAgendaPeriodo = null;
   if (grupo === 'todos') {
     filtroPrioridade = new Set();
     filtroStatus = new Set();
@@ -2060,6 +2091,17 @@ function filtrarTarefas(tarefas) {
     filtradas = filtradas.filter(t => !['Iniciado', 'Aguardando'].includes((t.Status || '').trim()));
   }
 
+  // Atalho "Hoje"/"Semana": Prioridade e Data Prevista são coisas diferentes — mostra o que está
+  // agendado pra esse período MAIS qualquer coisa Urgente (mesmo sem data ou com data mais distante)
+  if (modoAgendaPeriodo) {
+    filtradas = filtradas.filter(t =>
+      (t.Prioridade || '').trim() === 'Urgente' || dataDentroDoPeriodo(t['Data Prevista'], modoAgendaPeriodo)
+    );
+    if (esconderAguardandoDosUrgentes) {
+      filtradas = filtradas.filter(t => !['Iniciado', 'Aguardando'].includes((t.Status || '').trim()));
+    }
+  }
+
   if (searchTerm) {
     filtradas = filtradas.filter(t =>
       normalizarBusca(t.Tarefa).includes(searchTerm) ||
@@ -2172,6 +2214,39 @@ function renderTarefas(tarefas) {
 }
 
 // Evita o bug de new Date() interpretar "10/07/2026" como mês/dia (formato americano)
+// Converte "Data Prevista" da planilha (dd/MM/yyyy ou yyyy-MM-dd) num objeto Date, sem hora — só pra comparar dias
+function paraDataObj(dataRaw) {
+  const raw = String(dataRaw || '').trim();
+  if (!raw) return null;
+  const br = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if (br) {
+    const [, dd, mm, yyyy] = br;
+    return new Date(yyyy.length === 2 ? '20' + yyyy : yyyy, mm - 1, dd);
+  }
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) {
+    const [, yyyy, mm, dd] = iso;
+    return new Date(yyyy, mm - 1, dd);
+  }
+  return null;
+}
+
+// "hoje" = só o dia de hoje. "semana" = hoje até 6 dias à frente (os próximos 7 dias)
+function dataDentroDoPeriodo(dataRaw, periodo) {
+  const d = paraDataObj(dataRaw);
+  if (!d) return false;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  d.setHours(0, 0, 0, 0);
+  if (periodo === 'hoje') return d.getTime() === hoje.getTime();
+  if (periodo === 'semana') {
+    const limite = new Date(hoje);
+    limite.setDate(limite.getDate() + 6);
+    return d >= hoje && d <= limite;
+  }
+  return false;
+}
+
 function formatarDataBR(dataRaw) {
   const raw = String(dataRaw).trim();
 
