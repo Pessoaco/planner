@@ -1317,6 +1317,10 @@
 
     <div class="filtros-secao" id="filtros-secao-local">
       <div class="filtros-divisor" style="margin-top:0;padding-top:0;border-top:none">📍 Nesta pasta</div>
+      <div class="filtro-legenda">Agenda</div>
+      <button class="filter-btn" onclick="atalhoAgenda('hoje','local')">📅 Hoje</button>
+      <button class="filter-btn" onclick="atalhoAgenda('semana','local')">🗓️ Semana</button>
+      <div class="filters-break"></div>
       <div class="filtro-legenda">Prioridade</div>
       <button class="filter-btn" data-grupo="prioridade" data-valor="Urgente" onclick="setFilter('prioridade','Urgente')">🔴 Urgente</button>
       <button class="filter-btn" data-grupo="prioridade" data-valor="Média" onclick="setFilter('prioridade','Média')">🟡 Média</button>
@@ -1553,7 +1557,7 @@ let filtroEnvolvidoG = new Set();
 
 function algumFiltroAtivo() {
   // Só os filtros GLOBAIS (+ busca por texto) forçam o modo cruzado entre abas
-  return filtroPrioridadeG.size > 0 || filtroStatusG.size > 0 || filtroEnvolvidoG.size > 0 || !!searchTerm || !!modoAgendaPeriodo;
+  return filtroPrioridadeG.size > 0 || filtroStatusG.size > 0 || filtroEnvolvidoG.size > 0 || !!searchTerm || (!!modoAgendaPeriodo && modoAgendaEscopo === 'global');
 }
 
 function nenhumFiltroAtivoTotal() {
@@ -1631,6 +1635,7 @@ function fecharModalFiltros() {
 let esconderAguardandoDosUrgentes = JSON.parse(localStorage.getItem('esconderAguardandoDosUrgentes') || 'true');
 let modoUrgentesAtivo = false;
 let modoAgendaPeriodo = null; // null | 'hoje' | 'semana' — mostra o que tem Data Prevista nesse período + tudo que é Urgente
+let modoAgendaEscopo = 'global'; // 'global' (todas as pastas, atalho do cabeçalho) | 'local' (só a pasta aberta, filtro avançado)
 
 function alternarEsconderAguardando(marcado) {
   esconderAguardandoDosUrgentes = marcado;
@@ -1661,15 +1666,21 @@ function atalhoUrgentes() {
 }
 
 // Atalho: mostra o que está agendado (Data Prevista) pra hoje/semana, MAIS tudo que é Urgente (não importa a data)
-function atalhoAgenda(periodo) {
+// escopo 'global' = todas as pastas (atalho do cabeçalho). 'local' = só a pasta aberta (dentro do Filtros).
+function atalhoAgenda(periodo, escopo) {
   limparModosAtalho();
   modoAgendaPeriodo = periodo;
+  modoAgendaEscopo = escopo || 'global';
+  filtroPrioridade = new Set();
+  filtroStatus = new Set();
+  filtroEnvolvido = new Set();
   filtroPrioridadeG = new Set();
   filtroStatusG = new Set();
   filtroEnvolvidoG = new Set();
   searchTerm = '';
   const si = document.getElementById('search-input');
   if (si) si.value = '';
+  if (modoAgendaEscopo === 'local') fecharModalFiltros();
   atualizarBotoesFiltro();
   popularBotoesEnvolvidos();
   renderTabs();
@@ -1682,6 +1693,7 @@ function atualizarChipsAtivos() {
   const cruzado = algumFiltroAtivo();
   const chips = [];
   if (cruzado) chips.push('🌐 Todas as pastas');
+  if (modoAgendaPeriodo) chips.push(modoAgendaPeriodo === 'hoje' ? '📅 Hoje + Urgente' : '🗓️ Semana + Urgente');
   const prio = cruzado ? filtroPrioridadeG : filtroPrioridade;
   const stat = cruzado ? filtroStatusG : filtroStatus;
   const env = cruzado ? filtroEnvolvidoG : filtroEnvolvido;
@@ -2204,8 +2216,31 @@ function renderTarefas(tarefas) {
 
   const priOrd = { 'Urgente': 0, 'Média': 1, 'Baixa': 2 };
 
-  const html = Object.entries(grupos).sort(([a], [b]) => a.localeCompare(b)).map(([cat, items]) => {
-    items.sort((a, b) => (priOrd[a.Prioridade] ?? 1) - (priOrd[b.Prioridade] ?? 1));
+  // No modo Hoje/Semana, quem tem data+hora marcada vem primeiro (na ordem do relógio),
+  // e só depois vêm as urgentes sem data — senão a ordem alfabética das divisões esconde os horários
+  const ordenacaoPorAgenda = !!modoAgendaPeriodo;
+  const timestampTarefa = t => {
+    const d = paraDataObj(t['Data Prevista']);
+    if (!d) return Infinity;
+    const partes = String(t.Hora || '').trim().split(':');
+    if (partes.length >= 2) d.setHours(Number(partes[0]) || 0, Number(partes[1]) || 0, 0, 0);
+    return d.getTime();
+  };
+
+  const gruposOrdenados = ordenacaoPorAgenda
+    ? Object.entries(grupos).sort(([, itemsA], [, itemsB]) => {
+        const minA = Math.min(...itemsA.map(timestampTarefa));
+        const minB = Math.min(...itemsB.map(timestampTarefa));
+        return minA - minB;
+      })
+    : Object.entries(grupos).sort(([a], [b]) => a.localeCompare(b));
+
+  const html = gruposOrdenados.map(([cat, items]) => {
+    if (ordenacaoPorAgenda) {
+      items.sort((a, b) => timestampTarefa(a) - timestampTarefa(b));
+    } else {
+      items.sort((a, b) => (priOrd[a.Prioridade] ?? 1) - (priOrd[b.Prioridade] ?? 1));
+    }
     const colapsado = categoriasColapsadas.has(cat + abaAtual);
     const itemsHtml = colapsado ? '' : items.map(t => cardHtml(t)).join('');
     // Na busca cruzada, colore a categoria com a cor da aba de origem (tipo etiqueta do fichário)
