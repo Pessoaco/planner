@@ -216,7 +216,8 @@
   .header-titulo-linha .quick-urgentes { padding: 6px 10px; font-size: 12px; }
 
   /* Barra compacta: busca da pasta + atalhos, sempre visível mas enxuta */
-  .quick-bar { display: flex; gap: 6px; align-items: center; margin: 6px 0; }
+  .quick-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; }
+  .quick-bar .search-com-filtro { min-width: 160px; }
   .quick-bar .search-input-inline { flex: 1 1 auto; min-width: 0; }
   .quick-bar .btn-refresh { flex-shrink: 0; white-space: nowrap; }
   .quick-urgentes { background: var(--danger-light); color: var(--danger); font-weight: 700; }
@@ -245,6 +246,13 @@
     align-items: center;
   }
   #modal-filtros .modal-titulo-linha { flex-basis: 100%; }
+  .filtros-secao {
+    flex-basis: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
 
   .filtros-divisor {
     flex-basis: 100%;
@@ -1263,16 +1271,14 @@
 
   <div class="quick-bar">
     <div class="search-com-filtro">
-      <input type="search" id="search-input" class="search-input-inline" placeholder="🔎 PESQUISAR EM TODAS AS PASTAS..." oninput="setSearch(this.value)">
-      <button class="btn-filtro-icone" onclick="abrirModalFiltros()" title="Filtros avançados">
+      <input type="search" id="search-input" class="search-input-inline" placeholder="🔎 TODAS AS PASTAS..." oninput="setSearch(this.value)">
+      <button class="btn-filtro-icone" onclick="abrirModalFiltros('global')" title="Filtros de todas as pastas">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 4 20 4 14 13 14 20 10 20 10 13"/></svg>
       </button>
     </div>
-  </div>
-  <div class="quick-bar">
     <div class="search-com-filtro">
-      <input type="search" id="search-local-input" class="search-input-inline" placeholder="📍 PESQUISAR NA PASTA ATUAL..." oninput="setSearchLocal(this.value)">
-      <button class="btn-filtro-icone" onclick="abrirModalFiltros()" title="Filtros desta pasta">
+      <input type="search" id="search-local-input" class="search-input-inline" placeholder="📍 ESTA PASTA..." oninput="setSearchLocal(this.value)">
+      <button class="btn-filtro-icone" onclick="abrirModalFiltros('local')" title="Filtros desta pasta">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 4 20 4 14 13 14 20 10 20 10 13"/></svg>
       </button>
     </div>
@@ -1291,42 +1297,47 @@
       <button class="modal-fechar-x" onclick="fecharModalFiltros()" title="Fechar">✕</button>
     </div>
 
-    <div class="filtros-divisor" style="margin-top:0;padding-top:0;border-top:none">📍 Nesta pasta</div>
-    <div class="filtro-legenda">Prioridade</div>
-    <button class="filter-btn" data-grupo="prioridade" data-valor="Urgente" onclick="setFilter('prioridade','Urgente')">🔴 Urgente</button>
-    <button class="filter-btn" data-grupo="prioridade" data-valor="Média" onclick="setFilter('prioridade','Média')">🟡 Média</button>
-    <button class="filter-btn" data-grupo="prioridade" data-valor="Baixa" onclick="setFilter('prioridade','Baixa')">🟢 Baixa</button>
-    <div class="filters-break"></div>
-    <div class="filtro-legenda">Status</div>
-    <button class="filter-btn" data-grupo="status" data-valor="Aberto" onclick="setFilter('status','Aberto')">Aberto</button>
-    <button class="filter-btn" data-grupo="status" data-valor="Em Andamento" onclick="setFilter('status','Em Andamento')">Em andamento</button>
-    <button class="filter-btn" data-grupo="status" data-valor="Iniciado" onclick="setFilter('status','Iniciado')">▶️ Iniciado</button>
-    <button class="filter-btn" data-grupo="status" data-valor="A conferir" onclick="setFilter('status','A conferir')">🔍 A conferir</button>
-    <button class="filter-btn" data-grupo="status" data-valor="Feito" onclick="setFilter('status','Feito')">✔️ Feito</button>
-    <button class="filter-btn" data-grupo="status" data-valor="Aguardando" onclick="setFilter('status','Aguardando')">🕓 Aguardando</button>
-    <button class="filter-btn" data-grupo="status" data-valor="Concluído" onclick="setFilter('status','Concluído')">Concluídas</button>
-    <div class="filters-break"></div>
-    <div class="filtro-legenda">Envolvidos</div>
-    <button class="filter-btn" id="btn-envolvidos" onclick="abrirModalEnvolvidos(false)">👤 Envolvidos</button>
+    <div class="filtros-secao" id="filtros-secao-local">
+      <div class="filtros-divisor" style="margin-top:0;padding-top:0;border-top:none">📍 Nesta pasta</div>
+      <div class="filtro-legenda">Prioridade</div>
+      <button class="filter-btn" data-grupo="prioridade" data-valor="Urgente" onclick="setFilter('prioridade','Urgente')">🔴 Urgente</button>
+      <button class="filter-btn" data-grupo="prioridade" data-valor="Média" onclick="setFilter('prioridade','Média')">🟡 Média</button>
+      <button class="filter-btn" data-grupo="prioridade" data-valor="Baixa" onclick="setFilter('prioridade','Baixa')">🟢 Baixa</button>
+      <div class="filters-break"></div>
+      <div class="filtro-legenda">Status</div>
+      <button class="filter-btn" data-grupo="status" data-valor="Aberto" onclick="setFilter('status','Aberto')">Aberto</button>
+      <button class="filter-btn" data-grupo="status" data-valor="Em Andamento" onclick="setFilter('status','Em Andamento')">Em andamento</button>
+      <button class="filter-btn" data-grupo="status" data-valor="Iniciado" onclick="setFilter('status','Iniciado')">▶️ Iniciado</button>
+      <button class="filter-btn" data-grupo="status" data-valor="A conferir" onclick="setFilter('status','A conferir')">🔍 A conferir</button>
+      <button class="filter-btn" data-grupo="status" data-valor="Feito" onclick="setFilter('status','Feito')">✔️ Feito</button>
+      <button class="filter-btn" data-grupo="status" data-valor="Aguardando" onclick="setFilter('status','Aguardando')">🕓 Aguardando</button>
+      <button class="filter-btn" data-grupo="status" data-valor="Concluído" onclick="setFilter('status','Concluído')">Concluídas</button>
+      <div class="filters-break"></div>
+      <div class="filtro-legenda">Envolvidos</div>
+      <button class="filter-btn" id="btn-envolvidos" onclick="abrirModalEnvolvidos(false)">👤 Envolvidos</button>
+    </div>
 
-    <div class="filtros-divisor">🌐 EM TODAS AS PASTAS</div>
+    <div class="filtros-secao" id="filtros-secao-global">
+      <div class="filtros-divisor" style="margin-top:0;padding-top:0;border-top:none">🌐 Em todas as pastas</div>
+      <div class="filtro-legenda">Prioridade</div>
+      <button class="filter-btn" data-grupo="prioridadeG" data-valor="Urgente" onclick="setFilter('prioridadeG','Urgente')">🔴 Urgente</button>
+      <button class="filter-btn" data-grupo="prioridadeG" data-valor="Média" onclick="setFilter('prioridadeG','Média')">🟡 Média</button>
+      <button class="filter-btn" data-grupo="prioridadeG" data-valor="Baixa" onclick="setFilter('prioridadeG','Baixa')">🟢 Baixa</button>
+      <div class="filters-break"></div>
+      <div class="filtro-legenda">Status</div>
+      <button class="filter-btn" data-grupo="statusG" data-valor="Aberto" onclick="setFilter('statusG','Aberto')">Aberto</button>
+      <button class="filter-btn" data-grupo="statusG" data-valor="Em Andamento" onclick="setFilter('statusG','Em Andamento')">Em andamento</button>
+      <button class="filter-btn" data-grupo="statusG" data-valor="Iniciado" onclick="setFilter('statusG','Iniciado')">▶️ Iniciado</button>
+      <button class="filter-btn" data-grupo="statusG" data-valor="A conferir" onclick="setFilter('statusG','A conferir')">🔍 A conferir</button>
+      <button class="filter-btn" data-grupo="statusG" data-valor="Feito" onclick="setFilter('statusG','Feito')">✔️ Feito</button>
+      <button class="filter-btn" data-grupo="statusG" data-valor="Aguardando" onclick="setFilter('statusG','Aguardando')">🕓 Aguardando</button>
+      <button class="filter-btn" data-grupo="statusG" data-valor="Concluído" onclick="setFilter('statusG','Concluído')">Concluídas</button>
+      <div class="filters-break"></div>
+      <div class="filtro-legenda">Envolvidos</div>
+      <button class="filter-btn" id="btn-envolvidos-g" onclick="abrirModalEnvolvidos(true)">👤 Envolvidos</button>
+    </div>
 
-    <div class="filtro-legenda">Prioridade (todas as pastas)</div>
-    <button class="filter-btn" data-grupo="prioridadeG" data-valor="Urgente" onclick="setFilter('prioridadeG','Urgente')">🔴 Urgente</button>
-    <button class="filter-btn" data-grupo="prioridadeG" data-valor="Média" onclick="setFilter('prioridadeG','Média')">🟡 Média</button>
-    <button class="filter-btn" data-grupo="prioridadeG" data-valor="Baixa" onclick="setFilter('prioridadeG','Baixa')">🟢 Baixa</button>
-    <div class="filters-break"></div>
-    <div class="filtro-legenda">Status (todas as pastas)</div>
-    <button class="filter-btn" data-grupo="statusG" data-valor="Aberto" onclick="setFilter('statusG','Aberto')">Aberto</button>
-    <button class="filter-btn" data-grupo="statusG" data-valor="Em Andamento" onclick="setFilter('statusG','Em Andamento')">Em andamento</button>
-    <button class="filter-btn" data-grupo="statusG" data-valor="Iniciado" onclick="setFilter('statusG','Iniciado')">▶️ Iniciado</button>
-    <button class="filter-btn" data-grupo="statusG" data-valor="A conferir" onclick="setFilter('statusG','A conferir')">🔍 A conferir</button>
-    <button class="filter-btn" data-grupo="statusG" data-valor="Feito" onclick="setFilter('statusG','Feito')">✔️ Feito</button>
-    <button class="filter-btn" data-grupo="statusG" data-valor="Aguardando" onclick="setFilter('statusG','Aguardando')">🕓 Aguardando</button>
-    <button class="filter-btn" data-grupo="statusG" data-valor="Concluído" onclick="setFilter('statusG','Concluído')">Concluídas</button>
-    <div class="filters-break"></div>
-    <div class="filtro-legenda">Envolvidos (todas as pastas)</div>
-    <button class="filter-btn" id="btn-envolvidos-g" onclick="abrirModalEnvolvidos(true)">👤 Envolvidos</button>
+    <button class="menu-mais-item" id="btn-ver-outra-secao" onclick="alternarSecaoFiltros()" style="text-align:center;font-weight:700"></button>
 
     <button class="filter-btn active" data-grupo="todos" onclick="setFilter('todos')" id="btn-todas" style="width:100%;justify-content:center;margin-top:16px">🔄 Limpar todos os filtros</button>
     <button class="modal-cancel" onclick="fecharModalFiltros()" style="margin-top:8px">Fechar</button>
@@ -1574,7 +1585,23 @@ function fecharModalMais() {
   document.getElementById('modal-mais').classList.remove('open');
 }
 
-function abrirModalFiltros() {
+let secaoFiltrosAtual = 'local';
+
+function mostrarSecaoFiltros(escopo) {
+  secaoFiltrosAtual = escopo;
+  document.getElementById('filtros-secao-local').style.display = escopo === 'local' ? 'block' : 'none';
+  document.getElementById('filtros-secao-global').style.display = escopo === 'global' ? 'block' : 'none';
+  document.getElementById('btn-ver-outra-secao').textContent = escopo === 'local'
+    ? '🌐 Ver filtros de todas as pastas'
+    : '📍 Ver filtros só desta pasta';
+}
+
+function alternarSecaoFiltros() {
+  mostrarSecaoFiltros(secaoFiltrosAtual === 'local' ? 'global' : 'local');
+}
+
+function abrirModalFiltros(escopo) {
+  mostrarSecaoFiltros(escopo || 'local');
   document.getElementById('modal-filtros').classList.add('open');
 }
 
