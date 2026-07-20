@@ -176,6 +176,27 @@
   .btn-filtro-pill:active { background: var(--primary-light); }
   .btn-filtro-pill.ativo { background: var(--primary); color: white; }
 
+  /* Ícone de filtro avançado embutido dentro da própria barra de busca de cima */
+  .search-com-filtro { position: relative; flex: 1; display: flex; }
+  .search-com-filtro input { flex: 1; padding-right: 40px; }
+  .btn-filtro-icone {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: var(--primary-light);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .btn-filtro-icone:active { background: var(--primary); color: white; }
+
   .menu-mais-item {
     display: block;
     width: 100%;
@@ -1241,12 +1262,20 @@
   </div>
 
   <div class="quick-bar">
-    <input type="search" id="search-local-input" class="search-input-inline" placeholder="🔎 PESQUISAR EM TODAS AS PASTAS..." oninput="setSearchLocal(this.value)">
-    <button class="btn-filtro-pill" id="btn-busca-escopo" onclick="toggleBuscaEscopo()">📍 Pesquisar somente na pasta selecionada</button>
-    <button class="btn-filtro-pill" id="btn-abrir-filtros" onclick="abrirModalFiltros()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 4 20 4 14 13 14 20 10 20 10 13"/></svg>
-      Filtros
-    </button>
+    <div class="search-com-filtro">
+      <input type="search" id="search-input" class="search-input-inline" placeholder="🔎 PESQUISAR EM TODAS AS PASTAS..." oninput="setSearch(this.value)">
+      <button class="btn-filtro-icone" onclick="abrirModalFiltros()" title="Filtros avançados">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 4 20 4 14 13 14 20 10 20 10 13"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="quick-bar">
+    <div class="search-com-filtro">
+      <input type="search" id="search-local-input" class="search-input-inline" placeholder="📍 PESQUISAR NA PASTA ATUAL..." oninput="setSearchLocal(this.value)">
+      <button class="btn-filtro-icone" onclick="abrirModalFiltros()" title="Filtros desta pasta">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 4 20 4 14 13 14 20 10 20 10 13"/></svg>
+      </button>
+    </div>
     <button class="btn-refresh" onclick="setFilter('todos')">🔄 Limpar</button>
   </div>
 
@@ -1262,7 +1291,7 @@
       <button class="modal-fechar-x" onclick="fecharModalFiltros()" title="Fechar">✕</button>
     </div>
 
-    <div class="filtros-divisor" style="margin-top:0;padding-top:0;border-top:none">📍 Pesquisar na pasta selecionada</div>
+    <div class="filtros-divisor" style="margin-top:0;padding-top:0;border-top:none">📍 Nesta pasta</div>
     <div class="filtro-legenda">Prioridade</div>
     <button class="filter-btn" data-grupo="prioridade" data-valor="Urgente" onclick="setFilter('prioridade','Urgente')">🔴 Urgente</button>
     <button class="filter-btn" data-grupo="prioridade" data-valor="Média" onclick="setFilter('prioridade','Média')">🟡 Média</button>
@@ -1282,7 +1311,6 @@
 
     <div class="filtros-divisor">🌐 EM TODAS AS PASTAS</div>
 
-    <input type="search" id="search-input" class="search-input-inline" placeholder="🌐 Pesquisar em TODAS as pastas..." oninput="setSearch(this.value)">
     <div class="filtro-legenda">Prioridade (todas as pastas)</div>
     <button class="filter-btn" data-grupo="prioridadeG" data-valor="Urgente" onclick="setFilter('prioridadeG','Urgente')">🔴 Urgente</button>
     <button class="filter-btn" data-grupo="prioridadeG" data-valor="Média" onclick="setFilter('prioridadeG','Média')">🟡 Média</button>
@@ -1602,7 +1630,6 @@ function atualizarChipsAtivos() {
 let searchTerm = '';       // busca global (barra de cima) — sempre cruza todas as abas
 let searchTermLocal = '';  // busca local (linha de filtros) — só dentro da aba atual
 let categoriasColapsadas = new Set();
-let buscaTodasPastas = true; // liga/desliga o alcance da busca rápida da quick-bar — nasce ligado (pesquisa em tudo), assim ninguém acha "não existe" por estar na pasta errada
 
 // Tira acentos pra pesquisa não fazer diferença entre "farmacia" e "farmácia"
 const MAPA_ACENTOS = { á:'a', à:'a', â:'a', ã:'a', ä:'a', é:'e', è:'e', ê:'e', ë:'e', í:'i', ì:'i', î:'i', ï:'i', ó:'o', ò:'o', ô:'o', õ:'o', ö:'o', ú:'u', ù:'u', û:'u', ü:'u', ç:'c' };
@@ -1610,38 +1637,33 @@ function normalizarBusca(s) {
   return String(s || '').toLowerCase().split('').map(ch => MAPA_ACENTOS[ch] || ch).join('');
 }
 
-function setSearchLocal(v) {
+// Digitar uma busca rápida assume que a pessoa quer ver isso agora — some com filtros de prioridade/status/envolvido antigos
+function limparFiltrosAoDigitar() {
+  modoUrgentesAtivo = false;
+  filtroPrioridade = new Set();
+  filtroStatus = new Set();
+  filtroEnvolvido = new Set();
+  filtroPrioridadeG = new Set();
+  filtroStatusG = new Set();
+  filtroEnvolvidoG = new Set();
+  atualizarBotoesFiltro();
+}
+
+// Barra de cima: sempre pesquisa em TODAS as pastas
+function setSearch(v) {
   const termo = normalizarBusca(v.trim());
-  // Digitar uma busca rápida assume que a pessoa quer ver isso agora — some com filtros de prioridade/status/envolvido antigos
-  if (termo) {
-    modoUrgentesAtivo = false;
-    filtroPrioridade = new Set();
-    filtroStatus = new Set();
-    filtroEnvolvido = new Set();
-    filtroPrioridadeG = new Set();
-    filtroStatusG = new Set();
-    filtroEnvolvidoG = new Set();
-    atualizarBotoesFiltro();
-  }
-  if (buscaTodasPastas) {
-    searchTerm = termo;
-    searchTermLocal = '';
-  } else {
-    searchTermLocal = termo;
-    searchTerm = '';
-  }
+  if (termo) limparFiltrosAoDigitar();
+  searchTerm = termo;
   renderTabs();
   render();
 }
 
-function toggleBuscaEscopo() {
-  buscaTodasPastas = !buscaTodasPastas;
-  const btn = document.getElementById('btn-busca-escopo');
-  const input = document.getElementById('search-local-input');
-  btn.classList.toggle('ativo', !buscaTodasPastas);
-  input.placeholder = buscaTodasPastas ? '🔎 PESQUISAR EM TODAS AS PASTAS...' : '🔎 Pesquisar só na pasta atual...';
-  // Reaplica o termo já digitado no novo alcance
-  setSearchLocal(input.value);
+// Barra de baixo: sempre pesquisa só na pasta atual
+function setSearchLocal(v) {
+  const termo = normalizarBusca(v.trim());
+  if (termo) limparFiltrosAoDigitar();
+  searchTermLocal = termo;
+  render();
 }
 // { id: { status: statusAnterior, ts: timestamp } } — fica salvo no celular até a pessoa desfazer,
 // mesmo se fechar o app. Expira sozinho depois de alguns minutos pra não ficar "grudado" pra sempre
@@ -1748,12 +1770,6 @@ try {
   }
 } catch (e) { /* localStorage indisponível — usa ordem padrão */ }
 abaAtual = abaOrdem[0];
-
-function setSearch(v) {
-  searchTerm = normalizarBusca(v.trim());
-  renderTabs();
-  render();
-}
 
 function renderTabs() {
   // Enquanto a busca/filtro cruza todas as abas, nenhuma aba fica com o contorno de "selecionada"
