@@ -1575,6 +1575,16 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-acoes-tarefa" onclick="if(event.target===this) fecharMenuAcoesTarefa()">
+  <div class="modal">
+    <h3>⋯ Mais ações</h3>
+    <button class="menu-mais-item" id="btn-acoes-duplicar">📄 Duplicar tarefa</button>
+    <button class="menu-mais-item" id="btn-acoes-compartilhar">↗️ Compartilhar no WhatsApp</button>
+    <button class="menu-mais-item" id="btn-acoes-lembrete" style="display:none"></button>
+    <button class="modal-cancel" onclick="fecharMenuAcoesTarefa()" style="margin-top:14px">Fechar</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-mais" onclick="if(event.target===this) fecharModalMais()">
   <div class="modal">
     <h3>⋯ Mais opções</h3>
@@ -2029,7 +2039,7 @@ function renderTabs() {
   `;
   }).join('');
   const sidebar = document.getElementById('sidebar-pastas');
-  sidebar.innerHTML = `<div class="sidebar-titulo">PASTAS</div>${html}<div class="sidebar-nova-pasta" onclick="abrirModalNovaPasta()">➕ Nova pasta</div>`;
+  sidebar.innerHTML = `<div class="sidebar-titulo">PASTAS</div>${html}<div class="sidebar-nova-pasta" style="order:9999" onclick="abrirModalNovaPasta()">➕ Nova pasta</div>`;
   document.querySelectorAll('.sidebar-item').forEach(w => {
     w.addEventListener('pointerdown', onTabPointerDown);
   });
@@ -2520,11 +2530,8 @@ function cardHtml(t) {
   const chaveSelecao = `${t._aba}::${t.ID}`;
   const dadosJson = JSON.stringify(t).replace(/'/g,"&#39;");
   const botoesTopo = `
-    <button class="btn-editar-topo" onclick='duplicarTarefa(${dadosJson})' title="Duplicar tarefa">📄</button>
-    <button class="btn-editar-topo btn-compartilhar-topo" onclick='compartilharTarefa(${dadosJson})' title="Compartilhar no WhatsApp">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#25874a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/></svg>
-    </button>
     <button class="btn-editar-topo" onclick='openEditModal(${dadosJson})' title="Editar tarefa">✏️</button>
+    <button class="btn-editar-topo" onclick='abrirMenuAcoesTarefa(${dadosJson})' title="Mais ações">⋯</button>
   `;
   const emLista = vistaModo === 'lista';
 
@@ -2566,11 +2573,6 @@ function cardHtml(t) {
     </span>
   `;
   const concluirHtml = !concluido ? `<button class="btn-concluir-grande" onclick="atualizarStatus('${t.ID}', this, '${t._aba}', 'Concluído')" id="btn-${t.ID}"><span class="link-trocar-txt-completo">✅ Marcar como concluída</span><span class="link-trocar-txt-curto">✅ Concluir</span></button>` : '';
-  const bellHtml = t.Envolvido ? `
-    <div class="tarefa-acoes">
-      <button class="btn-lembrete" onclick="enviarLembrete('${t.ID}', '${t._aba}', this)" title="Avisar ${t.Envolvido}">🔔</button>
-    </div>
-  ` : '';
 
   if (emLista) {
     const nomeAttr = String(t.Tarefa || '').replace(/"/g, '&quot;');
@@ -2586,7 +2588,6 @@ function cardHtml(t) {
           <div class="tarefa-acoes-topo">${botoesTopo}</div>
           ${camposParesHtml}
           ${desfazerHtml}
-          ${bellHtml}
           ${concluirHtml}
         </div>
       </div>
@@ -2606,7 +2607,6 @@ function cardHtml(t) {
       ${desfazerHtml}
       ${linksHtml}
       ${concluirHtml}
-      ${bellHtml}
     </div>
   `;
 }
@@ -2779,6 +2779,27 @@ async function desfazerStatus(id, btn, aba) {
     btn.textContent = '↩️ Desfazer';
     showToast('⚠️ Sem conexão');
   }
+}
+
+// Menu "⋯" por tarefa — junta Duplicar/Compartilhar/Lembrete pra não poluir o card
+function abrirMenuAcoesTarefa(t) {
+  document.getElementById('btn-acoes-duplicar').onclick = () => { fecharMenuAcoesTarefa(); duplicarTarefa(t); };
+  document.getElementById('btn-acoes-compartilhar').onclick = () => { fecharMenuAcoesTarefa(); compartilharTarefa(t); };
+
+  const btnLembrete = document.getElementById('btn-acoes-lembrete');
+  if (t.Envolvido) {
+    btnLembrete.style.display = '';
+    btnLembrete.textContent = `🔔 Avisar ${t.Envolvido}`;
+    btnLembrete.onclick = () => { fecharMenuAcoesTarefa(); enviarLembrete(t.ID, t._aba, { disabled: false, textContent: '' }); };
+  } else {
+    btnLembrete.style.display = 'none';
+  }
+
+  document.getElementById('modal-acoes-tarefa').classList.add('open');
+}
+
+function fecharMenuAcoesTarefa() {
+  document.getElementById('modal-acoes-tarefa').classList.remove('open');
 }
 
 async function enviarLembrete(id, aba, btn) {
