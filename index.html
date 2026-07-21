@@ -1398,6 +1398,7 @@
       <option value="Concluído">Concluído</option>
     </select>
     <button class="btn-selecao-concluir" onclick="concluirSelecionadas()">✅ Concluir</button>
+    <button class="btn-selecao-concluir" onclick="compartilharSelecionadas()">📤 Compartilhar</button>
     <button class="btn-selecao-excluir" onclick="excluirSelecionadas()">🗑️ Excluir</button>
   </div>
 </div>
@@ -1413,11 +1414,6 @@
       <label>Pasta</label>
       <select id="f-aba">
         <option value="" disabled>Selecione a pasta...</option>
-        <option value="PESSOAL">Pessoal</option>
-        <option value="OBRA">Obra</option>
-        <option value="WORK">Work</option>
-        <option value="ODOO PROJETO">Odoo</option>
-        <option value="Projeto Ideias">Ideias</option>
       </select>
     </div>
 
@@ -1542,11 +1538,32 @@
     <button class="menu-mais-item" onclick="fecharModalMais(); exportarCSV(false)">📊 Exportar esta pasta para Excel</button>
     <button class="menu-mais-item" onclick="fecharModalMais(); exportarCSV(true)">📊🌐 Exportar TODAS as pastas para Excel</button>
     <button class="menu-mais-item" onclick="fecharModalMais(); window.print()">🖨️ Imprimir</button>
+    <button class="menu-mais-item" onclick="fecharModalMais(); abrirModalNovaPasta()">➕📁 Nova pasta</button>
     <label class="menu-mais-item" style="display:flex;align-items:center;gap:8px;cursor:pointer">
       <input type="checkbox" id="chk-esconder-aguardando" onchange="alternarEsconderAguardando(this.checked)">
       🕓 "🔥 Urgentes" esconde "Iniciado" e "Aguardando" (não é sua vez de agir ainda)
     </label>
     <button class="modal-cancel" onclick="fecharModalMais()" style="margin-top:14px">Fechar</button>
+  </div>
+</div>
+
+<div class="modal" id="modal-nova-pasta">
+  <div class="modal-content">
+    <h3>➕📁 Nova Pasta</h3>
+    <div class="form-group">
+      <label>Nome da pasta nova</label>
+      <input type="text" id="np-nome" placeholder="Ex: Obra 2, Curso de Inglês...">
+    </div>
+    <div class="form-group">
+      <label>Copiar tarefas de:</label>
+      <select id="np-origem">
+        <option value="">— Pasta vazia —</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="modal-cancel" onclick="fecharModalNovaPasta()">Cancelar</button>
+      <button class="btn-salvar" onclick="criarPastaNova()">Criar</button>
+    </div>
   </div>
 </div>
 
@@ -1556,9 +1573,31 @@
 // ⚙️ CONFIGURAÇÃO — cole aqui a URL do Google Apps Script após deploy
 const API_URL = 'https://script.google.com/macros/s/AKfycbwHY-VQAb31qHvwCVkGaHWOgywUQumkvjRYorx0iGTj-xL3EQEwjn6sWFa2CHRJQgSSfg/exec';
 
-// Estado
-const ABAS = ['PESSOAL', 'OBRA', 'WORK', 'ODOO PROJETO', 'Projeto Ideias'];
-const ABA_LABEL = { 'PESSOAL': 'Pessoal', 'OBRA': 'Obra', 'WORK': 'Work', 'ODOO PROJETO': 'Odoo', 'Projeto Ideias': 'Ideias' };
+// Estado — lista de pastas começa com as 5 de sempre (pra já mostrar algo na tela),
+// e depois é sincronizada de verdade com o que existe na planilha (função sincronizarPastas)
+let ABAS = ['PESSOAL', 'OBRA', 'WORK', 'ODOO PROJETO', 'Projeto Ideias'];
+let ABA_LABEL = { 'PESSOAL': 'Pessoal', 'OBRA': 'Obra', 'WORK': 'Work', 'ODOO PROJETO': 'Odoo', 'Projeto Ideias': 'Ideias' };
+
+// Cores fixas das 5 pastas de sempre; pastas novas (criadas pelo botão "Nova Pasta") ganham
+// uma cor dessa paleta, na ordem em que forem criadas — sem precisar mexer em CSS pra cada uma
+const CORES_PASTAS_FIXAS = {
+  'PESSOAL': ['#4f46e5', '#eef2ff'],
+  'OBRA': ['#d97706', '#fef3c7'],
+  'WORK': ['#0891b2', '#cffafe'],
+  'ODOO PROJETO': ['#16a34a', '#dcfce7'],
+  'Projeto Ideias': ['#c026d3', '#fae8ff']
+};
+const PALETA_PASTAS_NOVAS = [
+  ['#e11d48', '#ffe4e6'], ['#0ea5e9', '#e0f2fe'], ['#65a30d', '#ecfccb'],
+  ['#7c3aed', '#ede9fe'], ['#ea580c', '#ffedd5'], ['#0f766e', '#ccfbf1']
+];
+function corDaPasta(aba) {
+  if (CORES_PASTAS_FIXAS[aba]) return CORES_PASTAS_FIXAS[aba];
+  const novas = ABAS.filter(a => !CORES_PASTAS_FIXAS[a]);
+  const idx = Math.max(0, novas.indexOf(aba));
+  return PALETA_PASTAS_NOVAS[idx % PALETA_PASTAS_NOVAS.length];
+}
+
 let allData = {};
 let abaAtual = 'PESSOAL';
 
@@ -1622,6 +1661,41 @@ function abrirModalMais() {
 
 function fecharModalMais() {
   document.getElementById('modal-mais').classList.remove('open');
+}
+
+function abrirModalNovaPasta() {
+  const sel = document.getElementById('np-origem');
+  sel.innerHTML = '<option value="">— Pasta vazia —</option>' +
+    ABAS.map(a => `<option value="${a}">${ABA_LABEL[a] || a}</option>`).join('');
+  document.getElementById('np-nome').value = '';
+  document.getElementById('modal-nova-pasta').classList.add('open');
+}
+
+function fecharModalNovaPasta() {
+  document.getElementById('modal-nova-pasta').classList.remove('open');
+}
+
+async function criarPastaNova() {
+  const nome = document.getElementById('np-nome').value.trim();
+  const origem = document.getElementById('np-origem').value;
+  if (!nome) { showToast('⚠️ Digite um nome pra pasta'); return; }
+
+  try {
+    const resp = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'criarPasta', origem: origem, nomeNova: nome })
+    });
+    const data = await resp.json();
+    if (!data.ok) { showToast('⚠️ ' + (data.error || 'Erro ao criar pasta')); return; }
+
+    fecharModalNovaPasta();
+    showToast('✅ Pasta criada!');
+    await loadData();
+    switchTab(nome);
+  } catch (err) {
+    showToast('⚠️ Erro ao criar pasta');
+  }
 }
 
 let secaoFiltrosAtual = 'local';
@@ -1870,14 +1944,43 @@ try {
 } catch (e) { /* localStorage indisponível — usa ordem padrão */ }
 abaAtual = abaOrdem[0];
 
+// Atualiza a lista de pastas (ABAS/ABA_LABEL) com o que realmente existe na planilha —
+// preserva a ordem que a pessoa já organizou e só acrescenta as pastas novas no final.
+function sincronizarPastas(lista) {
+  if (!Array.isArray(lista) || !lista.length) return;
+  ABAS = lista;
+  lista.forEach(p => { if (!ABA_LABEL[p]) ABA_LABEL[p] = p; });
+  const jaTinha = abaOrdem.filter(a => lista.includes(a));
+  const novas = lista.filter(a => !jaTinha.includes(a));
+  abaOrdem = [...jaTinha, ...novas];
+  if (!lista.includes(abaAtual)) abaAtual = abaOrdem[0];
+  popularSelectPastas();
+}
+
+// Preenche o <select> "Pasta" do formulário de Nova/Editar tarefa com as pastas de verdade
+function popularSelectPastas() {
+  const sel = document.getElementById('f-aba');
+  if (!sel) return;
+  const valorAtual = sel.value;
+  sel.innerHTML = '<option value="" disabled>Selecione a pasta...</option>' +
+    ABAS.map(a => `<option value="${a}">${ABA_LABEL[a]}</option>`).join('');
+  if (ABAS.includes(valorAtual)) sel.value = valorAtual;
+}
+
 function renderTabs() {
   // Enquanto a busca/filtro cruza todas as abas, nenhuma aba fica com o contorno de "selecionada"
   const cruzado = algumFiltroAtivo();
-  const html = abaOrdem.map((aba, i) => `
+  const html = abaOrdem.map((aba, i) => {
+    const [cor, corClara] = corDaPasta(aba);
+    const ativa = !cruzado && aba === abaAtual;
+    const estiloBase = `background:${corClara};color:${cor};`;
+    const estiloAtiva = ativa ? `border-color:${cor};` : '';
+    return `
     <div class="tab-wrap" data-aba="${aba}" style="order:${i}">
-      <div class="tab ${(!cruzado && aba === abaAtual) ? 'active' : ''}" data-aba="${aba}">${ABA_LABEL[aba]}</div>
+      <div class="tab ${ativa ? 'active' : ''}" data-aba="${aba}" style="${estiloBase}${estiloAtiva}">${ABA_LABEL[aba]}</div>
     </div>
-  `).join('');
+  `;
+  }).join('');
   document.getElementById('tabs').innerHTML = html;
   document.querySelectorAll('.tab-wrap').forEach(w => {
     w.addEventListener('pointerdown', onTabPointerDown);
@@ -1956,6 +2059,7 @@ async function loadData() {
     const res = await fetch(`${API_URL}?action=getAll`, { cache: 'no-store' });
     const text = await res.text();
     allData = JSON.parse(text);
+    sincronizarPastas(Object.keys(allData));
     const now = new Date().toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     document.getElementById('last-update').textContent = `Atualizado às ${now}`;
     popularBotoesEnvolvidos();
@@ -2358,6 +2462,7 @@ function cardHtml(t) {
   const dadosJson = JSON.stringify(t).replace(/'/g,"&#39;");
   const botoesTopo = `
     <button class="btn-editar-topo" onclick='duplicarTarefa(${dadosJson})' title="Duplicar tarefa">📄</button>
+    <button class="btn-editar-topo" onclick='compartilharTarefa(${dadosJson})' title="Compartilhar no WhatsApp">📤</button>
     <button class="btn-editar-topo" onclick='openEditModal(${dadosJson})' title="Editar tarefa">✏️</button>
   `;
   const emLista = vistaModo === 'lista';
@@ -2713,6 +2818,42 @@ async function abrirNovaTarefaNaDivisao(aba, divisao) {
   document.getElementById('f-tarefa').focus();
 }
 
+// Monta o texto de uma tarefa pra compartilhar (WhatsApp, etc.)
+function textoTarefaParaCompartilhar(t) {
+  let msg = `📋 ${t.Tarefa}`;
+  if (t['Divisão']) msg += `\n📁 ${t['Divisão']}`;
+  if (t.Prioridade) msg += `\n${{Urgente:'🔴',Média:'🟡',Baixa:'🟢'}[t.Prioridade] || ''} ${t.Prioridade}`;
+  if (t.Status) msg += ` · ${t.Status}`;
+  if (t['Data Prevista']) {
+    const horaFmt = (t.Hora || '').trim().substring(0, 5);
+    msg += `\n📅 ${formatarDataBR(t['Data Prevista'])}${horaFmt ? ` às ${horaFmt}` : ''}`;
+  }
+  if (t.Envolvido) msg += `\n👤 ${t.Envolvido}`;
+  if (t['Observação']) msg += `\n💬 ${t['Observação']}`;
+  return msg;
+}
+
+// Abre o WhatsApp com o texto já pronto — a pessoa escolhe pra quem mandar
+function abrirWhatsappCompartilhar(texto) {
+  window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
+}
+
+function compartilharTarefa(t) {
+  abrirWhatsappCompartilhar(textoTarefaParaCompartilhar(t));
+}
+
+// Compartilha todas as tarefas marcadas no modo "Selecionar", num texto só
+function compartilharSelecionadas() {
+  if (!selecionados.size) { showToast('⚠️ Selecione ao menos uma tarefa'); return; }
+  const textos = [...selecionados].map(chave => {
+    const [aba, id] = chave.split('::');
+    const t = (allData[aba] || []).find(x => String(x.ID) === String(id));
+    return t ? textoTarefaParaCompartilhar(t) : null;
+  }).filter(Boolean);
+  if (!textos.length) { showToast('⚠️ Nenhuma tarefa encontrada'); return; }
+  abrirWhatsappCompartilhar(textos.join('\n\n———\n\n'));
+}
+
 // Cria uma cópia da tarefa (mesma divisão/prioridade/status/envolvido) e já abre pra renomear
 async function duplicarTarefa(t) {
   showToast('📄 Duplicando tarefa...');
@@ -2980,8 +3121,16 @@ async function salvarTarefa() {
     if (data.ok) {
       closeAddModal();
       showToast(editando ? '✅ Tarefa atualizada!' : '✅ Tarefa criada!');
-      const abaRecarregar = editando ? editandoAba : aba;
-      if (abaRecarregar === abaAtual || algumFiltroAtivo()) await loadData();
+
+      // Atualiza só a tarefa em memória em vez de recarregar tudo — evita a tela branca
+      if (editando) {
+        const tarefaAtual = (allData[editandoAba] || []).find(t => String(t.ID) === String(editandoId));
+        if (tarefaAtual) Object.assign(tarefaAtual, fields);
+      } else {
+        if (!allData[aba]) allData[aba] = [];
+        allData[aba].push(Object.assign({ ID: data.id, 'Data criação': new Date().toLocaleDateString('pt-BR') }, fields));
+      }
+      renderMantendoScroll();
     } else {
       showToast('⚠️ Erro: ' + (data.error || 'tente novamente'));
     }
