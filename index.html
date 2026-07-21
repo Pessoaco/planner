@@ -1456,10 +1456,27 @@
         </div>
       </div>
       <div class="form-group">
-        <label>Hora (opcional)</label>
+        <label>Hora início (opcional)</label>
         <div class="campo-com-limpar">
           <input type="time" id="f-hora">
           <button type="button" class="btn-limpar-campo" onclick="document.getElementById('f-hora').value=''" title="Apagar hora">✕</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Data término (opcional — só se for período de vários dias)</label>
+        <div class="campo-com-limpar">
+          <input type="date" id="f-data-fim">
+          <button type="button" class="btn-limpar-campo" onclick="document.getElementById('f-data-fim').value=''" title="Apagar data término">✕</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Hora término (opcional — reunião com hora certa de acabar)</label>
+        <div class="campo-com-limpar">
+          <input type="time" id="f-hora-fim">
+          <button type="button" class="btn-limpar-campo" onclick="document.getElementById('f-hora-fim').value=''" title="Apagar hora término">✕</button>
         </div>
       </div>
     </div>
@@ -2675,6 +2692,8 @@ async function openAddModal() {
   document.getElementById('f-obs').value = '';
   document.getElementById('f-data').value = '';
   document.getElementById('f-hora').value = '';
+  document.getElementById('f-data-fim').value = '';
+  document.getElementById('f-hora-fim').value = '';
   document.getElementById('f-status-group').style.display = 'none';
   document.getElementById('f-data-conclusao-group').style.display = 'none';
   document.getElementById('f-data-conclusao').value = '';
@@ -2705,6 +2724,8 @@ async function duplicarTarefa(t) {
     Envolvido: t.Envolvido || '',
     'Data Prevista': t['Data Prevista'] || '',
     Hora: t.Hora || '',
+    'Data Fim': t['Data Fim'] || '',
+    'Hora Fim': t['Hora Fim'] || '',
     'Observação': t['Observação'] || ''
   };
   try {
@@ -2740,6 +2761,8 @@ async function openEditModal(t) {
   document.getElementById('f-obs').value = t['Observação'] || '';
   document.getElementById('f-data').value = parseDataParaInput(t['Data Prevista']);
   document.getElementById('f-hora').value = (t.Hora || '').trim().substring(0, 5);
+  document.getElementById('f-data-fim').value = parseDataParaInput(t['Data Fim']);
+  document.getElementById('f-hora-fim').value = (t['Hora Fim'] || '').trim().substring(0, 5);
   document.getElementById('f-status-group').style.display = 'block';
   document.getElementById('f-status').value = t.Status || 'Aberto';
   document.getElementById('f-data-conclusao').value = parseDataParaInput(t['Data conclusão']);
@@ -2906,6 +2929,9 @@ async function salvarTarefa() {
   const dataPrevistaRaw = document.getElementById('f-data').value;
   const dataPrevista = dataPrevistaRaw ? formatarDataBR(dataPrevistaRaw) : '';
   const hora = document.getElementById('f-hora').value;
+  const dataFimRaw = document.getElementById('f-data-fim').value;
+  const dataFim = dataFimRaw ? formatarDataBR(dataFimRaw) : '';
+  const horaFim = document.getElementById('f-hora-fim').value;
   const obs = document.getElementById('f-obs').value.trim();
   const envolvido = document.getElementById('f-envolvido').value.trim();
   const editando = !!editandoId;
@@ -2921,6 +2947,8 @@ async function salvarTarefa() {
     Prioridade: prioridade,
     'Data Prevista': dataPrevista || '',
     Hora: hora || '',
+    'Data Fim': dataFim || '',
+    'Hora Fim': horaFim || '',
     Envolvido: envolvido,
     'Observação': obs
   };
