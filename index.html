@@ -89,63 +89,79 @@
 
   .btn-refresh:active { background: var(--border); }
 
-  /* TABS — tipo divisórias de fichário, coloridas por categoria */
-  .tabs {
+  /* SIDEBAR DE PASTAS — substitui as abas horizontais, escala melhor com pastas ilimitadas */
+  .app-body { display: flex; align-items: flex-start; }
+  .app-body .main { flex: 1; min-width: 0; }
+
+  .btn-toggle-sidebar { display: inline-flex; }
+
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 90;
+  }
+  .sidebar-overlay.open { display: block; }
+
+  .sidebar-pastas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 220px;
+    background: white;
+    z-index: 95;
     display: flex;
-    gap: 6px;
-    padding: 0 4px 4px;
+    flex-direction: column;
+    gap: 3px;
+    padding: 16px 10px;
+    overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 0.2s;
+    box-shadow: 2px 0 12px rgba(0,0,0,0.15);
+  }
+  .sidebar-pastas.open { transform: translateX(0); }
+
+  .sidebar-titulo {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    padding: 4px 8px 8px;
   }
 
-  .tab {
-    flex: 1;
-    text-align: center;
-    padding: 10px 4px;
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 8px;
+    border-radius: 8px;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     border: 2px solid transparent;
-    border-radius: 8px 8px 0 0;
-    transition: all 0.2s;
     white-space: nowrap;
-  }
-
-  /* Abas sempre coloridas, tipo divisória de fichário */
-  .tab[data-aba="PESSOAL"]      { background: var(--aba-pessoal-light); color: var(--aba-pessoal); }
-  .tab[data-aba="OBRA"]         { background: var(--aba-obra-light);    color: var(--aba-obra); }
-  .tab[data-aba="WORK"]         { background: var(--aba-work-light);    color: var(--aba-work); }
-  .tab[data-aba="ODOO PROJETO"] { background: var(--aba-odoo-light);    color: var(--aba-odoo); }
-  .tab[data-aba="Projeto Ideias"] { background: var(--aba-ideias-light); color: var(--aba-ideias); }
-
-  /* Aba selecionada: contorno grosso da mesma cor, deixa óbvio qual está aberta */
-  .tab.active { font-weight: 800; }
-  .tab.active[data-aba="PESSOAL"]      { border-color: var(--aba-pessoal); }
-  .tab.active[data-aba="OBRA"]         { border-color: var(--aba-obra); }
-  .tab.active[data-aba="WORK"]         { border-color: var(--aba-work); }
-  .tab.active[data-aba="ODOO PROJETO"] { border-color: var(--aba-odoo); }
-  .tab.active[data-aba="Projeto Ideias"] { border-color: var(--aba-ideias); }
-
-  /* Arrastar abas para reorganizar */
-  .tab-wrap {
-    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
   }
+  .sidebar-item.active { font-weight: 800; }
+  .sidebar-item.dragging { opacity: 0.85; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
 
-  .tab-wrap .tab { flex: 1; }
-
-  .tab-wrap.tab-dragging {
-    opacity: 0.85;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  .sidebar-nova-pasta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 8px;
     border-radius: 8px;
-  }
-
-  .tabs-hint {
-    text-align: center;
-    font-size: 10px;
+    font-size: 13px;
+    font-weight: 600;
     color: var(--text-muted);
-    padding: 4px 0 6px;
-    opacity: 0.75;
+    cursor: pointer;
+    margin-top: 4px;
   }
 
   /* BUSCA */
@@ -558,7 +574,6 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: var(--primary);
-    flex: 1;
   }
 
   .categoria-count {
@@ -568,6 +583,7 @@
     font-weight: 600;
     padding: 2px 7px;
     border-radius: 10px;
+    margin-left: auto;
   }
 
   .categoria-toggle { color: var(--text-muted); font-size: 12px; }
@@ -741,6 +757,17 @@
     margin-left: auto;
   }
   .btn-editar-topo:active { opacity: 0.6; }
+
+  /* Compartilhar no WhatsApp — fundo verde clarinho pra destacar dos outros dois ícones */
+  .btn-compartilhar-topo {
+    background: #dcf8c6;
+    border-radius: 6px;
+    margin-left: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 6px;
+  }
 
   /* Excluir: mesmo visual bonito de antes, só que pequeno, no canto direito do rodapé */
   .btn-excluir-rodape {
@@ -1127,7 +1154,7 @@
   @media print {
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-    .header, .fab, .modal-overlay, .toast, .filters,
+    .header, .sidebar-pastas, .sidebar-overlay, .fab, .modal-overlay, .toast, .filters,
     .search-bar, .counters, .tarefa-acoes, .btn-concluir-grande, .btn-excluir-rodape,
     .btn-desfazer, .btn-lembrete, .categoria-toggle, .btn-editar-topo,
     .check-selecao, .selecao-barra, .btn-nova-inline,
@@ -1225,8 +1252,22 @@
   }
 
   @media (min-width: 640px) {
-    .main { max-width: 1400px; margin: 0 auto; }
+    .app-body .main { max-width: 1400px; margin: 0 auto; }
     .counters-footer { justify-content: center; }
+
+    /* No PC a sidebar fica sempre visível, fixa ao lado — sem gaveta, sem overlay */
+    .btn-toggle-sidebar { display: none; }
+    .sidebar-overlay { display: none !important; }
+    .sidebar-pastas {
+      position: sticky;
+      top: 0;
+      height: calc(100vh - 0px);
+      width: 170px;
+      flex-shrink: 0;
+      transform: none;
+      box-shadow: none;
+      border-right: 1px solid var(--border);
+    }
 
     /* Cards lado a lado em grade no PC (tem espaço de sobra) */
     .categoria-group {
@@ -1278,6 +1319,7 @@
       <div class="header-subtitle" id="last-update">Carregando...</div>
     </div>
     <div class="header-botoes">
+      <button class="btn-refresh btn-toggle-sidebar" onclick="toggleSidebar()" title="Ver pastas">☰ Pastas</button>
       <button class="btn-refresh quick-urgentes" id="btn-urgentes" onclick="atalhoUrgentes()">🔥 Urgentes</button>
       <button class="btn-refresh quick-agenda" onclick="atalhoAgenda('hoje')">📅 Hoje</button>
       <button class="btn-refresh quick-agenda" onclick="atalhoAgenda('semana')">🗓️ Semana</button>
@@ -1303,9 +1345,7 @@
     <button class="btn-refresh" onclick="setFilter('todos')">🔄 Limpar</button>
   </div>
 
-  <div class="tabs" id="tabs"></div>
   <div class="chips-ativos" id="chips-ativos"></div>
-  <div class="tabs-hint">↔️ Segure e arraste uma pasta para reorganizar</div>
 </header>
 
 <div class="modal-overlay" id="modal-filtros" onclick="if(event.target===this) fecharModalFiltros()">
@@ -1366,9 +1406,13 @@
   </div>
 </div>
 
-<main class="main" id="main">
-  <div class="loading"><div class="spinner"></div>Carregando tarefas...</div>
-</main>
+<div class="app-body">
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="fecharSidebar()"></div>
+  <nav class="sidebar-pastas" id="sidebar-pastas"></nav>
+  <main class="main" id="main">
+    <div class="loading"><div class="spinner"></div>Carregando tarefas...</div>
+  </main>
+</div>
 
 <footer class="counters-footer" id="counters"></footer>
 
@@ -1794,9 +1838,6 @@ function atualizarChipsAtivos() {
   const el = document.getElementById('chips-ativos');
   if (el) {
     el.innerHTML = chips.map(c => `<span class="chip-ativo">${c}</span>`).join('');
-    // Alinha o chip embaixo da aba atual (aproximado, já que as abas têm largura igual)
-    const idx = Math.max(0, abaOrdem.indexOf(abaAtual));
-    el.style.marginLeft = chips.length ? `calc((100% / ${ABAS.length}) * ${idx})` : '0';
   }
 }
 let searchTerm = '';       // busca global (barra de cima) — sempre cruza todas as abas
@@ -1967,8 +2008,14 @@ function popularSelectPastas() {
   if (ABAS.includes(valorAtual)) sel.value = valorAtual;
 }
 
+// Nome curto pra caber na sidebar sem estourar a largura — "Curso de Inglês" já é o limite bom
+function nomeCurtoPasta(aba) {
+  const nome = ABA_LABEL[aba] || aba;
+  return nome.length > 16 ? nome.slice(0, 16).trimEnd() + '…' : nome;
+}
+
 function renderTabs() {
-  // Enquanto a busca/filtro cruza todas as abas, nenhuma aba fica com o contorno de "selecionada"
+  // Enquanto a busca/filtro cruza todas as abas, nenhuma pasta fica com o contorno de "selecionada"
   const cruzado = algumFiltroAtivo();
   const html = abaOrdem.map((aba, i) => {
     const [cor, corClara] = corDaPasta(aba);
@@ -1976,23 +2023,34 @@ function renderTabs() {
     const estiloBase = `background:${corClara};color:${cor};`;
     const estiloAtiva = ativa ? `border-color:${cor};` : '';
     return `
-    <div class="tab-wrap" data-aba="${aba}" style="order:${i}">
-      <div class="tab ${ativa ? 'active' : ''}" data-aba="${aba}" style="${estiloBase}${estiloAtiva}">${ABA_LABEL[aba]}</div>
+    <div class="sidebar-item ${ativa ? 'active' : ''}" data-aba="${aba}" style="order:${i};${estiloBase}${estiloAtiva}" title="${ABA_LABEL[aba]}">
+      <span>${iconeCategoria(aba)}</span><span>${nomeCurtoPasta(aba)}</span>
     </div>
   `;
   }).join('');
-  document.getElementById('tabs').innerHTML = html;
-  document.querySelectorAll('.tab-wrap').forEach(w => {
+  const sidebar = document.getElementById('sidebar-pastas');
+  sidebar.innerHTML = `<div class="sidebar-titulo">PASTAS</div>${html}<div class="sidebar-nova-pasta" onclick="abrirModalNovaPasta()">➕ Nova pasta</div>`;
+  document.querySelectorAll('.sidebar-item').forEach(w => {
     w.addEventListener('pointerdown', onTabPointerDown);
   });
 }
 
-// ===== ARRASTAR ABAS =====
+function toggleSidebar() {
+  document.getElementById('sidebar-pastas').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+}
+
+function fecharSidebar() {
+  document.getElementById('sidebar-pastas').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+}
+
+// ===== ARRASTAR PASTAS (reordenar na sidebar, de cima pra baixo) =====
 let dragState = null;
 
 function onTabPointerDown(e) {
   const wrap = e.currentTarget;
-  dragState = { aba: wrap.dataset.aba, wrap, startX: e.clientX, dragging: false };
+  dragState = { aba: wrap.dataset.aba, wrap, startY: e.clientY, dragging: false };
   wrap.setPointerCapture(e.pointerId);
   wrap.addEventListener('pointermove', onTabPointerMove);
   wrap.addEventListener('pointerup', onTabPointerUp);
@@ -2001,25 +2059,25 @@ function onTabPointerDown(e) {
 
 function onTabPointerMove(e) {
   if (!dragState) return;
-  const dx = e.clientX - dragState.startX;
+  const dy = e.clientY - dragState.startY;
 
-  if (!dragState.dragging && Math.abs(dx) > 10) {
+  if (!dragState.dragging && Math.abs(dy) > 10) {
     dragState.dragging = true;
-    dragState.wrap.classList.add('tab-dragging');
+    dragState.wrap.classList.add('dragging');
   }
   if (!dragState.dragging) return;
 
-  dragState.wrap.style.transform = `translateX(${dx}px)`;
+  dragState.wrap.style.transform = `translateY(${dy}px)`;
   dragState.wrap.style.zIndex = 10;
 
-  const outros = [...document.querySelectorAll('.tab-wrap')].filter(w => w !== dragState.wrap);
+  const outros = [...document.querySelectorAll('.sidebar-item')].filter(w => w !== dragState.wrap);
   let novoIndex = abaOrdem.indexOf(dragState.aba);
   outros.forEach(w => {
     const r = w.getBoundingClientRect();
-    const centro = r.left + r.width / 2;
+    const centro = r.top + r.height / 2;
     const idxOutro = abaOrdem.indexOf(w.dataset.aba);
-    if (e.clientX > centro && idxOutro > novoIndex) novoIndex = idxOutro;
-    else if (e.clientX < centro && idxOutro < novoIndex) novoIndex = idxOutro;
+    if (e.clientY > centro && idxOutro > novoIndex) novoIndex = idxOutro;
+    else if (e.clientY < centro && idxOutro < novoIndex) novoIndex = idxOutro;
   });
 
   const atualIndex = abaOrdem.indexOf(dragState.aba);
@@ -2033,14 +2091,15 @@ function onTabPointerMove(e) {
 function onTabPointerUp(e) {
   if (!dragState) return;
   if (dragState.dragging) {
-    dragState.wrap.classList.remove('tab-dragging');
+    dragState.wrap.classList.remove('dragging');
     dragState.wrap.style.transform = '';
     dragState.wrap.style.zIndex = '';
     try { localStorage.setItem('abaOrdem', JSON.stringify(abaOrdem)); } catch (e) {}
     renderTabs();
-    showToast('✅ Ordem das abas salva!');
+    showToast('✅ Ordem das pastas salva!');
   } else {
     switchTab(dragState.aba);
+    fecharSidebar();
   }
   dragState = null;
 }
@@ -2462,7 +2521,9 @@ function cardHtml(t) {
   const dadosJson = JSON.stringify(t).replace(/'/g,"&#39;");
   const botoesTopo = `
     <button class="btn-editar-topo" onclick='duplicarTarefa(${dadosJson})' title="Duplicar tarefa">📄</button>
-    <button class="btn-editar-topo" onclick='compartilharTarefa(${dadosJson})' title="Compartilhar no WhatsApp">📤</button>
+    <button class="btn-editar-topo btn-compartilhar-topo" onclick='compartilharTarefa(${dadosJson})' title="Compartilhar no WhatsApp">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#25874a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/></svg>
+    </button>
     <button class="btn-editar-topo" onclick='openEditModal(${dadosJson})' title="Editar tarefa">✏️</button>
   `;
   const emLista = vistaModo === 'lista';
@@ -2820,16 +2881,22 @@ async function abrirNovaTarefaNaDivisao(aba, divisao) {
 
 // Monta o texto de uma tarefa pra compartilhar (WhatsApp, etc.)
 function textoTarefaParaCompartilhar(t) {
-  let msg = `📋 ${t.Tarefa}`;
-  if (t['Divisão']) msg += `\n📁 ${t['Divisão']}`;
-  if (t.Prioridade) msg += `\n${{Urgente:'🔴',Média:'🟡',Baixa:'🟢'}[t.Prioridade] || ''} ${t.Prioridade}`;
-  if (t.Status) msg += ` · ${t.Status}`;
+  let msg = `*📋 Secretária Virtual*\n\n*Tarefa:* ${t.Tarefa}`;
+  if (t['Observação']) msg += `\n→ ${t['Observação']}`;
+
+  const pastaLabel = ABA_LABEL[t._aba] || t._aba || '';
+  const caminho = [pastaLabel, t['Divisão']].filter(Boolean).join(' / ');
+  if (caminho) msg += `\n📁 ${caminho}`;
+
+  if (t.Prioridade) {
+    const emoji = { Urgente: '🔴', Média: '🟡', Baixa: '🟢' }[t.Prioridade] || '';
+    msg += `\n${emoji} *${t.Prioridade}*${t.Status ? ` · ${t.Status}` : ''}`;
+  }
   if (t['Data Prevista']) {
     const horaFmt = (t.Hora || '').trim().substring(0, 5);
     msg += `\n📅 ${formatarDataBR(t['Data Prevista'])}${horaFmt ? ` às ${horaFmt}` : ''}`;
   }
-  if (t.Envolvido) msg += `\n👤 ${t.Envolvido}`;
-  if (t['Observação']) msg += `\n💬 ${t['Observação']}`;
+  if (t.Envolvido) msg += `\n👤 *Envolvido:* ${t.Envolvido}`;
   return msg;
 }
 
