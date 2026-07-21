@@ -131,16 +131,18 @@
     padding: 4px 8px 8px;
   }
 
+  /* Tarja colorida saindo pela direita, tipo divisória de fichário de verdade */
   .sidebar-item {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 8px;
+    padding: 10px 10px 10px 8px;
     border-radius: 8px;
     font-size: 13px;
     font-weight: 600;
+    color: var(--text);
     cursor: pointer;
-    border: 2px solid transparent;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -148,8 +150,18 @@
     user-select: none;
     -webkit-user-select: none;
   }
-  .sidebar-item.active { font-weight: 800; }
-  .sidebar-item.dragging { opacity: 0.85; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+  .sidebar-item .sidebar-item-label { overflow: hidden; text-overflow: ellipsis; }
+  .sidebar-item .sidebar-tab {
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    right: -6px;
+    width: 6px;
+    border-radius: 0 6px 6px 0;
+  }
+  .sidebar-item.active { background: var(--gray-light); font-weight: 800; }
+  .sidebar-item.active .sidebar-tab { width: 9px; }
+  .sidebar-item.dragging { opacity: 0.85; box-shadow: 0 4px 10px rgba(0,0,0,0.2); background: var(--gray-light); }
 
   .sidebar-nova-pasta {
     display: flex;
@@ -347,7 +359,8 @@
     grid-column: 3;
     display: flex;
     align-items: center;
-    gap: 6px;
+    row-gap: 8px;
+    column-gap: 6px;
     flex-wrap: wrap;
     justify-content: flex-end;
     justify-self: end;
@@ -2028,13 +2041,12 @@ function renderTabs() {
   // Enquanto a busca/filtro cruza todas as abas, nenhuma pasta fica com o contorno de "selecionada"
   const cruzado = algumFiltroAtivo();
   const html = abaOrdem.map((aba, i) => {
-    const [cor, corClara] = corDaPasta(aba);
+    const [cor] = corDaPasta(aba);
     const ativa = !cruzado && aba === abaAtual;
-    const estiloBase = `background:${corClara};color:${cor};`;
-    const estiloAtiva = ativa ? `border-color:${cor};` : '';
     return `
-    <div class="sidebar-item ${ativa ? 'active' : ''}" data-aba="${aba}" style="order:${i};${estiloBase}${estiloAtiva}" title="${ABA_LABEL[aba]}">
-      <span>${iconeCategoria(aba)}</span><span>${nomeCurtoPasta(aba)}</span>
+    <div class="sidebar-item ${ativa ? 'active' : ''}" data-aba="${aba}" style="order:${i}" title="${ABA_LABEL[aba]}">
+      <span style="color:${cor}">${iconeCategoria(aba)}</span><span class="sidebar-item-label">${nomeCurtoPasta(aba)}</span>
+      <span class="sidebar-tab" style="background:${cor}"></span>
     </div>
   `;
   }).join('');
