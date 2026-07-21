@@ -1174,7 +1174,7 @@
     .busca-avancada-toggle, .busca-avancada-painel,
     .mudar-status-links { display: none !important; }
 
-    body { background: white; font-size: 9px; }
+    body { background: white; }
 
     .main { padding: 0; max-width: 100% !important; margin: 0; }
 
@@ -1212,8 +1212,27 @@
     /* Não imprime tarefas concluídas — só andamento/relatório na tela */
     .tarefa-card.status-Concluído { display: none !important; }
 
-    /* Cada tarefa vira uma linha compacta */
-    .tarefa-card {
+    /* Rodapé com numeração de página — não é toda impressora/PDF que respeita isso,
+       verifique também a caixinha "Cabeçalhos e rodapés" na janela de impressão do navegador */
+    @page { margin: 12mm 5mm 14mm; }
+    body::after {
+      content: 'Página ' counter(page) ' de ' counter(pages);
+      position: fixed;
+      bottom: 4mm;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 8px;
+      color: #999;
+    }
+  }
+
+  /* Formato REDUZIDO — uma linha compacta por tarefa (padrão) */
+  body.print-reduzido {
+    font-size: 9px;
+  }
+  @media print {
+    body.print-reduzido .tarefa-card {
       display: flex;
       align-items: baseline;
       gap: 4px;
@@ -1228,43 +1247,51 @@
     }
 
     /* Indicador de prioridade como letra */
-    .tarefa-card::before {
+    body.print-reduzido .tarefa-card::before {
       font-size: 8px;
       font-weight: 700;
       flex-shrink: 0;
       width: 10px;
     }
-    .tarefa-card.prioridade-Urgente::before   { content: 'U'; color: #dc2626; }
-    .tarefa-card.prioridade-Média::before  { content: 'M'; color: #d97706; }
-    .tarefa-card.prioridade-Baixa::before  { content: 'B'; color: #16a34a; }
+    body.print-reduzido .tarefa-card.prioridade-Urgente::before  { content: 'U'; color: #dc2626; }
+    body.print-reduzido .tarefa-card.prioridade-Média::before    { content: 'M'; color: #d97706; }
+    body.print-reduzido .tarefa-card.prioridade-Baixa::before    { content: 'B'; color: #16a34a; }
 
-    .tarefa-top { flex: 1; }
+    body.print-reduzido .tarefa-top { flex: 1; }
 
-    .tarefa-nome {
+    body.print-reduzido .tarefa-nome {
       font-size: 9px;
       font-weight: 500;
       line-height: 1.2;
     }
 
-    .tarefa-card.status-Concluído .tarefa-nome {
+    body.print-reduzido .tarefa-card.status-Concluído .tarefa-nome {
       text-decoration: line-through;
       color: #999;
     }
 
     /* Data e envolvido em linha, pequeno */
-    .tarefa-meta {
+    body.print-reduzido .tarefa-meta {
       flex-shrink: 0;
       margin-top: 0;
       gap: 4px;
     }
 
-    .meta-item { font-size: 8px; color: #666; }
+    body.print-reduzido .meta-item { font-size: 8px; color: #666; }
 
     /* Oculta badges — info já está na linha */
-    .badges, .mini-legenda { display: none !important; }
+    body.print-reduzido .badges, body.print-reduzido .mini-legenda { display: none !important; }
   }
 
-  @media (min-width: 640px) {
+  /* Formato COMO NA TELA — mantém cards ou lista igual você vê no app, só reduz a fonte um pouco */
+  @media print {
+    body.print-tela .tarefa-nome { font-size: 11px; }
+    body.print-tela .meta-item { font-size: 10px; }
+    body.print-tela .badge { font-size: 9px; padding: 2px 6px; }
+    body.print-tela .tarefa-card { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
+  }
+
+  @media screen and (min-width: 640px) {
     .app-body .main { max-width: 1400px; margin: 0 auto; }
     .counters-footer { justify-content: center; }
 
@@ -1604,7 +1631,8 @@
     <button class="menu-mais-item" onclick="fecharModalMais(); abrirModalCategorias()">📁 Ver divisões desta pasta</button>
     <button class="menu-mais-item" onclick="fecharModalMais(); exportarCSV(false)">📊 Exportar esta pasta para Excel</button>
     <button class="menu-mais-item" onclick="fecharModalMais(); exportarCSV(true)">📊🌐 Exportar TODAS as pastas para Excel</button>
-    <button class="menu-mais-item" onclick="fecharModalMais(); window.print()">🖨️ Imprimir</button>
+    <button class="menu-mais-item" onclick="fecharModalMais(); imprimir('reduzido')">🖨️ Imprimir (reduzido)</button>
+    <button class="menu-mais-item" onclick="fecharModalMais(); imprimir('tela')">🖨️ Imprimir (como na tela)</button>
     <button class="menu-mais-item" onclick="fecharModalMais(); abrirModalNovaPasta()">➕📁 Nova pasta</button>
     <label class="menu-mais-item" style="display:flex;align-items:center;gap:8px;cursor:pointer">
       <input type="checkbox" id="chk-esconder-aguardando" onchange="alternarEsconderAguardando(this.checked)">
@@ -1614,8 +1642,8 @@
   </div>
 </div>
 
-<div class="modal" id="modal-nova-pasta">
-  <div class="modal-content">
+<div class="modal-overlay" id="modal-nova-pasta" onclick="if(event.target===this) fecharModalNovaPasta()">
+  <div class="modal">
     <h3>➕📁 Nova Pasta</h3>
     <div class="form-group">
       <label>Nome da pasta nova</label>
@@ -3243,7 +3271,13 @@ async function salvarTarefa() {
 }
 
 // ===== PRINT =====
-// window.print() chamado diretamente no botão 🖨️
+// "reduzido" = uma linha compacta por tarefa. "tela" = mantém cards/lista igual você vê no app.
+function imprimir(modo) {
+  document.body.classList.remove('print-reduzido', 'print-tela');
+  document.body.classList.add(modo === 'tela' ? 'print-tela' : 'print-reduzido');
+  window.print();
+  setTimeout(() => document.body.classList.remove('print-reduzido', 'print-tela'), 500);
+}
 
 // ===== UTILS =====
 function showLoading() {
