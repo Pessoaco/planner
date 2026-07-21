@@ -1167,7 +1167,7 @@
   @media print {
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-    .header, .sidebar-pastas, .sidebar-overlay, .fab, .modal-overlay, .toast, .filters,
+    .header, .sidebar-pastas, .sidebar-overlay, .fab, .bottom-nav, .modal-overlay, .toast, .filters,
     .search-bar, .counters, .tarefa-acoes, .btn-concluir-grande, .btn-excluir-rodape,
     .btn-desfazer, .btn-lembrete, .categoria-toggle, .btn-editar-topo,
     .check-selecao, .selecao-barra, .btn-nova-inline,
@@ -1212,19 +1212,6 @@
     /* Não imprime tarefas concluídas — só andamento/relatório na tela */
     .tarefa-card.status-Concluído { display: none !important; }
 
-    /* Rodapé com numeração de página — não é toda impressora/PDF que respeita isso,
-       verifique também a caixinha "Cabeçalhos e rodapés" na janela de impressão do navegador */
-    @page { margin: 12mm 5mm 14mm; }
-    body::after {
-      content: 'Página ' counter(page) ' de ' counter(pages);
-      position: fixed;
-      bottom: 4mm;
-      left: 0;
-      right: 0;
-      text-align: center;
-      font-size: 8px;
-      color: #999;
-    }
   }
 
   /* Formato REDUZIDO — uma linha compacta por tarefa (padrão) */
@@ -1289,6 +1276,16 @@
     body.print-tela .meta-item { font-size: 10px; }
     body.print-tela .badge { font-size: 9px; padding: 2px 6px; }
     body.print-tela .tarefa-card { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
+
+    /* Se estava em Cards na tela, mantém lado a lado no papel também */
+    body.print-tela:not(.vista-lista-print) #main .categoria-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 8px;
+      align-items: start;
+    }
+    body.print-tela:not(.vista-lista-print) #main .categoria-header { grid-column: 1 / -1; }
+    body.print-tela:not(.vista-lista-print) #main .tarefa-card { margin-bottom: 0; }
   }
 
   @media screen and (min-width: 640px) {
@@ -3273,10 +3270,11 @@ async function salvarTarefa() {
 // ===== PRINT =====
 // "reduzido" = uma linha compacta por tarefa. "tela" = mantém cards/lista igual você vê no app.
 function imprimir(modo) {
-  document.body.classList.remove('print-reduzido', 'print-tela');
+  document.body.classList.remove('print-reduzido', 'print-tela', 'vista-lista-print');
   document.body.classList.add(modo === 'tela' ? 'print-tela' : 'print-reduzido');
+  if (vistaModo === 'lista') document.body.classList.add('vista-lista-print');
   window.print();
-  setTimeout(() => document.body.classList.remove('print-reduzido', 'print-tela'), 500);
+  setTimeout(() => document.body.classList.remove('print-reduzido', 'print-tela', 'vista-lista-print'), 500);
 }
 
 // ===== UTILS =====
