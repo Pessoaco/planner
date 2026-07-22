@@ -379,7 +379,9 @@
   #main.vista-lista .badges { flex-shrink: 0; margin-top: 0; display: flex; gap: 4px; }
   #main.vista-lista .mudar-status-links { margin-top: 0; flex-basis: auto; flex-shrink: 0; gap: 4px; display: flex; }
   /* Junta o badge (Urgente/Em andamento) com o linkzinho de trocar dele, lado a lado */
-  #main.vista-lista .campo-inline { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
+  .campo-inline { display: inline-flex; align-items: center; gap: 3px; }
+  .campos-pares-card { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-top: 6px; }
+  #main.vista-lista .campo-inline { gap: 3px; flex-shrink: 0; }
   #main.vista-lista .tarefa-acoes { margin-top: 0; flex-shrink: 0; }
 
   /* Textos curtos só aparecem na vista em lista, pra economizar espaço */
@@ -2584,6 +2586,9 @@ function renderTarefas(tarefas) {
   const mainEl = document.getElementById('main');
   mainEl.innerHTML = html;
   mainEl.dataset.aba = abaAtual;
+  // Força o navegador a recalcular o layout na hora — sem isso, às vezes os cards
+  // ficam com altura/alinhamento errado até a pessoa clicar em algo de novo
+  void mainEl.offsetHeight;
 }
 
 // Evita o bug de new Date() interpretar "10/07/2026" como mês/dia (formato americano)
@@ -2737,10 +2742,8 @@ function cardHtml(t) {
       </div>
       ${metaHtml}
       <div class="tarefa-rodape">
-        <div class="mini-legenda">Prioridade e Status atual:</div>
-        ${badgesHtml}
+        <div class="campos-pares-card">${camposParesHtml}</div>
         ${desfazerHtml}
-        ${linksHtml}
         <div class="tarefa-rodape-acoes">
           ${btnMaisAcoes}
           ${concluirHtml}
