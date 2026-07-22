@@ -2036,10 +2036,16 @@ abaAtual = abaOrdem[0];
 
 // Atualiza a lista de pastas (ABAS/ABA_LABEL) com o que realmente existe na planilha —
 // preserva a ordem que a pessoa já organizou e só acrescenta as pastas novas no final.
+// Deixa o nome bonito (Primeira Letra Maiúscula) mesmo se a aba na planilha estiver em CAIXA ALTA —
+// assim os usuários que só usam o app (sem acesso à planilha) sempre veem um nome consistente
+function formatarNomePasta(nome) {
+  return String(nome).toLowerCase().replace(/(^|[\s/])\S/g, c => c.toUpperCase());
+}
+
 function sincronizarPastas(lista) {
   if (!Array.isArray(lista) || !lista.length) return;
   ABAS = lista;
-  lista.forEach(p => { if (!ABA_LABEL[p]) ABA_LABEL[p] = p; });
+  lista.forEach(p => { if (!ABA_LABEL[p]) ABA_LABEL[p] = formatarNomePasta(p); });
   const jaTinha = abaOrdem.filter(a => lista.includes(a));
   const novas = lista.filter(a => !jaTinha.includes(a));
   abaOrdem = [...jaTinha, ...novas];
