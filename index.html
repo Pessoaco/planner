@@ -2170,18 +2170,40 @@ async function loadData() {
   const scrollY = window.scrollY;
   showLoading();
   try {
-    const res = await fetch(`${API_URL}?action=getAll`, { cache: 'no-store' });
-    const text = await res.text();
-    allData = JSON.parse(text);
-    sincronizarPastas(Object.keys(allData));
+    // Carrega rápido só a pasta atual + a lista de pastas (pra tela abrir na hora),
+    // em vez de esperar os dados de TODAS as pastas pra mostrar qualquer coisa
+    const [resPastas, resAtual] = await Promise.all([
+      fetch(`${API_URL}?action=getPastas`, { cache: 'no-store' }),
+      fetch(`${API_URL}?action=getData&aba=${encodeURIComponent(abaAtual)}`, { cache: 'no-store' })
+    ]);
+    const pastasResp = JSON.parse(await resPastas.text());
+    const dadosAtual = JSON.parse(await resAtual.text());
+
+    if (pastasResp.ok && Array.isArray(pastasResp.pastas)) sincronizarPastas(pastasResp.pastas);
+    allData[abaAtual] = dadosAtual;
+
     const now = new Date().toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     document.getElementById('last-update').textContent = `Atualizado às ${now}`;
     popularBotoesEnvolvidos();
     render();
     requestAnimationFrame(() => window.scrollTo(0, scrollY));
+
+    carregarRestanteDasPastas();
   } catch (e) {
     document.getElementById('main').innerHTML =
       `<div class="empty">⚠️ Erro ao carregar dados. Verifique sua conexão e tente novamente.<br><small>${e.message}</small></div>`;
+  }
+}
+
+// Busca os dados das outras pastas em segundo plano, sem travar a tela que já está aberta
+async function carregarRestanteDasPastas() {
+  try {
+    const res = await fetch(`${API_URL}?action=getAll`, { cache: 'no-store' });
+    allData = JSON.parse(await res.text());
+    popularBotoesEnvolvidos();
+    render();
+  } catch (e) {
+    // Silencioso — a pasta atual já carregou, não precisa travar o uso por causa disso
   }
 }
 
