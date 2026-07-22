@@ -273,6 +273,27 @@
     padding-bottom: 4px;
     font-size: 11px;
   }
+
+  /* Mostra em qual pasta você está — só no celular, onde a barra de pastas fica escondida */
+  .pasta-atual-mobile {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    background: var(--gray-light);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin: 2px 0 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
+  }
+  @media (max-width: 639px) {
+    .pasta-atual-mobile { display: flex; }
+  }
   .chip-ativo {
     background: var(--primary-light);
     color: var(--primary);
@@ -424,7 +445,14 @@
   .link-trocar-txt-curto { display: none; }
   #main.vista-lista .link-trocar-txt-completo { display: none; }
   #main.vista-lista .link-trocar-txt-curto { display: inline; }
-  #main.vista-lista .link-trocar { padding: 4px 6px; font-size: 10px; }
+  /* Botão de verdade, não ícone soltinho — dedo grande precisa de alvo grande, mesmo na lista */
+  #main.vista-lista .link-trocar {
+    background: var(--gray-light);
+    border-radius: 8px;
+    padding: 9px 11px;
+    margin: 0;
+    font-size: 15px;
+  }
   #main.vista-lista .badge { font-size: 10px; padding: 3px 7px; }
 
   #main.vista-lista .btn-lembrete {
@@ -1510,6 +1538,7 @@
   </div>
 
   <div class="chips-ativos" id="chips-ativos"></div>
+  <button class="pasta-atual-mobile" id="pasta-atual-mobile" onclick="toggleSidebar()"></button>
 </header>
 
 <div class="modal-overlay" id="modal-filtros" onclick="if(event.target===this) fecharModalFiltros()">
@@ -2444,6 +2473,7 @@ function renderMantendoScroll() {
 
 // ===== RENDER =====
 function render() {
+  atualizarPastaAtualMobile();
   // Qualquer filtro ativo (prioridade, status, envolvido ou busca) passa a procurar em todas as abas
   if (algumFiltroAtivo()) {
     const cruzadas = ABAS.flatMap(aba => (allData[aba] || []).map(t => ({ ...t, _aba: aba })));
@@ -2454,6 +2484,18 @@ function render() {
   const tarefas = (allData[abaAtual] || []).map(t => ({ ...t, _aba: abaAtual }));
   renderCounters(tarefas);
   renderTarefas(tarefas);
+}
+
+// Mostra em qual pasta a pessoa está vendo — importante no celular, onde a barra de pastas fica escondida
+function atualizarPastaAtualMobile() {
+  const el = document.getElementById('pasta-atual-mobile');
+  if (!el) return;
+  if (algumFiltroAtivo()) {
+    el.innerHTML = `🌐 Vendo todas as pastas`;
+  } else {
+    const [cor] = corDaPasta(abaAtual);
+    el.innerHTML = `<span style="color:${cor}">${iconeCategoria(abaAtual)}</span> Você está em: <span style="color:${cor}">${ABA_LABEL[abaAtual] || abaAtual}</span>`;
+  }
 }
 
 function renderCounters(tarefas) {
@@ -2790,10 +2832,10 @@ function cardHtml(t) {
         <div class="tarefa-top">
           ${modoSelecao ? `<input type="checkbox" class="check-selecao" ${selecionados.has(chaveSelecao) ? 'checked' : ''} onchange="toggleSelecionado('${chaveSelecao}', this.checked)">` : ''}
           <div class="tarefa-nome" data-full="${nomeAttr}" data-curto="${nomeCurtoAttr}" onclick="this.classList.toggle('expandido'); this.textContent = this.classList.contains('expandido') ? this.dataset.full : this.dataset.curto;">${nomeExibido}</div>
+          ${botoesTopo}
         </div>
         ${metaHtml}
         <div class="tarefa-lista-direita">
-          <div class="tarefa-acoes-topo">${botoesTopo}</div>
           ${camposParesHtml}
           ${desfazerHtml}
           ${btnMaisAcoes}
