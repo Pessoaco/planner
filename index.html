@@ -323,7 +323,7 @@
     display: grid;
     /* Larguras fixas em % (não 1fr/auto) — assim a coluna de Observação/Envolvido sempre
        começa no mesmo lugar em todas as linhas, não varia conforme o conteúdo de cada tarefa */
-    grid-template-columns: 36% 30% 1fr;
+    grid-template-columns: 30% 26% 1fr;
     column-gap: 12px;
     align-items: center;
     padding: 8px 12px;
@@ -687,17 +687,20 @@
     white-space: nowrap;
   }
 
+  /* Paleta de PRIORIDADE — nunca usa verde (verde é só do botão Concluir) */
   .badge-prio-Urgente { background: var(--danger-light); color: var(--danger); }
   .badge-prio-Média { background: var(--warning-light); color: var(--warning); }
-  .badge-prio-Baixa { background: var(--success-light); color: var(--success); }
+  .badge-prio-Baixa { background: #e2e8f0; color: #475569; }
 
+  /* Paleta de STATUS — cores diferentes da Prioridade, pra não confundir uma com a outra.
+     Concluído continua verde de propósito (é o mesmo significado do botão Concluir). */
   .badge-status-Aberto { background: var(--primary-light); color: var(--primary); }
-  .badge-status-EmAndamento { background: var(--warning-light); color: var(--warning); }
+  .badge-status-EmAndamento { background: #cffafe; color: #0e7490; }
   .badge-status-Concluído { background: var(--success-light); color: var(--success); }
   .badge-status-Aguardando { background: #f3e8ff; color: #9333ea; }
-  .badge-status-Iniciado { background: #e0f2fe; color: #0284c7; }
-  .badge-status-Aconferir { background: #fff7ed; color: #ea580c; }
-  .badge-status-Feito { background: #ecfccb; color: #4d7c0f; }
+  .badge-status-Iniciado { background: #e0e7ff; color: #4338ca; }
+  .badge-status-Aconferir { background: #fce7f3; color: #be185d; }
+  .badge-status-Feito { background: #fef9c3; color: #a16207; }
 
   .badge-info { background: var(--gray-light); color: var(--gray); }
 
