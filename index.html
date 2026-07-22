@@ -102,7 +102,8 @@
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.4);
-    z-index: 90;
+    /* Fica acima do cabeçalho (z-index:100) — senão a gaveta some atrás dele no celular */
+    z-index: 150;
   }
   .sidebar-overlay.open { display: block; }
 
@@ -113,7 +114,7 @@
     height: 100%;
     width: 220px;
     background: white;
-    z-index: 95;
+    z-index: 155;
     display: flex;
     flex-direction: column;
     gap: 3px;
@@ -766,8 +767,8 @@
     background: none;
     border: none;
     /* Área de toque maior que o ícone em si — dedo grande erra fácil num alvo pequeno */
-    padding: 8px;
-    margin: -8px;
+    padding: 6px;
+    margin: -6px;
     font-size: 13px;
     font-weight: 600;
     color: var(--primary);
