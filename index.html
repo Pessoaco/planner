@@ -102,8 +102,8 @@
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.4);
-    /* Fica acima do cabeçalho (z-index:100) — senão a gaveta some atrás dele no celular */
-    z-index: 150;
+    /* Acima do cabeçalho (100) e do rodapé fixo (200) — a gaveta cobre tudo quando aberta */
+    z-index: 205;
   }
   .sidebar-overlay.open { display: block; }
 
@@ -114,11 +114,12 @@
     height: 100%;
     width: 220px;
     background: white;
-    z-index: 155;
+    /* Acima do rodapé fixo (z-index:200) também — senão as últimas pastas ficam escondidas atrás dele */
+    z-index: 210;
     display: flex;
     flex-direction: column;
     gap: 3px;
-    padding: 16px 10px;
+    padding: 16px 10px calc(16px + 60px + env(safe-area-inset-bottom));
     overflow-y: auto;
     transform: translateX(-100%);
     transition: transform 0.2s;
@@ -388,6 +389,36 @@
   .campos-pares-card { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 6px; }
   #main.vista-lista .campo-inline { gap: 3px; flex-shrink: 0; }
   #main.vista-lista .tarefa-acoes { margin-top: 0; flex-shrink: 0; }
+
+  /* Celular estreito: a grade de 3 colunas fixas não cabe — empilha tudo em bloco, como um mini-card */
+  @media (max-width: 520px) {
+    #main.vista-lista .tarefa-card {
+      display: block;
+      padding: 10px 12px;
+    }
+    #main.vista-lista .tarefa-top { margin-bottom: 4px; }
+    #main.vista-lista .tarefa-meta {
+      display: block;
+      white-space: normal;
+      overflow: visible;
+      margin-bottom: 6px;
+    }
+    #main.vista-lista .tarefa-meta .meta-item {
+      display: inline-flex;
+      white-space: normal;
+      margin-right: 10px;
+    }
+    #main.vista-lista .meta-obs {
+      display: inline;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+    }
+    #main.vista-lista .tarefa-lista-direita {
+      justify-content: flex-start;
+      justify-self: auto;
+    }
+  }
 
   /* Textos curtos só aparecem na vista em lista, pra economizar espaço */
   .link-trocar-txt-curto { display: none; }
