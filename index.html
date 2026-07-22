@@ -150,7 +150,13 @@
     user-select: none;
     -webkit-user-select: none;
   }
-  .sidebar-item .sidebar-item-label { overflow: hidden; text-overflow: ellipsis; }
+  .sidebar-item .sidebar-item-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+  }
   .sidebar-item .sidebar-tab {
     position: absolute;
     top: 6px;
@@ -315,7 +321,9 @@
   }
   #main.vista-lista .tarefa-card {
     display: grid;
-    grid-template-columns: 1fr 1fr auto;
+    /* Larguras fixas em % (não 1fr/auto) — assim a coluna de Observação/Envolvido sempre
+       começa no mesmo lugar em todas as linhas, não varia conforme o conteúdo de cada tarefa */
+    grid-template-columns: 36% 30% 1fr;
     column-gap: 12px;
     align-items: center;
     padding: 8px 12px;
@@ -631,6 +639,21 @@
     font-weight: 600;
     color: #3f3f46;
     line-height: 1.3;
+    cursor: pointer;
+  }
+
+  /* Nome e observação limitados a 2 linhas no card — clica duas vezes na tarefa pra abrir e ver tudo */
+  #main:not(.vista-lista) .tarefa-nome {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  #main:not(.vista-lista) .meta-obs {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   .tarefa-card.status-Concluído .tarefa-nome {
@@ -763,15 +786,17 @@
 
   /* Lápis no topo, ao lado do nome da tarefa */
   .btn-editar-topo {
-    background: none;
+    background: var(--gray-light);
     border: none;
-    font-size: 16px;
+    border-radius: 8px;
+    font-size: 15px;
     cursor: pointer;
     flex-shrink: 0;
-    padding: 2px 4px;
+    padding: 6px 9px;
     margin-left: auto;
   }
   .btn-editar-topo:active { opacity: 0.6; }
+  #main.vista-lista .btn-editar-topo { padding: 5px 7px; }
 
   /* "Mais ações" (duplicar/compartilhar/lembrete) — perto do Concluir, é o menos usado */
   .btn-mais-acoes {
@@ -1329,10 +1354,16 @@
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
       gap: 12px;
-      align-items: start;
+      align-items: stretch;
     }
     .categoria-header { grid-column: 1 / -1; }
-    .categoria-group .tarefa-card { margin-bottom: 0; }
+    /* Todos os cards da mesma linha ficam com a mesma altura, mesmo com quantidades diferentes de conteúdo */
+    .categoria-group .tarefa-card {
+      margin-bottom: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .categoria-group .tarefa-card .btn-concluir-grande { margin-top: auto; }
 
     /* Tudo numa linha só (tem espaço de sobra no PC) */
     .filters, .busca-avancada-painel { justify-content: center; align-items: center; }
@@ -1361,7 +1392,7 @@
     #modal-filtros .filters-break { display: block !important; }
 
     /* Data/hora maior e mais escura, mais fácil de ler */
-    .meta-item { font-size: 14px; color: var(--text); font-weight: 500; }
+    .meta-item { font-size: 14px; color: var(--text-muted); font-weight: 400; }
   }
 </style>
 </head>
@@ -2096,7 +2127,7 @@ function renderTabs() {
     const ativa = !cruzado && aba === abaAtual;
     return `
     <div class="sidebar-item ${ativa ? 'active' : ''}" data-aba="${aba}" style="order:${i}" title="${ABA_LABEL[aba]}">
-      <span style="color:${cor}">${iconeCategoria(aba)}</span><span class="sidebar-item-label">${nomeCurtoPasta(aba)}</span>
+      <span style="color:${cor}">${iconeCategoria(aba)}</span><span class="sidebar-item-label" style="color:${cor}">${nomeCurtoPasta(aba)}</span>
       <span class="sidebar-tab" style="background:${cor}"></span>
     </div>
   `;
@@ -2681,7 +2712,7 @@ function cardHtml(t) {
   }
 
   return `
-    <div class="tarefa-card prioridade-${prio} status-${status.replace(/\s/g,'')}" id="card-${t.ID}">
+    <div class="tarefa-card prioridade-${prio} status-${status.replace(/\s/g,'')}" id="card-${t.ID}" ondblclick='openEditModal(${dadosJson})'>
       <div class="tarefa-top">
         ${modoSelecao ? `<input type="checkbox" class="check-selecao" ${selecionados.has(chaveSelecao) ? 'checked' : ''} onchange="toggleSelecionado('${chaveSelecao}', this.checked)">` : ''}
         <div class="tarefa-nome" title="${t.Tarefa}">${nomeExibido}</div>
