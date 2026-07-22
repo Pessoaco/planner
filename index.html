@@ -807,6 +807,16 @@
   }
   .link-trocar:active { opacity: 0.6; }
 
+  /* No card, o lápis de trocar prioridade/status vira um botão visível de verdade — não só um
+     ícone soltinho no ar, mais fácil de mirar com o dedo */
+  #main:not(.vista-lista) .link-trocar {
+    background: var(--gray-light);
+    border-radius: 8px;
+    padding: 9px 11px;
+    margin: 0;
+    font-size: 15px;
+  }
+
   /* Botõezinhos que aparecem no lugar do link, ao clicar em "Trocar Prioridade/Status" */
   .opcoes-inline { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
   .opcao-inline-btn {
@@ -841,6 +851,14 @@
   }
   .btn-editar-topo:active { opacity: 0.6; }
   #main.vista-lista .btn-editar-topo { padding: 5px 7px; }
+
+  /* No card (não na lista), o lápis de editar é maior — dedo grande precisa de alvo grande,
+     e mais espaço embaixo do nome pra não ficar perto de outros botões sem querer */
+  #main:not(.vista-lista) .tarefa-top { margin-bottom: 6px; }
+  #main:not(.vista-lista) .btn-editar-topo {
+    font-size: 20px;
+    padding: 10px 14px;
+  }
 
   /* "Mais ações" (duplicar/compartilhar/lembrete) — perto do Concluir, é o menos usado */
   .btn-mais-acoes {
@@ -1411,7 +1429,7 @@
     /* Cards lado a lado em grade no PC (tem espaço de sobra) */
     .categoria-group {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 12px;
       align-items: stretch;
     }
@@ -2199,7 +2217,19 @@ function renderTabs() {
   });
 }
 
+// Faz a gaveta começar embaixo do cabeçalho (não cobrir ele) — o cabeçalho muda de altura
+// conforme quebra linha, então mede na hora em vez de fixar um valor
+function posicionarSidebar() {
+  const header = document.querySelector('.header');
+  const sidebar = document.getElementById('sidebar-pastas');
+  if (window.innerWidth >= 640 || !header || !sidebar) return; // no PC a sidebar já é fixa do lado, não precisa
+  const altura = header.getBoundingClientRect().height;
+  sidebar.style.top = altura + 'px';
+  sidebar.style.height = `calc(100% - ${altura}px)`;
+}
+
 function toggleSidebar() {
+  posicionarSidebar();
   document.getElementById('sidebar-pastas').classList.toggle('open');
   document.getElementById('sidebar-overlay').classList.toggle('open');
 }
