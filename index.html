@@ -618,13 +618,14 @@
     padding: 11px;
     margin-bottom: 6px;
     box-shadow: var(--shadow);
-    border-left: 3px solid transparent;
+    border-left: 2px solid transparent;
     transition: all 0.2s;
   }
 
+  /* Fica reservado pra prioridade — o verde é só do botão Concluir, nunca da borda */
   .tarefa-card.prioridade-Urgente { border-left-color: var(--danger); }
   .tarefa-card.prioridade-Média { border-left-color: var(--warning); }
-  .tarefa-card.prioridade-Baixa { border-left-color: var(--success); }
+  .tarefa-card.prioridade-Baixa { border-left-color: #94a3b8; }
   .tarefa-card.status-Concluído { opacity: 0.55; }
 
   .tarefa-top {
@@ -800,18 +801,33 @@
 
   /* "Mais ações" (duplicar/compartilhar/lembrete) — perto do Concluir, é o menos usado */
   .btn-mais-acoes {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    width: auto;
+    flex: 0 0 auto;
     background: var(--gray-light);
     border: none;
     color: var(--text-muted);
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
-    padding: 8px 14px;
+    padding: 8px 12px;
     border-radius: 8px;
     cursor: pointer;
-    flex-shrink: 0;
   }
   .btn-mais-acoes:active { opacity: 0.6; }
   #main.vista-lista .btn-mais-acoes { padding: 6px 10px; }
+
+  /* Bloco fixo no rodapé do card: prioridade/status + "mais ações" + concluir, tudo junto embaixo */
+  .tarefa-rodape-acoes {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .tarefa-rodape-acoes .btn-concluir-grande { flex: 1; margin-top: 0; }
 
   /* Compartilhar no WhatsApp — fundo verde clarinho pra destacar dos outros dois ícones */
   .btn-compartilhar-topo {
@@ -1363,7 +1379,8 @@
       display: flex;
       flex-direction: column;
     }
-    .categoria-group .tarefa-card .btn-concluir-grande { margin-top: auto; }
+    /* Junta prioridade/status + "mais ações" + concluir num bloco só, grudado embaixo do card */
+    .categoria-group .tarefa-card .tarefa-rodape { margin-top: auto; }
 
     /* Tudo numa linha só (tem espaço de sobra no PC) */
     .filters, .busca-avancada-painel { justify-content: center; align-items: center; }
@@ -2719,12 +2736,16 @@ function cardHtml(t) {
         ${botoesTopo}
       </div>
       ${metaHtml}
-      <div class="mini-legenda">Prioridade e Status atual:</div>
-      ${badgesHtml}
-      ${desfazerHtml}
-      ${linksHtml}
-      ${btnMaisAcoes}
-      ${concluirHtml}
+      <div class="tarefa-rodape">
+        <div class="mini-legenda">Prioridade e Status atual:</div>
+        ${badgesHtml}
+        ${desfazerHtml}
+        ${linksHtml}
+        <div class="tarefa-rodape-acoes">
+          ${btnMaisAcoes}
+          ${concluirHtml}
+        </div>
+      </div>
     </div>
   `;
 }
