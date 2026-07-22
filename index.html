@@ -380,7 +380,7 @@
   #main.vista-lista .mudar-status-links { margin-top: 0; flex-basis: auto; flex-shrink: 0; gap: 4px; display: flex; }
   /* Junta o badge (Urgente/Em andamento) com o linkzinho de trocar dele, lado a lado */
   .campo-inline { display: inline-flex; align-items: center; gap: 3px; }
-  .campos-pares-card { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-top: 6px; }
+  .campos-pares-card { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 6px; }
   #main.vista-lista .campo-inline { gap: 3px; flex-shrink: 0; }
   #main.vista-lista .tarefa-acoes { margin-top: 0; flex-shrink: 0; }
 
@@ -680,10 +680,11 @@
   }
 
   .badge {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
-    padding: 5px 12px;
+    padding: 5px 9px;
     border-radius: 8px;
+    white-space: nowrap;
   }
 
   .badge-prio-Urgente { background: var(--danger-light); color: var(--danger); }
@@ -1370,7 +1371,7 @@
     /* Cards lado a lado em grade no PC (tem espaço de sobra) */
     .categoria-group {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
       gap: 12px;
       align-items: stretch;
     }
