@@ -2238,17 +2238,13 @@ async function loadData() {
   const scrollY = window.scrollY;
   showLoading();
   try {
-    // Carrega rápido só a pasta atual + a lista de pastas (pra tela abrir na hora),
-    // em vez de esperar os dados de TODAS as pastas pra mostrar qualquer coisa
-    const [resPastas, resAtual] = await Promise.all([
-      fetch(`${API_URL}?action=getPastas`, { cache: 'no-store' }),
-      fetch(`${API_URL}?action=getData&aba=${encodeURIComponent(abaAtual)}`, { cache: 'no-store' })
-    ]);
-    const pastasResp = JSON.parse(await resPastas.text());
-    const dadosAtual = JSON.parse(await resAtual.text());
+    // Carrega rápido só a pasta atual + a lista de pastas, numa chamada SÓ (o Apps Script não
+    // roda 2 chamadas em paralelo de verdade, então juntar tudo evita pagar a demora de "aquecer" 2x)
+    const res = await fetch(`${API_URL}?action=getInicial&aba=${encodeURIComponent(abaAtual)}`, { cache: 'no-store' });
+    const resp = JSON.parse(await res.text());
 
-    if (pastasResp.ok && Array.isArray(pastasResp.pastas)) sincronizarPastas(pastasResp.pastas);
-    allData[abaAtual] = dadosAtual;
+    if (resp.ok && Array.isArray(resp.pastas)) sincronizarPastas(resp.pastas);
+    allData[abaAtual] = resp.dados || [];
 
     const now = new Date().toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     document.getElementById('last-update').textContent = `Atualizado às ${now}`;
@@ -2288,6 +2284,7 @@ function toggleVista() {
   vistaModo = vistaModo === 'lista' ? 'cards' : 'lista';
   localStorage.setItem('vistaModo', vistaModo);
   aplicarVista();
+  render();
 }
 
 function switchTab(aba) {
