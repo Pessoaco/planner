@@ -2052,6 +2052,7 @@ function sincronizarPastas(lista) {
   if (!lista.includes(abaAtual)) abaAtual = abaOrdem[0];
   popularSelectPastas();
   renderTabs();
+  try { localStorage.setItem('pastasCache', JSON.stringify(lista)); } catch (e) {}
 }
 
 // Preenche o <select> "Pasta" do formulário de Nova/Editar tarefa com as pastas de verdade
@@ -3329,6 +3330,12 @@ function showToast(msg) {
 }
 
 // Inicia
+// Usa a última lista de pastas conhecida (salva no aparelho) antes mesmo da resposta do servidor chegar,
+// pra não mostrar por 1-2s a lista antiga/errada enquanto carrega de verdade
+try {
+  const pastasCache = JSON.parse(localStorage.getItem('pastasCache') || 'null');
+  if (Array.isArray(pastasCache) && pastasCache.length) sincronizarPastas(pastasCache);
+} catch (e) {}
 renderTabs();
 aplicarVista();
 loadData();
