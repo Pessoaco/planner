@@ -66,8 +66,10 @@
 
   .header-top {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
+    row-gap: 8px;
     margin-bottom: 12px;
   }
 
@@ -146,7 +148,9 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    touch-action: none;
+    /* pan-y (não "none") — deixa o dedo rolar a lista verticalmente no celular;
+       o arrastar-pra-reordenar continua funcionando no mouse (desktop) */
+    touch-action: pan-y;
     user-select: none;
     -webkit-user-select: none;
   }
@@ -189,7 +193,7 @@
     margin-bottom: 12px;
   }
 
-  .header-botoes { display: flex; gap: 6px; }
+  .header-botoes { display: flex; flex-wrap: wrap; gap: 6px; }
 
   .btn-filtro-pill {
     display: inline-flex;
@@ -761,14 +765,15 @@
   .link-trocar {
     background: none;
     border: none;
-    padding: 0;
-    font-size: 11px;
+    /* Área de toque maior que o ícone em si — dedo grande erra fácil num alvo pequeno */
+    padding: 8px;
+    margin: -8px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--primary);
-    text-decoration: underline;
     cursor: pointer;
   }
-  .link-trocar:active { opacity: 0.7; }
+  .link-trocar:active { opacity: 0.6; }
 
   /* Botõezinhos que aparecem no lugar do link, ao clicar em "Trocar Prioridade/Status" */
   .opcoes-inline { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
@@ -2337,7 +2342,9 @@ function setFilter(grupo, valor) {
     filtroStatusG = new Set();
     filtroEnvolvidoG = new Set();
     searchTermLocal = '';
+    searchTerm = '';
     document.getElementById('search-local-input').value = '';
+    document.getElementById('search-input').value = '';
   } else if (grupo === 'prioridade') {
     if (filtroPrioridade.has(valor)) filtroPrioridade.delete(valor); else filtroPrioridade.add(valor);
   } else if (grupo === 'status') {
