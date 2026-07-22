@@ -1170,6 +1170,7 @@
     .header, .sidebar-pastas, .sidebar-overlay, .fab, .bottom-nav, .modal-overlay, .toast, .filters,
     .search-bar, .counters, .tarefa-acoes, .btn-concluir-grande, .btn-excluir-rodape,
     .btn-desfazer, .btn-lembrete, .categoria-toggle, .btn-editar-topo,
+    .btn-nova-na-divisao,
     .check-selecao, .selecao-barra, .btn-nova-inline,
     .busca-avancada-toggle, .busca-avancada-painel,
     .mudar-status-links { display: none !important; }
@@ -3270,11 +3271,20 @@ async function salvarTarefa() {
 // ===== PRINT =====
 // "reduzido" = uma linha compacta por tarefa. "tela" = mantém cards/lista igual você vê no app.
 function imprimir(modo) {
+  const vistaOriginal = vistaModo;
+  // O formato reduzido foi feito pro HTML do card — se a tela tava em lista, força card só pra impressão
+  if (modo === 'reduzido' && vistaOriginal === 'lista') { vistaModo = 'cards'; aplicarVista(); render(); }
+
   document.body.classList.remove('print-reduzido', 'print-tela', 'vista-lista-print');
   document.body.classList.add(modo === 'tela' ? 'print-tela' : 'print-reduzido');
-  if (vistaModo === 'lista') document.body.classList.add('vista-lista-print');
+  if (modo === 'tela' && vistaOriginal === 'lista') document.body.classList.add('vista-lista-print');
+
   window.print();
-  setTimeout(() => document.body.classList.remove('print-reduzido', 'print-tela', 'vista-lista-print'), 500);
+
+  setTimeout(() => {
+    document.body.classList.remove('print-reduzido', 'print-tela', 'vista-lista-print');
+    if (vistaModo !== vistaOriginal) { vistaModo = vistaOriginal; aplicarVista(); render(); }
+  }, 500);
 }
 
 // ===== UTILS =====
