@@ -2045,6 +2045,7 @@ function sincronizarPastas(lista) {
   abaOrdem = [...jaTinha, ...novas];
   if (!lista.includes(abaAtual)) abaAtual = abaOrdem[0];
   popularSelectPastas();
+  renderTabs();
 }
 
 // Preenche o <select> "Pasta" do formulário de Nova/Editar tarefa com as pastas de verdade
