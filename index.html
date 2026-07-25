@@ -2833,7 +2833,7 @@ function cardHtml(t) {
       <div class="tarefa-card prioridade-${prio} status-${status.replace(/\s/g,'')}" id="card-${t.ID}">
         <div class="tarefa-top">
           ${modoSelecao ? `<input type="checkbox" class="check-selecao" ${selecionados.has(chaveSelecao) ? 'checked' : ''} onchange="toggleSelecionado('${chaveSelecao}', this.checked)">` : ''}
-          <div class="tarefa-nome" data-full="${nomeAttr}" data-curto="${nomeCurtoAttr}" onclick="this.classList.toggle('expandido'); this.textContent = this.classList.contains('expandido') ? this.dataset.full : this.dataset.curto;">${nomeExibido}</div>
+          <div class="tarefa-nome" data-full="${nomeAttr}" data-curto="${nomeCurtoAttr}" onclick="this.classList.toggle('expandido'); this.textContent = this.classList.contains('expandido') ? this.dataset.full : this.dataset.curto;" ondblclick='openEditModal(${dadosJson})'>${nomeExibido}</div>
           ${botoesTopo}
         </div>
         ${metaHtml}
