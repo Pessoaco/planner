@@ -1445,8 +1445,10 @@
     .sidebar-overlay { display: none !important; }
     .sidebar-pastas {
       position: sticky;
-      top: 0;
-      height: calc(100vh - 0px);
+      /* Gruda embaixo do cabeçalho, não em cima dele — a altura real é medida via JS
+         porque o cabeçalho muda de tamanho conforme os botões quebram linha */
+      top: var(--header-h, 0px);
+      height: calc(100vh - var(--header-h, 0px));
       width: 170px;
       flex-shrink: 0;
       transform: none;
@@ -1640,7 +1642,7 @@
   </div>
 </div>
 
-<div class="modal-overlay" id="modal-add" onclick="closeAddModal(event)">
+<div class="modal-overlay" id="modal-add">
   <div class="modal">
     <div class="modal-titulo-linha">
       <h3 id="modal-add-title">✏️ Nova tarefa</h3>
@@ -3525,6 +3527,19 @@ try {
 renderTabs();
 aplicarVista();
 loadData();
+
+// Mede a altura real do cabeçalho e mantém uma variável CSS atualizada — usada pra sidebar
+// (no PC) grudar embaixo do cabeçalho em vez de por cima dele. O cabeçalho muda de altura
+// conforme os botões quebram linha ou os chips de filtro aparecem, então observa sempre.
+function atualizarAlturaHeader() {
+  const header = document.querySelector('.header');
+  if (header) document.documentElement.style.setProperty('--header-h', header.getBoundingClientRect().height + 'px');
+}
+atualizarAlturaHeader();
+window.addEventListener('resize', atualizarAlturaHeader);
+if (window.ResizeObserver) {
+  new ResizeObserver(atualizarAlturaHeader).observe(document.querySelector('.header'));
+}
 </script>
 </body>
 </html>
