@@ -2680,7 +2680,7 @@ function renderTarefas(tarefas) {
     if (ordenacaoPorAgenda) {
       items.sort((a, b) => timestampTarefa(a) - timestampTarefa(b));
     } else {
-      items.sort((a, b) => (priOrd[a.Prioridade] ?? 1) - (priOrd[b.Prioridade] ?? 1));
+      items.sort((a, b) => (priOrd[a.Prioridade] ?? 1) - (priOrd[b.Prioridade] ?? 1) || (a.Tarefa || '').localeCompare(b.Tarefa || '', 'pt-BR'));
     }
     const colapsado = categoriasColapsadas.has(cat + abaAtual);
     const itemsHtml = colapsado ? '' : items.map(t => cardHtml(t)).join('');
