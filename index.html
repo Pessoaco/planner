@@ -2203,7 +2203,7 @@ abaAtual = abaOrdem[0];
 // Deixa o nome bonito (Primeira Letra Maiúscula) mesmo se a aba na planilha estiver em CAIXA ALTA —
 // assim os usuários que só usam o app (sem acesso à planilha) sempre veem um nome consistente
 function formatarNomePasta(nome) {
-  return String(nome).toLowerCase().replace(/(^|[\s/])\S/g, c => c.toUpperCase());
+  return String(nome).trim().toUpperCase();
 }
 
 function sincronizarPastas(lista) {
@@ -3435,7 +3435,7 @@ async function salvarTarefa() {
 
   const catSel = document.getElementById('f-categoria').value;
   const categoria = catSel === '__nova__'
-    ? document.getElementById('f-nova-cat').value.trim()
+    ? document.getElementById('f-nova-cat').value.trim().toUpperCase()
     : catSel;
   if (!categoria) { showToast('⚠️ Informe a divisão'); return; }
 
