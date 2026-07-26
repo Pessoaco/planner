@@ -1676,9 +1676,9 @@
     <div class="form-group">
       <label>Prioridade</label>
       <div class="prio-btns">
-        <button class="prio-btn sel" data-p="Urgente" onclick="selPrio(this)">🔴 Urgente</button>
+        <button class="prio-btn" data-p="Urgente" onclick="selPrio(this)">🔴 Urgente</button>
         <button class="prio-btn" data-p="Média" onclick="selPrio(this)">🟡 Média</button>
-        <button class="prio-btn" data-p="Baixa" onclick="selPrio(this)">🟢 Baixa</button>
+        <button class="prio-btn sel" data-p="Baixa" onclick="selPrio(this)">🟢 Baixa</button>
       </div>
     </div>
 
@@ -2074,6 +2074,7 @@ function setSearch(v) {
   const termo = normalizarBusca(v.trim());
   if (termo) limparFiltrosAoDigitar();
   searchTerm = termo;
+  fecharSidebar(); // garante que a gaveta de pastas nunca fique aberta cobrindo a tela ao digitar
   renderTabs();
   render();
 }
@@ -2083,6 +2084,7 @@ function setSearchLocal(v) {
   const termo = normalizarBusca(v.trim());
   if (termo) limparFiltrosAoDigitar();
   searchTermLocal = termo;
+  fecharSidebar();
   render();
 }
 // { id: { status: statusAnterior, ts: timestamp } } — fica salvo no celular até a pessoa desfazer,
@@ -2683,7 +2685,7 @@ function renderTarefas(tarefas) {
     const colapsado = categoriasColapsadas.has(cat + abaAtual);
     const itemsHtml = colapsado ? '' : items.map(t => cardHtml(t)).join('');
     // Na busca cruzada, colore a categoria com a cor da aba de origem (tipo etiqueta do fichário)
-    const corAba = cruzado ? `color: var(--aba-${ABA_LABEL[items[0]._aba].toLowerCase()});` : '';
+    const corAba = cruzado ? `color: ${corDaPasta(items[0]._aba)[0]};` : '';
     return `
       <div class="categoria-group">
         <div class="categoria-header" onclick="toggleCategoria('${cat}')">
@@ -3142,7 +3144,7 @@ async function openAddModal() {
   document.getElementById('f-data-conclusao').value = '';
   document.getElementById('btn-lembrete-modal').style.display = 'none';
   document.getElementById('btn-excluir-modal').style.display = 'none';
-  document.querySelectorAll('.prio-btn').forEach(b => b.classList.toggle('sel', b.dataset.p === 'Urgente'));
+  document.querySelectorAll('.prio-btn').forEach(b => b.classList.toggle('sel', b.dataset.p === 'Baixa'));
   document.getElementById('modal-add').classList.add('open');
 }
 
