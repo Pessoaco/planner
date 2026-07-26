@@ -2391,7 +2391,7 @@ function toggleVista() {
   render();
 }
 
-function switchTab(aba) {
+async function switchTab(aba) {
   abaAtual = aba;
   modoUrgentesAtivo = false;
   modoAgendaPeriodo = null;
@@ -2408,6 +2408,20 @@ function switchTab(aba) {
   filtroEnvolvidoG = new Set();
   atualizarBotoesFiltro();
   renderTabs();
+  popularBotoesEnvolvidos();
+
+  // Se essa pasta ainda não chegou (o carregamento de fundo não terminou), busca ela na
+  // hora — senão aparece "Nenhuma tarefa encontrada" por um instante, o que assusta
+  if (allData[aba] === undefined) {
+    showLoading();
+    try {
+      const res = await fetch(`${API_URL}?action=getData&aba=${encodeURIComponent(aba)}`, { cache: 'no-store' });
+      allData[aba] = JSON.parse(await res.text());
+    } catch (e) {
+      allData[aba] = [];
+    }
+  }
+
   popularBotoesEnvolvidos();
   render();
 }
