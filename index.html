@@ -1199,7 +1199,7 @@
 
   .btn-salvar {
     width: 100%;
-    padding: 13px;
+    padding: 17px 13px;
     background: var(--primary);
     color: white;
     border: none;
@@ -1209,6 +1209,9 @@
     cursor: pointer;
     margin-top: 4px;
     transition: opacity 0.2s;
+    /* Evita que o toque seja "engolido" pelo gesto de rolar quando o botão fica perto
+       da borda de uma área com scroll (bug clássico de iOS) */
+    touch-action: manipulation;
   }
 
   .btn-salvar:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -1229,13 +1232,14 @@
   .modal {
     background: white;
     border-radius: 20px 20px 0 0;
-    padding: 24px 20px 40px;
+    padding: 24px 20px 56px;
     width: 100%;
     max-width: 480px;
     max-height: 88vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
+  .modal button { touch-action: manipulation; }
 
   .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
 
@@ -1277,7 +1281,7 @@
 
   .modal-cancel {
     width: 100%;
-    padding: 12px;
+    padding: 15px 12px;
     background: var(--gray-light);
     border: none;
     border-radius: var(--radius);
@@ -1285,6 +1289,7 @@
     font-weight: 600;
     color: var(--text-muted);
     cursor: pointer;
+    touch-action: manipulation;
     margin-top: 8px;
   }
 
@@ -2669,8 +2674,12 @@ function renderTarefas(tarefas) {
     const cat = cruzado
       ? `${ABA_LABEL[t._aba]} — ${t['Divisão'] || 'Sem divisão'}`
       : (t['Divisão'] || 'Sem divisão');
-    if (!grupos[cat]) grupos[cat] = [];
-    grupos[cat].push(t);
+    // Agrupa ignorando maiúscula/minúscula e espaço extra — senão "Higiene" e "HIGIENE" (ou com
+    // espaço a mais) viram dois grupos diferentes que parecem idênticos na tela (o título é
+    // sempre exibido em CAIXA ALTA via CSS, então a diferença fica escondida da pessoa)
+    const catKey = cat.trim().toLowerCase();
+    if (!grupos[catKey]) grupos[catKey] = { label: cat.trim(), items: [] };
+    grupos[catKey].items.push(t);
   });
 
   const priOrd = { 'Urgente': 0, 'Média': 1, 'Baixa': 2 };
@@ -2687,30 +2696,31 @@ function renderTarefas(tarefas) {
   };
 
   const gruposOrdenados = ordenacaoPorAgenda
-    ? Object.entries(grupos).sort(([, itemsA], [, itemsB]) => {
-        const minA = Math.min(...itemsA.map(timestampTarefa));
-        const minB = Math.min(...itemsB.map(timestampTarefa));
+    ? Object.entries(grupos).sort(([, a], [, b]) => {
+        const minA = Math.min(...a.items.map(timestampTarefa));
+        const minB = Math.min(...b.items.map(timestampTarefa));
         return minA - minB;
       })
-    : Object.entries(grupos).sort(([a], [b]) => a.localeCompare(b));
+    : Object.entries(grupos).sort(([, a], [, b]) => a.label.localeCompare(b.label, 'pt-BR'));
 
-  const html = gruposOrdenados.map(([cat, items]) => {
+  const html = gruposOrdenados.map(([catKey, grupo]) => {
+    const { label: cat, items } = grupo;
     if (ordenacaoPorAgenda) {
       items.sort((a, b) => timestampTarefa(a) - timestampTarefa(b));
     } else {
       items.sort((a, b) => (priOrd[a.Prioridade] ?? 1) - (priOrd[b.Prioridade] ?? 1) || (a.Tarefa || '').localeCompare(b.Tarefa || '', 'pt-BR'));
     }
-    const colapsado = categoriasColapsadas.has(cat + abaAtual);
+    const colapsado = categoriasColapsadas.has(catKey + abaAtual);
     const itemsHtml = colapsado ? '' : items.map(t => cardHtml(t)).join('');
     // Na busca cruzada, colore a categoria com a cor da aba de origem (tipo etiqueta do fichário)
     const corAba = cruzado ? `color: ${corDaPasta(items[0]._aba)[0]};` : '';
     return `
       <div class="categoria-group">
-        <div class="categoria-header" onclick="toggleCategoria('${cat}')">
+        <div class="categoria-header" onclick="toggleCategoria('${catKey}')">
           <span class="categoria-title" style="${corAba}">${iconeCategoria(cat)} ${cat}</span>
+          <span class="categoria-toggle">${colapsado ? '▶' : '▼'}</span>
           <button class="btn-nova-na-divisao" onclick="event.stopPropagation(); abrirNovaTarefaNaDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').replace(/'/g,"\\'")}')" title="Nova tarefa nesta divisão">➕</button>
           <span class="categoria-count">${items.length}</span>
-          <span class="categoria-toggle">${colapsado ? '▶' : '▼'}</span>
         </div>
         ${itemsHtml}
       </div>
