@@ -1577,6 +1577,9 @@
       <div class="filters-break"></div>
       <div class="filtro-legenda">Envolvidos</div>
       <button class="filter-btn" id="btn-envolvidos" onclick="abrirModalEnvolvidos(false)">👤 Envolvidos</button>
+      <div class="filters-break"></div>
+      <div class="filtro-legenda">Tag</div>
+      <button class="filter-btn" id="btn-tags" onclick="abrirModalTags(false)">🏷️ Tag</button>
     </div>
 
     <div class="filtros-secao" id="filtros-secao-global">
@@ -1597,6 +1600,9 @@
       <div class="filters-break"></div>
       <div class="filtro-legenda">Envolvidos</div>
       <button class="filter-btn" id="btn-envolvidos-g" onclick="abrirModalEnvolvidos(true)">👤 Envolvidos</button>
+      <div class="filters-break"></div>
+      <div class="filtro-legenda">Tag</div>
+      <button class="filter-btn" id="btn-tags-g" onclick="abrirModalTags(true)">🏷️ Tag</button>
     </div>
 
     <button class="menu-mais-item" id="btn-ver-outra-secao" onclick="alternarSecaoFiltros()" style="text-align:center;font-weight:700"></button>
@@ -1745,6 +1751,11 @@
     </div>
 
     <div class="form-group">
+      <label>Tag (opcional — projeto/assunto, não é pessoa)</label>
+      <input type="text" id="f-tag" placeholder="Ex: ODOO">
+    </div>
+
+    <div class="form-group">
       <label>Observação (opcional)</label>
       <textarea id="f-obs" placeholder="Detalhes adicionais..."></textarea>
     </div>
@@ -1772,6 +1783,14 @@
     <h3 id="modal-envolvidos-title">👤 Envolvidos</h3>
     <div id="lista-envolvidos" class="opcoes-inline" style="justify-content:flex-start"></div>
     <button class="modal-cancel" onclick="fecharModalEnvolvidos()" style="margin-top:14px">Fechar</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-tags" onclick="if(event.target===this) fecharModalTags()">
+  <div class="modal">
+    <h3 id="modal-tags-title">🏷️ Tags</h3>
+    <div id="lista-tags" class="opcoes-inline" style="justify-content:flex-start"></div>
+    <button class="modal-cancel" onclick="fecharModalTags()" style="margin-top:14px">Fechar</button>
   </div>
 </div>
 
@@ -1860,19 +1879,21 @@ let abaAtual = 'PESSOAL';
 let filtroPrioridade = new Set();
 let filtroStatus = new Set();
 let filtroEnvolvido = new Set();
+let filtroTag = new Set();
 
 // Filtros GLOBAIS — painel "Busca avançada", sempre cruzam todas as abas
 let filtroPrioridadeG = new Set();
 let filtroStatusG = new Set();
 let filtroEnvolvidoG = new Set();
+let filtroTagG = new Set();
 
 function algumFiltroAtivo() {
   // Só os filtros GLOBAIS (+ busca por texto) forçam o modo cruzado entre abas
-  return filtroPrioridadeG.size > 0 || filtroStatusG.size > 0 || filtroEnvolvidoG.size > 0 || !!searchTerm || (!!modoAgendaPeriodo && modoAgendaEscopo === 'global');
+  return filtroPrioridadeG.size > 0 || filtroStatusG.size > 0 || filtroEnvolvidoG.size > 0 || filtroTagG.size > 0 || !!searchTerm || (!!modoAgendaPeriodo && modoAgendaEscopo === 'global');
 }
 
 function nenhumFiltroAtivoTotal() {
-  return !algumFiltroAtivo() && filtroPrioridade.size === 0 && filtroStatus.size === 0 && filtroEnvolvido.size === 0;
+  return !algumFiltroAtivo() && filtroPrioridade.size === 0 && filtroStatus.size === 0 && filtroEnvolvido.size === 0 && filtroTag.size === 0;
 }
 
 // Atualiza o texto dos botões "Envolvidos" com a contagem de selecionados (ex: "Envolvidos (2)")
@@ -1907,6 +1928,40 @@ function selecionarEnvolvido(nome, global) {
 
 function fecharModalEnvolvidos() {
   document.getElementById('modal-envolvidos').classList.remove('open');
+}
+
+// Atualiza o texto dos botões "Tag" com a contagem de selecionadas
+function popularBotoesTag() {
+  const btnLocal = document.getElementById('btn-tags');
+  if (btnLocal) btnLocal.textContent = `🏷️ Tag${filtroTag.size ? ` (${filtroTag.size})` : ''}`;
+  const btnGlobal = document.getElementById('btn-tags-g');
+  if (btnGlobal) btnGlobal.textContent = `🏷️ Tag${filtroTagG.size ? ` (${filtroTagG.size})` : ''}`;
+}
+
+// Popup de seleção de Tags — Tag é pra projeto/assunto, não pra pessoa (isso é Envolvido)
+function abrirModalTags(global) {
+  const nomes = global
+    ? [...new Set(ABAS.flatMap(aba => allData[aba] || []).map(t => (t.Tag || '').trim()).filter(Boolean))].sort()
+    : [...new Set((allData[abaAtual] || []).map(t => (t.Tag || '').trim()).filter(Boolean))].sort();
+
+  document.getElementById('modal-tags-title').textContent = global ? '🏷️ Tags (todas as pastas)' : '🏷️ Tags';
+  document.getElementById('lista-tags').innerHTML = nomes.length
+    ? nomes.map(n => {
+        const ativo = (global ? filtroTagG : filtroTag).has(n);
+        return `<button class="opcao-inline-btn${ativo ? ' sel' : ''}" onclick="selecionarTag('${n.replace(/'/g,"\\'")}', ${global})">🏷️ ${n}</button>`;
+      }).join('')
+    : '<p style="color:var(--text-muted);font-size:13px">Nenhuma tag cadastrada ainda.</p>';
+  document.getElementById('modal-tags').dataset.global = global;
+  document.getElementById('modal-tags').classList.add('open');
+}
+
+function selecionarTag(nome, global) {
+  setFilter(global ? 'tagG' : 'tag', nome);
+  abrirModalTags(global); // reabre a lista já atualizada, sem fechar o popup
+}
+
+function fecharModalTags() {
+  document.getElementById('modal-tags').classList.remove('open');
 }
 
 function abrirModalMais() {
@@ -2043,9 +2098,11 @@ function atualizarChipsAtivos() {
   const prio = cruzado ? filtroPrioridadeG : filtroPrioridade;
   const stat = cruzado ? filtroStatusG : filtroStatus;
   const env = cruzado ? filtroEnvolvidoG : filtroEnvolvido;
+  const tag = cruzado ? filtroTagG : filtroTag;
   prio.forEach(v => chips.push(`${{Urgente:'🔴',Média:'🟡',Baixa:'🟢'}[v] || ''} ${v}`));
   stat.forEach(v => chips.push(v));
   env.forEach(v => chips.push(`👤 ${v}`));
+  tag.forEach(v => chips.push(`🏷️ ${v}`));
   const el = document.getElementById('chips-ativos');
   if (el) {
     el.innerHTML = chips.map(c => `<span class="chip-ativo">${c}</span>`).join('');
@@ -2442,9 +2499,11 @@ function atualizarBotoesFiltro() {
     if (b.dataset.grupo === 'prioridade') { b.classList.toggle('active', filtroPrioridade.has(b.dataset.valor)); return; }
     if (b.dataset.grupo === 'status') { b.classList.toggle('active', filtroStatus.has(b.dataset.valor)); return; }
     if (b.dataset.grupo === 'envolvido') { b.classList.toggle('active', filtroEnvolvido.has(b.dataset.valor)); return; }
+    if (b.dataset.grupo === 'tag') { b.classList.toggle('active', filtroTag.has(b.dataset.valor)); return; }
     if (b.dataset.grupo === 'prioridadeG') { b.classList.toggle('active', filtroPrioridadeG.has(b.dataset.valor)); return; }
     if (b.dataset.grupo === 'statusG') { b.classList.toggle('active', filtroStatusG.has(b.dataset.valor)); return; }
     if (b.dataset.grupo === 'envolvidoG') { b.classList.toggle('active', filtroEnvolvidoG.has(b.dataset.valor)); return; }
+    if (b.dataset.grupo === 'tagG') { b.classList.toggle('active', filtroTagG.has(b.dataset.valor)); return; }
   });
   atualizarChipsAtivos();
 }
@@ -2456,9 +2515,11 @@ function setFilter(grupo, valor) {
     filtroPrioridade = new Set();
     filtroStatus = new Set();
     filtroEnvolvido = new Set();
+    filtroTag = new Set();
     filtroPrioridadeG = new Set();
     filtroStatusG = new Set();
     filtroEnvolvidoG = new Set();
+    filtroTagG = new Set();
     searchTermLocal = '';
     searchTerm = '';
     document.getElementById('search-local-input').value = '';
@@ -2469,16 +2530,21 @@ function setFilter(grupo, valor) {
     if (filtroStatus.has(valor)) filtroStatus.delete(valor); else filtroStatus.add(valor);
   } else if (grupo === 'envolvido') {
     if (filtroEnvolvido.has(valor)) filtroEnvolvido.delete(valor); else filtroEnvolvido.add(valor);
+  } else if (grupo === 'tag') {
+    if (filtroTag.has(valor)) filtroTag.delete(valor); else filtroTag.add(valor);
   } else if (grupo === 'prioridadeG') {
     if (filtroPrioridadeG.has(valor)) filtroPrioridadeG.delete(valor); else filtroPrioridadeG.add(valor);
   } else if (grupo === 'statusG') {
     if (filtroStatusG.has(valor)) filtroStatusG.delete(valor); else filtroStatusG.add(valor);
   } else if (grupo === 'envolvidoG') {
     if (filtroEnvolvidoG.has(valor)) filtroEnvolvidoG.delete(valor); else filtroEnvolvidoG.add(valor);
+  } else if (grupo === 'tagG') {
+    if (filtroTagG.has(valor)) filtroTagG.delete(valor); else filtroTagG.add(valor);
   }
 
   atualizarBotoesFiltro();
   popularBotoesEnvolvidos();
+  popularBotoesTag();
   renderTabs();
   render();
 
@@ -2553,6 +2619,7 @@ function filtrarTarefas(tarefas) {
   const prioridadeAtiva = cruzado ? filtroPrioridadeG : filtroPrioridade;
   const statusAtivo = cruzado ? filtroStatusG : filtroStatus;
   const envolvidoAtivo = cruzado ? filtroEnvolvidoG : filtroEnvolvido;
+  const tagAtiva = cruzado ? filtroTagG : filtroTag;
 
   let filtradas = tarefas;
 
@@ -2573,6 +2640,9 @@ function filtrarTarefas(tarefas) {
   }
   if (envolvidoAtivo.size) {
     filtradas = filtradas.filter(t => envolvidoAtivo.has((t.Envolvido || '').trim()));
+  }
+  if (tagAtiva.size) {
+    filtradas = filtradas.filter(t => tagAtiva.has((t.Tag || '').trim()));
   }
 
   // Atalho "Urgentes": some "Iniciado" (terceiro começou, ainda não é sua vez) e "Aguardando" (esperando algo externo)
@@ -3162,6 +3232,7 @@ async function openAddModal() {
   document.getElementById('f-tarefa-label').textContent = 'Tarefa *';
   document.getElementById('f-tarefa').value = '';
   document.getElementById('f-envolvido').value = '';
+  document.getElementById('f-tag').value = '';
   document.getElementById('f-obs').value = '';
   document.getElementById('f-data').value = '';
   document.getElementById('f-hora').value = '';
@@ -3273,6 +3344,7 @@ async function openEditModal(t) {
   document.getElementById('f-categoria').value = t['Divisão'] || '';
   document.getElementById('f-tarefa').value = t.Tarefa || '';
   document.getElementById('f-envolvido').value = t.Envolvido || '';
+  document.getElementById('f-tag').value = t.Tag || '';
   document.getElementById('f-obs').value = t['Observação'] || '';
   document.getElementById('f-data').value = parseDataParaInput(t['Data Prevista']);
   document.getElementById('f-hora').value = (t.Hora || '').trim().substring(0, 5);
@@ -3449,6 +3521,7 @@ async function salvarTarefa() {
   const horaFim = document.getElementById('f-hora-fim').value;
   const obs = document.getElementById('f-obs').value.trim();
   const envolvido = document.getElementById('f-envolvido').value.trim();
+  const tag = document.getElementById('f-tag').value.trim();
   const editando = !!editandoId;
 
   const btn = document.getElementById('btn-salvar');
@@ -3465,6 +3538,7 @@ async function salvarTarefa() {
     'Data Fim': dataFim || '',
     'Hora Fim': horaFim || '',
     Envolvido: envolvido,
+    Tag: tag,
     'Observação': obs
   };
   if (!editando) {
