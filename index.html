@@ -1229,6 +1229,10 @@
 
   .modal-overlay.open { display: flex; }
 
+  /* Popups que abrem POR CIMA de outro modal (ex: Envolvidos aberto de dentro de Filtros)
+     precisam de uma camada mais alta — senão o modal de baixo pode capturar o clique */
+  #modal-envolvidos { z-index: 350; }
+
   .modal {
     background: white;
     border-radius: 20px 20px 0 0;
@@ -1579,7 +1583,7 @@
       <button class="filter-btn" id="btn-envolvidos" onclick="abrirModalEnvolvidos(false)">👤 Envolvidos</button>
       <div class="filters-break"></div>
       <div class="filtro-legenda">Tag</div>
-      <button class="filter-btn" id="btn-tags" onclick="abrirModalTags(false)">🏷️ Tag</button>
+      <div id="tags-inline-local" class="opcoes-inline" style="justify-content:flex-start"></div>
     </div>
 
     <div class="filtros-secao" id="filtros-secao-global">
@@ -1602,7 +1606,7 @@
       <button class="filter-btn" id="btn-envolvidos-g" onclick="abrirModalEnvolvidos(true)">👤 Envolvidos</button>
       <div class="filters-break"></div>
       <div class="filtro-legenda">Tag</div>
-      <button class="filter-btn" id="btn-tags-g" onclick="abrirModalTags(true)">🏷️ Tag</button>
+      <div id="tags-inline-global" class="opcoes-inline" style="justify-content:flex-start"></div>
     </div>
 
     <button class="menu-mais-item" id="btn-ver-outra-secao" onclick="alternarSecaoFiltros()" style="text-align:center;font-weight:700"></button>
@@ -1786,14 +1790,6 @@
   </div>
 </div>
 
-<div class="modal-overlay" id="modal-tags" onclick="if(event.target===this) fecharModalTags()">
-  <div class="modal">
-    <h3 id="modal-tags-title">🏷️ Tags</h3>
-    <div id="lista-tags" class="opcoes-inline" style="justify-content:flex-start"></div>
-    <button class="modal-cancel" onclick="fecharModalTags()" style="margin-top:14px">Fechar</button>
-  </div>
-</div>
-
 <div class="modal-overlay" id="modal-acoes-tarefa" onclick="if(event.target===this) fecharMenuAcoesTarefa()">
   <div class="modal">
     <h3>⋯ Mais ações</h3>
@@ -1930,38 +1926,24 @@ function fecharModalEnvolvidos() {
   document.getElementById('modal-envolvidos').classList.remove('open');
 }
 
-// Atualiza o texto dos botões "Tag" com a contagem de selecionadas
+// Tag é pra projeto/assunto (não pessoa — isso é Envolvido). Poucas tags esperadas, então
+// os nomes já aparecem direto, clicáveis, sem precisar abrir um popup à parte
 function popularBotoesTag() {
-  const btnLocal = document.getElementById('btn-tags');
-  if (btnLocal) btnLocal.textContent = `🏷️ Tag${filtroTag.size ? ` (${filtroTag.size})` : ''}`;
-  const btnGlobal = document.getElementById('btn-tags-g');
-  if (btnGlobal) btnGlobal.textContent = `🏷️ Tag${filtroTagG.size ? ` (${filtroTagG.size})` : ''}`;
-}
+  const nomesLocal = [...new Set((allData[abaAtual] || []).map(t => (t.Tag || '').trim()).filter(Boolean))].sort();
+  const elLocal = document.getElementById('tags-inline-local');
+  if (elLocal) {
+    elLocal.innerHTML = nomesLocal.length
+      ? nomesLocal.map(n => `<button class="filter-btn${filtroTag.has(n) ? ' active' : ''}" onclick="setFilter('tag','${n.replace(/'/g,"\\'")}')">🏷️ ${n}</button>`).join('')
+      : '<p style="color:var(--text-muted);font-size:12px;margin:0">Nenhuma tag nesta pasta ainda.</p>';
+  }
 
-// Popup de seleção de Tags — Tag é pra projeto/assunto, não pra pessoa (isso é Envolvido)
-function abrirModalTags(global) {
-  const nomes = global
-    ? [...new Set(ABAS.flatMap(aba => allData[aba] || []).map(t => (t.Tag || '').trim()).filter(Boolean))].sort()
-    : [...new Set((allData[abaAtual] || []).map(t => (t.Tag || '').trim()).filter(Boolean))].sort();
-
-  document.getElementById('modal-tags-title').textContent = global ? '🏷️ Tags (todas as pastas)' : '🏷️ Tags';
-  document.getElementById('lista-tags').innerHTML = nomes.length
-    ? nomes.map(n => {
-        const ativo = (global ? filtroTagG : filtroTag).has(n);
-        return `<button class="opcao-inline-btn${ativo ? ' sel' : ''}" onclick="selecionarTag('${n.replace(/'/g,"\\'")}', ${global})">🏷️ ${n}</button>`;
-      }).join('')
-    : '<p style="color:var(--text-muted);font-size:13px">Nenhuma tag cadastrada ainda.</p>';
-  document.getElementById('modal-tags').dataset.global = global;
-  document.getElementById('modal-tags').classList.add('open');
-}
-
-function selecionarTag(nome, global) {
-  setFilter(global ? 'tagG' : 'tag', nome);
-  abrirModalTags(global); // reabre a lista já atualizada, sem fechar o popup
-}
-
-function fecharModalTags() {
-  document.getElementById('modal-tags').classList.remove('open');
+  const nomesGlobal = [...new Set(ABAS.flatMap(aba => allData[aba] || []).map(t => (t.Tag || '').trim()).filter(Boolean))].sort();
+  const elGlobal = document.getElementById('tags-inline-global');
+  if (elGlobal) {
+    elGlobal.innerHTML = nomesGlobal.length
+      ? nomesGlobal.map(n => `<button class="filter-btn${filtroTagG.has(n) ? ' active' : ''}" onclick="setFilter('tagG','${n.replace(/'/g,"\\'")}')">🏷️ ${n}</button>`).join('')
+      : '<p style="color:var(--text-muted);font-size:12px;margin:0">Nenhuma tag cadastrada ainda.</p>';
+  }
 }
 
 function abrirModalMais() {
@@ -2025,6 +2007,7 @@ function alternarSecaoFiltros() {
 
 function abrirModalFiltros(escopo) {
   mostrarSecaoFiltros(escopo || 'local');
+  popularBotoesTag();
   document.getElementById('modal-filtros').classList.add('open');
 }
 
