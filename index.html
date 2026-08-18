@@ -1928,8 +1928,14 @@ function fecharModalEnvolvidos() {
 
 // Tag é pra projeto/assunto (não pessoa — isso é Envolvido). Poucas tags esperadas, então
 // os nomes já aparecem direto, clicáveis, sem precisar abrir um popup à parte
+// Uma tarefa pode ter mais de uma Tag, separadas por vírgula (ex: "ODOO, Prospecção") —
+// isso devolve cada uma já separada e sem espaço sobrando, pra tratar cada uma individualmente
+function tagsDeTarefa(t) {
+  return (t.Tag || '').split(',').map(s => s.trim()).filter(Boolean);
+}
+
 function popularBotoesTag() {
-  const nomesLocal = [...new Set((allData[abaAtual] || []).map(t => (t.Tag || '').trim()).filter(Boolean))].sort();
+  const nomesLocal = [...new Set((allData[abaAtual] || []).flatMap(tagsDeTarefa))].sort();
   const elLocal = document.getElementById('tags-inline-local');
   if (elLocal) {
     elLocal.innerHTML = nomesLocal.length
@@ -1937,7 +1943,7 @@ function popularBotoesTag() {
       : '<p style="color:var(--text-muted);font-size:12px;margin:0">Nenhuma tag nesta pasta ainda.</p>';
   }
 
-  const nomesGlobal = [...new Set(ABAS.flatMap(aba => allData[aba] || []).map(t => (t.Tag || '').trim()).filter(Boolean))].sort();
+  const nomesGlobal = [...new Set(ABAS.flatMap(aba => allData[aba] || []).flatMap(tagsDeTarefa))].sort();
   const elGlobal = document.getElementById('tags-inline-global');
   if (elGlobal) {
     elGlobal.innerHTML = nomesGlobal.length
@@ -2625,7 +2631,7 @@ function filtrarTarefas(tarefas) {
     filtradas = filtradas.filter(t => envolvidoAtivo.has((t.Envolvido || '').trim()));
   }
   if (tagAtiva.size) {
-    filtradas = filtradas.filter(t => tagAtiva.has((t.Tag || '').trim()));
+    filtradas = filtradas.filter(t => tagsDeTarefa(t).some(tg => tagAtiva.has(tg)));
   }
 
   // Atalho "Urgentes": some "Iniciado" (terceiro começou, ainda não é sua vez) e "Aguardando" (esperando algo externo)
