@@ -1,3638 +1,465 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#ffffff">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Painel do Vendedor</title>
+
+<!-- ==== TELA INICIAL DO ANDROID / IOS (abre em tela cheia, com ícone) ==== -->
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Secretária Virtual">
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
-<title>Secretária Virtual</title>
+<meta name="apple-mobile-web-app-title" content="Painel do Vendedor">
+<meta name="theme-color" content="#35657a">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%2335657a'/%3E%3Ctext x='50' y='68' font-size='54' text-anchor='middle' fill='white' font-family='Arial'%3EP%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%2335657a'/%3E%3Ctext x='50' y='70' font-size='56' text-anchor='middle' fill='white' font-family='Arial'%3EP%3C/text%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
 <style>
-  :root {
-    --primary: #4f46e5;
-    --primary-light: #eef2ff;
-    --success: #16a34a;
-    --success-light: #dcfce7;
-    --warning: #d97706;
-    --warning-light: #fef3c7;
-    --danger: #dc2626;
-    --danger-light: #fee2e2;
-    --gray: #6b7280;
-    --gray-light: #f3f4f6;
-    --border: #e5e7eb;
-    --text: #111827;
-    --text-muted: #6b7280;
-    --bg: #f8f9fa;
-    --card: #ffffff;
-    --radius: 12px;
-    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
-
-    /* Cores das abas (tipo divisórias de fichário) */
-    --aba-pessoal: #4f46e5;
-    --aba-pessoal-light: #eef2ff;
-    --aba-obra: #d97706;
-    --aba-obra-light: #fef3c7;
-    --aba-work: #0891b2;
-    --aba-work-light: #cffafe;
-    --aba-odoo: #16a34a;
-    --aba-odoo-light: #dcfce7;
-    --aba-ideias: #c026d3;
-    --aba-ideias-light: #fae8ff;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-  }
-
-  /* HEADER */
-  .header {
-    background: white;
-    color: var(--text);
-    padding: 16px 20px 0;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .header-top {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    row-gap: 8px;
-    margin-bottom: 12px;
-  }
-
-  .header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; color: var(--text); }
-  .header-subtitle { font-size: 12px; color: var(--text-muted); }
-
-  .btn-refresh {
-    background: var(--gray-light);
-    border: none;
-    color: var(--text);
-    padding: 8px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .btn-refresh:active { background: var(--border); }
-
-  /* SIDEBAR DE PASTAS — substitui as abas horizontais, escala melhor com pastas ilimitadas */
-  .app-body { display: flex; align-items: flex-start; }
-  .app-body .main { flex: 1; min-width: 0; }
-
-  .btn-toggle-sidebar { display: inline-flex; }
-
-  .sidebar-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.4);
-    /* Acima do cabeçalho (100) e do rodapé fixo (200) — a gaveta cobre tudo quando aberta */
-    z-index: 205;
-  }
-  .sidebar-overlay.open { display: block; }
-
-  .sidebar-pastas {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 220px;
-    background: white;
-    /* Acima do rodapé fixo (z-index:200) também — senão as últimas pastas ficam escondidas atrás dele */
-    z-index: 210;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    padding: 16px 10px calc(16px + 60px + env(safe-area-inset-bottom));
-    overflow-y: auto;
-    transform: translateX(-100%);
-    transition: transform 0.2s;
-    box-shadow: 2px 0 12px rgba(0,0,0,0.15);
-  }
-  .sidebar-pastas.open { transform: translateX(0); }
-
-  .sidebar-titulo {
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--text-muted);
-    letter-spacing: 0.5px;
-    padding: 4px 8px 8px;
-  }
-
-  /* Tarja colorida saindo pela direita, tipo divisória de fichário de verdade */
-  .sidebar-item {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 10px 10px 8px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text);
-    cursor: pointer;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    /* pan-y (não "none") — deixa o dedo rolar a lista verticalmente no celular;
-       o arrastar-pra-reordenar continua funcionando no mouse (desktop) */
-    touch-action: pan-y;
-    user-select: none;
-    -webkit-user-select: none;
-  }
-  .sidebar-item .sidebar-item-label {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    text-transform: uppercase;
-    font-weight: 800;
-    letter-spacing: 0.3px;
-  }
-  .sidebar-item .sidebar-tab {
-    position: absolute;
-    top: 6px;
-    bottom: 6px;
-    right: -6px;
-    width: 6px;
-    border-radius: 0 6px 6px 0;
-  }
-  .sidebar-item.active { background: var(--gray-light); font-weight: 800; }
-  .sidebar-item.active .sidebar-tab { width: 9px; }
-  .sidebar-item.dragging { opacity: 0.85; box-shadow: 0 4px 10px rgba(0,0,0,0.2); background: var(--gray-light); }
-
-  .sidebar-nova-pasta {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 8px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-muted);
-    cursor: pointer;
-    margin-top: 4px;
-  }
-
-  /* BUSCA */
-  .search-bar {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-
-  .header-botoes { display: flex; flex-wrap: wrap; gap: 6px; }
-
-  .btn-filtro-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
-    border-radius: 20px;
-    border: 1.5px solid var(--primary);
-    background: var(--card);
-    color: var(--primary);
-    font-size: 13px;
-    font-weight: 700;
-    font-family: inherit;
-    cursor: pointer;
-    flex-shrink: 0;
-    white-space: nowrap;
-  }
-  .btn-filtro-pill:active { background: var(--primary-light); }
-  .btn-filtro-pill.ativo { background: var(--primary); color: white; }
-
-  /* Ícone de filtro avançado embutido dentro da própria barra de busca de cima */
-  .search-com-filtro { position: relative; flex: 1; display: flex; }
-  .search-com-filtro input { flex: 1; padding-right: 40px; }
-  .btn-filtro-icone {
-    position: absolute;
-    right: 6px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: none;
-    background: var(--primary-light);
-    color: var(--primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-  }
-  .btn-filtro-icone:active { background: var(--primary); color: white; }
-
-  .menu-mais-item {
-    display: block;
-    width: 100%;
-    text-align: left;
-    padding: 12px 14px;
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--card);
-    font-size: 14px;
-    font-family: inherit;
-    cursor: pointer;
-    margin-bottom: 8px;
-  }
-  .menu-mais-item:active { background: var(--primary-light); border-color: var(--primary); }
-
-  .header-titulo-linha { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .header-titulo-linha .quick-urgentes { padding: 6px 10px; font-size: 12px; }
-
-  /* Barra compacta: busca da pasta + atalhos, sempre visível mas enxuta */
-  .quick-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; }
-  .quick-bar .search-com-filtro { min-width: 160px; }
-  .quick-bar .search-input-inline { flex: 1 1 auto; min-width: 0; }
-  .quick-bar .btn-refresh { flex-shrink: 0; white-space: nowrap; }
-  .quick-urgentes { background: var(--danger-light); color: var(--danger); font-weight: 700; }
-  .quick-urgentes:active { background: var(--danger); color: white; }
-  .quick-agenda { background: var(--primary-light); color: var(--primary); font-weight: 700; }
-  .quick-agenda:active { background: var(--primary); color: white; }
-
-  /* Resumo dos filtros ativos, uma linha pequena abaixo da busca */
-  .chips-ativos {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    padding-bottom: 4px;
-    font-size: 11px;
-  }
-
-  /* Mostra em qual pasta você está — só no celular, onde a barra de pastas fica escondida */
-  .pasta-atual-mobile {
-    display: none;
-    align-items: center;
-    gap: 6px;
-    width: 100%;
-    background: var(--gray-light);
-    border: none;
-    border-radius: 8px;
-    padding: 8px 12px;
-    margin: 2px 0 6px;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--text);
-    text-align: left;
-    cursor: pointer;
-  }
-  @media (max-width: 639px) {
-    .pasta-atual-mobile { display: flex; }
-  }
-  .chip-ativo {
-    background: var(--primary-light);
-    color: var(--primary);
-    padding: 3px 8px;
-    border-radius: 10px;
-    font-weight: 600;
-  }
-
-  #modal-filtros .modal {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    align-items: center;
-  }
-  #modal-filtros .modal-titulo-linha { flex-basis: 100%; }
-  .filtros-secao {
-    flex-basis: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    align-items: center;
-  }
-
-  .filtros-divisor {
-    flex-basis: 100%;
-    margin-top: 14px;
-    padding-top: 12px;
-    border-top: 1.5px dashed var(--border);
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--primary);
-  }
-  .lista-categorias-ul { list-style: none; padding: 0; margin: 0; max-height: 55vh; overflow-y: auto; }
-  .lista-categorias-ul li {
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--border);
-    font-size: 14px;
-  }
-  .lista-categorias-ul li:last-child { border-bottom: none; }
-  .lista-categorias-grupo {
-    background: var(--gray-light);
-    font-weight: 700;
-    font-size: 12px;
-    color: var(--primary);
-    padding: 8px 12px !important;
-  }
-  .btn-vista { display: inline-flex; align-items: center; }
-
-  /* Vista em lista: uma linha compacta por tarefa, sem grade — funciona em qualquer tamanho de tela */
-  #main.vista-lista .categoria-group {
-    display: block;
-  }
-  #main.vista-lista .tarefa-card {
-    display: grid;
-    /* Larguras fixas em % (não 1fr/auto) — assim a coluna de Observação/Envolvido sempre
-       começa no mesmo lugar em todas as linhas, não varia conforme o conteúdo de cada tarefa */
-    grid-template-columns: 30% 26% 1fr;
-    column-gap: 12px;
-    align-items: center;
-    padding: 8px 12px;
-    margin-bottom: 4px;
-  }
-  #main.vista-lista .tarefa-top { grid-column: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
-  #main.vista-lista .tarefa-nome {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    cursor: pointer;
-  }
-  #main.vista-lista .tarefa-nome.expandido {
-    white-space: normal;
-    overflow: visible;
-    background: var(--primary-light);
-    border-radius: 6px;
-    padding: 2px 6px;
-    margin: -2px -6px;
-  }
-  #main.vista-lista .mini-legenda { display: none; }
-  #main.vista-lista .tarefa-meta {
-    grid-column: 2;
-    display: flex;
-    flex-wrap: nowrap;
-    min-width: 0;
-    margin-top: 0;
-    overflow: hidden;
-  }
-  #main.vista-lista .meta-item { flex-shrink: 0; white-space: nowrap; }
-  #main.vista-lista .meta-obs {
-    display: inline-block;
-    flex-shrink: 1;
-    min-width: 0;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    vertical-align: bottom;
-  }
-
-  /* Grupo fixo à direita: duplicar/lápis, prioridade/status, sino e concluir — nunca se mexe de lugar */
-  #main.vista-lista .tarefa-lista-direita {
-    grid-column: 3;
-    display: flex;
-    align-items: center;
-    row-gap: 8px;
-    column-gap: 6px;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    justify-self: end;
-  }
-  #main.vista-lista .tarefa-acoes-topo { display: flex; gap: 2px; flex-shrink: 0; }
-  #main.vista-lista .badges { flex-shrink: 0; margin-top: 0; display: flex; gap: 4px; }
-  #main.vista-lista .mudar-status-links { margin-top: 0; flex-basis: auto; flex-shrink: 0; gap: 4px; display: flex; }
-  /* Junta o badge (Urgente/Em andamento) com o linkzinho de trocar dele, lado a lado */
-  .campo-inline { display: inline-flex; align-items: center; gap: 3px; }
-  .campos-pares-card { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 6px; }
-  #main.vista-lista .campo-inline { gap: 3px; flex-shrink: 0; }
-  #main.vista-lista .tarefa-acoes { margin-top: 0; flex-shrink: 0; }
-
-  /* Celular estreito: a grade de 3 colunas fixas não cabe — empilha tudo em bloco, como um mini-card */
-  @media (max-width: 520px) {
-    #main.vista-lista .tarefa-card {
-      display: block;
-      padding: 10px 12px;
-    }
-    #main.vista-lista .tarefa-top { margin-bottom: 4px; }
-    #main.vista-lista .tarefa-meta {
-      display: block;
-      white-space: normal;
-      overflow: visible;
-      margin-bottom: 6px;
-    }
-    #main.vista-lista .tarefa-meta .meta-item {
-      display: inline-flex;
-      white-space: normal;
-      margin-right: 10px;
-    }
-    #main.vista-lista .meta-obs {
-      display: inline;
-      white-space: normal;
-      overflow: visible;
-      text-overflow: clip;
-    }
-    #main.vista-lista .tarefa-lista-direita {
-      justify-content: flex-start;
-      justify-self: auto;
-    }
-  }
-
-  /* Textos curtos só aparecem na vista em lista, pra economizar espaço */
-  .link-trocar-txt-curto { display: none; }
-  #main.vista-lista .link-trocar-txt-completo { display: none; }
-  #main.vista-lista .link-trocar-txt-curto { display: inline; }
-  /* Botão de verdade, não ícone soltinho — dedo grande precisa de alvo grande, mesmo na lista */
-  #main.vista-lista .link-trocar {
-    background: var(--gray-light);
-    border-radius: 8px;
-    padding: 9px 11px;
-    margin: 0;
-    font-size: 15px;
-  }
-  #main.vista-lista .badge { font-size: 10px; padding: 3px 7px; }
-
-  #main.vista-lista .btn-lembrete {
-    padding: 6px 10px;
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-  }
-  #main.vista-lista .btn-concluir-grande {
-    width: auto;
-    flex-shrink: 0;
-    margin-top: 0;
-    padding: 6px 10px;
-    font-size: 11px;
-    white-space: nowrap;
-  }
-
-  .busca-avancada-toggle {
-    font-size: 12px;
-    color: var(--primary);
-    font-weight: 600;
-    cursor: pointer;
-    padding: 6px 0 10px;
-    text-align: left;
-    user-select: none;
-  }
-
-  .busca-avancada-painel {
-    display: none;
-    flex-wrap: wrap;
-    gap: 6px;
-    align-items: center;
-    padding: 8px 10px;
-    margin-bottom: 8px;
-    background: var(--primary-light);
-    border-radius: 8px;
-  }
-  .busca-avancada-painel.aberto { display: flex; }
-  .busca-avancada-painel .filtro-legenda { flex-basis: 100%; color: var(--primary); }
-
-  .search-input-inline {
-    flex: 1 1 160px;
-    min-width: 120px;
-    padding: 8px 12px;
-    border: 1.5px solid var(--primary);
-    border-radius: 20px;
-    font-size: 13px;
-    font-family: inherit;
-    outline: none;
-    background: var(--card);
-  }
-
-  .search-bar input {
-    flex: 1;
-    min-width: 0;
-    padding: 10px 14px;
-    border: 1.5px solid var(--primary);
-    border-radius: 20px;
-    font-size: 14px;
-    font-family: inherit;
-    outline: none;
-    background: var(--card);
-    box-shadow: var(--shadow);
-  }
-
-  .search-bar input:focus { border-color: var(--primary); }
-
-  .search-bar .filter-btn { flex-shrink: 0; }
-
-  /* CONTADORES — rodapé pequeno e discreto */
-  .counters-footer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    /* padding-bottom maior pra não ficar embaixo do rodapé fixo (Em massa/Nova/Mais) */
-    padding: 10px 16px 90px;
-    font-size: 11px;
-    color: var(--text-muted);
-  }
-
-  .contador-linha {
-    display: flex;
-    justify-content: center;
-    gap: 14px;
-    flex-wrap: wrap;
-  }
-
-  .counters-footer .contador-item { display: flex; align-items: center; gap: 3px; }
-  .counters-footer .contador-item b { font-weight: 700; }
-  .counters-footer .aberto b { color: var(--primary); }
-  .counters-footer .andamento b { color: var(--warning); }
-  .counters-footer .concluido b { color: var(--success); }
-  .counters-footer .total b { color: var(--text); }
-  .counters-footer .urgente b { color: var(--danger); }
-
-  /* FILTROS */
-  .filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    padding: 8px 10px 12px;
-    margin: 0 16px 8px;
-    background: var(--primary-light);
-    border-radius: 8px;
-  }
-
-  .filters-break {
-    flex-basis: 100%;
-    height: 0;
-  }
-
-  .filtro-legenda {
-    flex-basis: 100%;
-    font-size: 11px;
-    color: var(--text-muted);
-    padding: 6px 0 2px;
-  }
-
-  .search-local-input {
-    flex-basis: 100%;
-    padding: 10px 14px;
-    border: 1.5px solid var(--primary);
-    border-radius: 20px;
-    font-size: 14px;
-    font-family: inherit;
-    outline: none;
-    background: var(--card);
-    box-shadow: var(--shadow);
-  }
-  .search-local-input:focus { border-color: var(--primary); }
-
-  .legenda-busca-local-rodape {
-    flex-basis: 100%;
-    font-size: 12px;
-    color: var(--primary);
-    font-weight: 600;
-    padding: 6px 0 10px;
-    text-align: left;
-    user-select: none;
-  }
-
-  .filter-btn {
-    flex: 0 0 auto;
-    padding: 6px 10px;
-    border-radius: 20px;
-    border: 1.5px solid var(--border);
-    background: var(--card);
-    color: var(--text-muted);
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-    white-space: nowrap;
-    box-shadow: var(--shadow);
-  }
-
-  .filter-btn.active {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: white;
-  }
-
-  /* Filtros locais (dentro da aba) ativos: contorno colorido, mas letra preta/negrito — não confunde com a busca avançada (cima) */
-  .filters .filter-btn.active {
-    background: var(--primary-light);
-    border-color: var(--primary);
-    color: var(--text);
-    font-weight: 700;
-  }
-
-  /* MAIN */
-  .main {
-    padding: 0 16px 100px;
-  }
-
-  /* CATEGORIA */
-  .categoria-group {
-    margin-bottom: 16px;
-  }
-
-  .categoria-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 0 6px;
-    cursor: pointer;
-    user-select: none;
-  }
-
-  .btn-nova-na-divisao {
-    background: var(--primary-light);
-    color: var(--primary);
-    border: none;
-    border-radius: 50%;
-    width: 22px;
-    height: 22px;
-    font-size: 12px;
-    line-height: 1;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-  .btn-nova-na-divisao:active { background: var(--primary); color: white; }
-
-  .categoria-title {
-    font-size: 13px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--primary);
-  }
-
-  .categoria-count {
-    background: var(--gray-light);
-    color: var(--gray);
-    font-size: 11px;
-    font-weight: 600;
-    padding: 2px 7px;
-    border-radius: 10px;
-    margin-left: auto;
-  }
-
-  .categoria-toggle { color: var(--text-muted); font-size: 12px; }
-
-  /* CARD TAREFA */
-  .tarefa-card {
-    background: var(--card);
-    border-radius: var(--radius);
-    padding: 11px;
-    margin-bottom: 6px;
-    box-shadow: var(--shadow);
-    border-left: 2px solid transparent;
-    transition: all 0.2s;
-  }
-
-  /* Fica reservado pra prioridade — o verde é só do botão Concluir, nunca da borda */
-  .tarefa-card.prioridade-Urgente { border-left-color: var(--danger); }
-  .tarefa-card.prioridade-Média { border-left-color: var(--warning); }
-  .tarefa-card.prioridade-Baixa { border-left-color: #94a3b8; }
-  .tarefa-card.status-Concluído { opacity: 0.55; }
-
-  .tarefa-top {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .tarefa-nome {
-    flex: 1;
-    font-size: 15px;
-    font-weight: 600;
-    color: #3f3f46;
-    line-height: 1.3;
-    cursor: pointer;
-  }
-
-  /* Nome e observação limitados a 2 linhas no card — clica duas vezes na tarefa pra abrir e ver tudo */
-  #main:not(.vista-lista) .tarefa-nome {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-  #main:not(.vista-lista) .meta-obs {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .tarefa-card.status-Concluído .tarefa-nome {
-    text-decoration: line-through;
-    color: var(--text-muted);
-  }
-
-  .badges {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 16px;
-    margin-top: 6px;
-  }
-
-  .mini-legenda {
-    font-size: 10px;
-    color: var(--text-muted);
-    margin-top: 4px;
-    opacity: 0.8;
-  }
-
-  .badge {
-    font-size: 13px;
-    font-weight: 800;
-    padding: 5px 9px;
-    border-radius: 8px;
-    white-space: nowrap;
-  }
-
-  /* Paleta de PRIORIDADE — nunca usa verde (verde é só do botão Concluir) */
-  .badge-prio-Urgente { background: var(--danger-light); color: var(--danger); }
-  .badge-prio-Média { background: var(--warning-light); color: var(--warning); }
-  .badge-prio-Baixa { background: #e2e8f0; color: #475569; }
-
-  /* Paleta de STATUS — cores diferentes da Prioridade, pra não confundir uma com a outra.
-     Concluído continua verde de propósito (é o mesmo significado do botão Concluir). */
-  .badge-status-Aberto { background: var(--primary-light); color: var(--primary); }
-  .badge-status-EmAndamento { background: #cffafe; color: #0e7490; }
-  .badge-status-Concluído { background: var(--success-light); color: var(--success); }
-  .badge-status-Aguardando { background: #f3e8ff; color: #9333ea; }
-  .badge-status-Iniciado { background: #e0e7ff; color: #4338ca; }
-  .badge-status-Aconferir { background: #fce7f3; color: #be185d; }
-  .badge-status-Feito { background: #fef9c3; color: #a16207; }
-
-  .badge-info { background: var(--gray-light); color: var(--gray); }
-
-  .tarefa-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-top: 4px;
-  }
-
-  .meta-item {
-    font-size: 12px;
-    color: var(--text-muted);
-    display: flex;
-    align-items: center;
-    gap: 3px;
-  }
-
-  /* BOTÃO CONCLUIR */
-  /* Links pequenos pra trocar status — pequenos de propósito, pra não parecerem o estado atual */
-  .btn-concluir, .btn-andamento {
-    padding: 4px 10px;
-    background: transparent;
-    border: none;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 600;
-    cursor: pointer;
-    text-decoration: underline;
-    flex: 0 0 auto;
-    width: auto;
-  }
-  .btn-concluir { color: var(--success); }
-  .btn-andamento { color: var(--warning); }
-  .btn-concluir:active, .btn-andamento:active { opacity: 0.7; }
-  .btn-concluir:disabled, .btn-andamento:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  .btn-desfazer {
-    width: 100%;
-    margin-top: 10px;
-    padding: 10px;
-    background: var(--primary);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-  }
-  .btn-desfazer:active { opacity: 0.85; }
-  .btn-desfazer:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  /* Ações no rodapé do card: só sino (opcional) + lixeira, pequenos, no canto direito */
-  .tarefa-acoes { display: flex; gap: 6px; margin-top: 8px; align-items: center; justify-content: flex-end; }
-
-  /* Links pequenos "Trocar Prioridade" / "Trocar Status" */
-  .mudar-status-links { display: flex; justify-content: center; gap: 14px; align-items: center; margin-top: 8px; padding-bottom: 4px; }
-  .link-trocar {
-    background: none;
-    border: none;
-    /* Área de toque maior que o ícone em si — dedo grande erra fácil num alvo pequeno */
-    padding: 6px;
-    margin: -6px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--primary);
-    cursor: pointer;
-  }
-  .link-trocar:active { opacity: 0.6; }
-
-  /* No card, o lápis de trocar prioridade/status vira um botão visível de verdade — não só um
-     ícone soltinho no ar, mais fácil de mirar com o dedo */
-  #main:not(.vista-lista) .link-trocar {
-    background: var(--gray-light);
-    border-radius: 8px;
-    padding: 9px 11px;
-    margin: 0;
-    font-size: 15px;
-  }
-
-  /* Botõezinhos que aparecem no lugar do link, ao clicar em "Trocar Prioridade/Status" */
-  .opcoes-inline { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
-  .opcao-inline-btn {
-    padding: 5px 10px;
-    border-radius: 14px;
-    border: 1.5px solid var(--border);
-    background: var(--card);
-    font-size: 11px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .opcao-inline-btn:active { opacity: 0.7; }
-  .opcao-inline-btn.sel { background: var(--primary); border-color: var(--primary); color: white; }
-  .opcao-inline-cancelar {
-    background: var(--danger-light);
-    color: var(--danger);
-    border-color: var(--danger);
-    font-weight: 700;
-    padding: 5px 9px;
-  }
-
-  /* Lápis no topo, ao lado do nome da tarefa */
-  .btn-editar-topo {
-    background: var(--gray-light);
-    border: none;
-    border-radius: 8px;
-    font-size: 15px;
-    cursor: pointer;
-    flex-shrink: 0;
-    padding: 6px 9px;
-    margin-left: auto;
-  }
-  .btn-editar-topo:active { opacity: 0.6; }
-  #main.vista-lista .btn-editar-topo { padding: 5px 7px; }
-
-  /* No card (não na lista), o lápis de editar é maior — dedo grande precisa de alvo grande,
-     e mais espaço embaixo do nome pra não ficar perto de outros botões sem querer */
-  #main:not(.vista-lista) .tarefa-top { margin-bottom: 6px; }
-  #main:not(.vista-lista) .btn-editar-topo {
-    font-size: 20px;
-    padding: 10px 14px;
-  }
-
-  /* "Mais ações" (duplicar/compartilhar/lembrete) — perto do Concluir, é o menos usado */
-  .btn-mais-acoes {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    align-self: center;
-    width: auto;
-    flex: 0 0 auto;
-    background: var(--gray-light);
-    border: none;
-    color: var(--text-muted);
-    font-size: 15px;
-    font-weight: 700;
-    padding: 8px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-  .btn-mais-acoes:active { opacity: 0.6; }
-  #main.vista-lista .btn-mais-acoes { padding: 6px 10px; }
-
-  /* Bloco fixo no rodapé do card: prioridade/status + "mais ações" + concluir, tudo junto embaixo */
-  .tarefa-rodape-acoes {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 8px;
-  }
-  .tarefa-rodape-acoes .btn-concluir-grande { flex: 1; margin-top: 0; }
-
-  /* Compartilhar no WhatsApp — fundo verde clarinho pra destacar dos outros dois ícones */
-  .btn-compartilhar-topo {
-    background: #dcf8c6;
-    border-radius: 6px;
-    margin-left: 4px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 4px 6px;
-  }
-
-  /* Excluir: mesmo visual bonito de antes, só que pequeno, no canto direito do rodapé */
-  .btn-excluir-rodape {
-    padding: 4px 8px;
-    background: var(--danger-light);
-    color: var(--danger);
-    border: 1.5px solid var(--danger);
-    border-radius: 6px;
-    font-size: 12px;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-  .btn-excluir-rodape:active { background: var(--danger); color: white; }
-  .btn-excluir-rodape:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  /* Marcar como concluída: grande, verde, círculo de vitória */
-  .btn-concluir-grande {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    width: 100%;
-    margin-top: 14px;
-    padding: 10px;
-    background: var(--success-light);
-    color: var(--success);
-    border: 2px solid var(--success);
-    border-radius: var(--radius);
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .btn-concluir-grande:active { background: var(--success); color: white; }
-  .btn-concluir-grande:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  .btn-lembrete {
-    padding: 8px 12px;
-    background: var(--success-light);
-    color: var(--success);
-    border: 1.5px solid var(--success);
-    border-radius: 8px;
-    font-size: 15px;
-    cursor: pointer;
-    transition: all 0.2s;
-    flex-shrink: 0;
-  }
-  .btn-lembrete:active { background: var(--success); color: white; }
-  .btn-lembrete:disabled { opacity: 0.6; cursor: not-allowed; }
-
-  /* LOADING */
-  .loading {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--text-muted);
-  }
-
-  .spinner {
-    width: 36px;
-    height: 36px;
-    border: 3px solid var(--border);
-    border-top-color: var(--primary);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin: 0 auto 12px;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .empty {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--text-muted);
-    font-size: 14px;
-  }
-
-  /* Rodapé fixo: Selecionar | + Nova Tarefa | Mais — os 3 com a mesma cara de pílula */
-  .bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    background: var(--card);
-    border-top: 1px solid var(--border);
-    padding: 6px 16px calc(6px + env(safe-area-inset-bottom));
-    z-index: 200;
-  }
-
-  .bottom-nav-item {
-    flex: 1;
-    max-width: 160px;
-    background: var(--gray-light);
-    border: none;
-    border-radius: 18px;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text);
-    font-family: inherit;
-    cursor: pointer;
-    padding: 8px 10px;
-  }
-  .bottom-nav-item .bottom-nav-icone { font-size: 14px; }
-  .bottom-nav-item.ativo { background: var(--primary-light); color: var(--primary); }
-
-  .bottom-nav-central {
-    background: var(--primary-light);
-    color: var(--primary);
-  }
-  .bottom-nav-central:active { background: #dde0fb; }
-
-  /* Checkbox de seleção no card */
-  .check-selecao {
-    width: 22px;
-    height: 22px;
-    margin-right: 8px;
-    flex-shrink: 0;
-    cursor: pointer;
-  }
-
-  /* Barra fixa de ações em massa */
-  .selecao-barra {
-    display: none;
-    position: fixed;
-    left: 0; right: 0; bottom: 0;
-    background: var(--text);
-    color: white;
-    padding: 12px 16px;
-    align-items: center;
-    justify-content: space-between;
-    z-index: 250;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
-  }
-  .selecao-barra.show { display: flex; }
-  .selecao-botoes { display: flex; gap: 8px; }
-  .btn-selecao-concluir, .btn-selecao-excluir {
-    padding: 8px 14px;
-    border: none;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-  }
-  .btn-selecao-concluir { background: var(--success); color: white; }
-  .btn-selecao-excluir { background: var(--danger); color: white; }
-  .selecao-status-select {
-    padding: 8px 10px;
-    border: none;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    background: white;
-    color: var(--text);
-  }
-
-  /* MODAL FORM */
-  .form-group { margin-bottom: 14px; }
-
-  .form-row { display: flex; gap: 10px; }
-  .campo-com-limpar { display: flex; gap: 6px; align-items: center; }
-  .campo-com-limpar input { flex: 1; min-width: 0; }
-  .btn-limpar-campo {
-    flex-shrink: 0;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: 1.5px solid var(--border);
-    background: var(--gray-light);
-    color: var(--text-muted);
-    font-size: 13px;
-    cursor: pointer;
-  }
-  .btn-limpar-campo:active { background: var(--danger-light); color: var(--danger); }
-  .form-row .form-group { flex: 1; }
-
-  .btn-lembrete-modal {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 10px;
-    background: var(--success-light);
-    color: var(--success);
-    border: 1.5px solid var(--success);
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .btn-lembrete-modal:active { background: var(--success); color: white; }
-  .btn-lembrete-modal:disabled { opacity: 0.6; cursor: not-allowed; }
-
-  .btn-excluir-modal {
-    display: block;
-    width: auto;
-    margin: 20px auto 0;
-    padding: 5px 12px;
-    background: transparent;
-    color: var(--danger);
-    border: 1px solid var(--danger-light);
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 500;
-    opacity: 0.75;
-    cursor: pointer;
-  }
-  .btn-excluir-modal:active { background: var(--danger); color: white; }
-  .btn-excluir-modal:disabled { opacity: 0.6; cursor: not-allowed; }
-
-  .form-group label {
-    display: block;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-muted);
-    margin-bottom: 4px;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-  }
-
-  .form-group input,
-  .form-group select,
-  .form-group textarea {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    font-size: 15px;
-    font-family: inherit;
-    color: var(--text);
-    background: white;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-
-  .form-group input:focus,
-  .form-group select:focus,
-  .form-group textarea:focus { border-color: var(--primary); }
-
-  .form-group textarea { resize: none; height: 60px; }
-
-  .prio-btns {
-    display: flex;
-    gap: 8px;
-  }
-
-  .prio-btn {
-    flex: 1;
-    padding: 10px 4px;
-    border-radius: 8px;
-    border: 1.5px solid var(--border);
-    background: white;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    text-align: center;
-    transition: all 0.15s;
-  }
-
-  .prio-btn[data-p="Urgente"].sel   { background: var(--danger-light);  border-color: var(--danger);  color: var(--danger); }
-  .prio-btn[data-p="Média"].sel  { background: var(--warning-light); border-color: var(--warning); color: var(--warning); }
-  .prio-btn[data-p="Baixa"].sel  { background: var(--success-light); border-color: var(--success); color: var(--success); }
-
-  .btn-salvar {
-    width: 100%;
-    padding: 17px 13px;
-    background: var(--primary);
-    color: white;
-    border: none;
-    border-radius: var(--radius);
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    margin-top: 4px;
-    transition: opacity 0.2s;
-    /* Evita que o toque seja "engolido" pelo gesto de rolar quando o botão fica perto
-       da borda de uma área com scroll (bug clássico de iOS) */
-    touch-action: manipulation;
-  }
-
-  .btn-salvar:disabled { opacity: 0.6; cursor: not-allowed; }
-
-  /* MODAL IMPRIMIR */
-  .modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 300;
-    align-items: flex-end;
-    justify-content: center;
-  }
-
-  .modal-overlay.open { display: flex; }
-
-  /* Popups que abrem POR CIMA de outro modal (ex: Envolvidos aberto de dentro de Filtros)
-     precisam de uma camada mais alta — senão o modal de baixo pode capturar o clique */
-  #modal-envolvidos { z-index: 350; }
-
-  .modal {
-    background: white;
-    border-radius: 20px 20px 0 0;
-    padding: 24px 20px 56px;
-    width: 100%;
-    max-width: 480px;
-    max-height: 88vh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  .modal button { touch-action: manipulation; }
-
-  .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
-
-  .modal-titulo-linha { display: flex; align-items: center; justify-content: space-between; }
-  .modal-titulo-linha h3 { margin-bottom: 16px; }
-  .modal-fechar-x {
-    background: var(--gray-light);
-    border: none;
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--text);
-    cursor: pointer;
-    flex-shrink: 0;
-    margin-top: -6px;
-  }
-  .modal-fechar-x:active { background: var(--border); }
-
-  .print-option {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px;
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius);
-    margin-bottom: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .print-option:active { background: var(--primary-light); border-color: var(--primary); }
-
-  .print-option-icon { font-size: 24px; }
-
-  .print-option-text strong { display: block; font-size: 14px; }
-  .print-option-text span { font-size: 12px; color: var(--text-muted); }
-
-  .modal-cancel {
-    width: 100%;
-    padding: 15px 12px;
-    background: var(--gray-light);
-    border: none;
-    border-radius: var(--radius);
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-muted);
-    cursor: pointer;
-    touch-action: manipulation;
-    margin-top: 8px;
-  }
-
-  /* TOAST */
-  .toast {
-    position: fixed;
-    bottom: 90px;
-    left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    background: #1f2937;
-    color: white;
-    padding: 10px 18px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 500;
-    opacity: 0;
-    transition: all 0.3s;
-    z-index: 400;
-    white-space: nowrap;
-  }
-
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-  /* PRINT STYLES */
-  @page { margin: 5mm; }
-
-  @media print {
-    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-
-    .header, .sidebar-pastas, .sidebar-overlay, .fab, .bottom-nav, .modal-overlay, .toast, .filters,
-    .search-bar, .counters, .tarefa-acoes, .btn-concluir-grande, .btn-excluir-rodape,
-    .btn-desfazer, .btn-lembrete, .categoria-toggle, .btn-editar-topo, .btn-mais-acoes,
-    .btn-nova-na-divisao,
-    .check-selecao, .selecao-barra, .btn-nova-inline,
-    .busca-avancada-toggle, .busca-avancada-painel,
-    .mudar-status-links { display: none !important; }
-
-    body { background: white; }
-
-    .main { padding: 0; max-width: 100% !important; margin: 0; }
-
-    /* Título da aba impressa */
-    .main::before {
-      content: attr(data-aba);
-      display: block;
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      border-bottom: 2px solid #333;
-      margin-bottom: 4px;
-      padding-bottom: 2px;
-    }
-
-    .categoria-group { margin-bottom: 4px; }
-
-    .categoria-header {
-      padding: 2px 0;
-      border-bottom: 1px solid #aaa;
-      margin-bottom: 2px;
-      break-after: avoid;
-      break-inside: avoid;
-    }
-
-    .categoria-title {
-      font-size: 9px;
-      font-weight: 700;
-      color: #333;
-      text-transform: uppercase;
-    }
-
-    .categoria-count { display: none; }
-
-    /* Não imprime tarefas concluídas — só andamento/relatório na tela */
-    .tarefa-card.status-Concluído { display: none !important; }
-
-  }
-
-  /* Formato REDUZIDO — uma linha compacta por tarefa (padrão) */
-  body.print-reduzido {
-    font-size: 9px;
-  }
-  @media print {
-    body.print-reduzido .tarefa-card {
-      display: flex;
-      align-items: baseline;
-      gap: 4px;
-      break-inside: avoid;
-      box-shadow: none;
-      border: none;
-      border-bottom: 1px dotted #ddd;
-      border-left: none !important;
-      margin-bottom: 0;
-      padding: 2px 0;
-      border-radius: 0;
-    }
-
-    /* Indicador de prioridade como letra */
-    body.print-reduzido .tarefa-card::before {
-      font-size: 8px;
-      font-weight: 700;
-      flex-shrink: 0;
-      width: 10px;
-    }
-    body.print-reduzido .tarefa-card.prioridade-Urgente::before  { content: 'U'; color: #dc2626; }
-    body.print-reduzido .tarefa-card.prioridade-Média::before    { content: 'M'; color: #d97706; }
-    body.print-reduzido .tarefa-card.prioridade-Baixa::before    { content: 'B'; color: #16a34a; }
-
-    body.print-reduzido .tarefa-top { flex: 1; }
-
-    body.print-reduzido .tarefa-nome {
-      font-size: 9px;
-      font-weight: 500;
-      line-height: 1.2;
-    }
-
-    body.print-reduzido .tarefa-card.status-Concluído .tarefa-nome {
-      text-decoration: line-through;
-      color: #999;
-    }
-
-    /* Data e envolvido em linha, pequeno */
-    body.print-reduzido .tarefa-meta {
-      flex-shrink: 0;
-      margin-top: 0;
-      gap: 4px;
-    }
-
-    body.print-reduzido .meta-item { font-size: 8px; color: #666; }
-
-    /* Oculta badges — info já está na linha */
-    body.print-reduzido .badges, body.print-reduzido .mini-legenda { display: none !important; }
-  }
-
-  /* Formato COMO NA TELA — mantém cards ou lista igual você vê no app, só reduz a fonte um pouco */
-  @media print {
-    body.print-tela .tarefa-nome { font-size: 11px; }
-    body.print-tela .meta-item { font-size: 10px; }
-    body.print-tela .badge { font-size: 9px; padding: 2px 6px; }
-    body.print-tela .tarefa-card { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
-
-    /* Se estava em Cards na tela, mantém lado a lado no papel também */
-    body.print-tela:not(.vista-lista-print) #main .categoria-group {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 8px;
-      align-items: start;
-    }
-    body.print-tela:not(.vista-lista-print) #main .categoria-header { grid-column: 1 / -1; }
-    body.print-tela:not(.vista-lista-print) #main .tarefa-card { margin-bottom: 0; }
-  }
-
-  @media screen and (min-width: 640px) {
-    .app-body .main { max-width: 1400px; margin: 0 auto; }
-    .counters-footer { justify-content: center; }
-
-    /* No PC a sidebar fica sempre visível, fixa ao lado — sem gaveta, sem overlay */
-    .btn-toggle-sidebar { display: none; }
-    .sidebar-overlay { display: none !important; }
-    .sidebar-pastas {
-      position: sticky;
-      /* Gruda embaixo do cabeçalho, não em cima dele — a altura real é medida via JS
-         porque o cabeçalho muda de tamanho conforme os botões quebram linha */
-      top: var(--header-h, 0px);
-      height: calc(100vh - var(--header-h, 0px));
-      width: 170px;
-      flex-shrink: 0;
-      transform: none;
-      box-shadow: none;
-      border-right: 1px solid var(--border);
-    }
-
-    /* Cards lado a lado em grade no PC (tem espaço de sobra) */
-    .categoria-group {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 12px;
-      align-items: stretch;
-    }
-    .categoria-header { grid-column: 1 / -1; }
-    /* Todos os cards da mesma linha ficam com a mesma altura, mesmo com quantidades diferentes de conteúdo */
-    .categoria-group .tarefa-card {
-      margin-bottom: 0;
-      display: flex;
-      flex-direction: column;
-    }
-    /* Junta prioridade/status + "mais ações" + concluir num bloco só, grudado embaixo do card */
-    .categoria-group .tarefa-card .tarefa-rodape { margin-top: auto; }
-
-    /* Tudo numa linha só (tem espaço de sobra no PC) */
-    .filters, .busca-avancada-painel { justify-content: center; align-items: center; }
-    .filters-break { display: none; }
-    .busca-avancada-painel .filtro-legenda {
-      flex-basis: auto;
-      padding: 0 8px 0 14px;
-      font-weight: 700;
-    }
-    .busca-avancada-painel .filtro-legenda:first-of-type { padding-left: 0; }
-    .filtro-legenda {
-      flex-basis: auto;
-      padding: 0 8px 0 14px;
-      font-weight: 700;
-      color: var(--text);
-    }
-    .filtro-legenda:first-of-type { padding-left: 0; }
-
-    /* O painel de Filtros (modal) sempre quebra linha por seção, não compacta como as barras antigas */
-    #modal-filtros .filtro-legenda {
-      flex-basis: 100% !important;
-      padding: 10px 0 2px !important;
-      font-weight: 700;
-      color: var(--primary);
-    }
-    #modal-filtros .filters-break { display: block !important; }
-
-    /* Data/hora maior e mais escura, mais fácil de ler */
-    .meta-item { font-size: 14px; color: var(--text-muted); font-weight: 400; }
+  /* ======================================================================
+     PAINEL DO VENDEDOR — app de tela única
+     Cor: tinta pálida, 1 tom por bloco, número escuro. Fundo branco.
+     ====================================================================== */
+  :root{
+    --ground:#fff; --surface:#fff; --ink:#211e18; --ink-soft:#5c574c; --ink-faint:#8d8778; --hair:#e4dfd4;
+    --green-bg:#eef5ef; --green-ink:#35673f; --green-edge:#6ea277;
+    --amber-bg:#fbf2dc; --amber-ink:#7d5f0f; --amber-edge:#cba646;
+    --clay-bg:#f8e9e3;  --clay-ink:#93402f;  --clay-edge:#c47e69;
+    --blue-bg:#e9f0f3;  --blue-ink:#2b5f73;  --blue-edge:#71a2b3;
+    --slate-bg:#f0ede4; --slate-ink:#66604f; --slate-edge:#b2ab99;
+    --shadow:0 1px 2px rgba(33,30,24,.05),0 4px 14px rgba(33,30,24,.045);
+    --radius:9px;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --ground:#100f0a; --surface:#191811; --ink:#f0eadc; --ink-soft:#aaa290; --ink-faint:#7a7364; --hair:#302d22;
+    --green-bg:#17211a; --green-ink:#93c79c; --green-edge:#3c6446;
+    --amber-bg:#241d0e; --amber-ink:#ddb662; --amber-edge:#6c5720;
+    --clay-bg:#251710;  --clay-ink:#e2937d;  --clay-edge:#6f4030;
+    --blue-bg:#13232a;  --blue-ink:#85b9cb;  --blue-edge:#37606f;
+    --slate-bg:#1e1c15; --slate-ink:#a6a08e; --slate-edge:#4a4534;
+    --shadow:0 1px 2px rgba(0,0,0,.32),0 5px 16px rgba(0,0,0,.26);
+  }}
+  :root[data-theme="dark"]{
+    --ground:#100f0a; --surface:#191811; --ink:#f0eadc; --ink-soft:#aaa290; --ink-faint:#7a7364; --hair:#302d22;
+    --green-bg:#17211a; --green-ink:#93c79c; --green-edge:#3c6446;
+    --amber-bg:#241d0e; --amber-ink:#ddb662; --amber-edge:#6c5720;
+    --clay-bg:#251710;  --clay-ink:#e2937d;  --clay-edge:#6f4030;
+    --blue-bg:#13232a;  --blue-ink:#85b9cb;  --blue-edge:#37606f;
+    --slate-bg:#1e1c15; --slate-ink:#a6a08e; --slate-edge:#4a4534;
+    --shadow:0 1px 2px rgba(0,0,0,.32),0 5px 16px rgba(0,0,0,.26);
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,sans-serif;line-height:1.48;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:max(10px,env(safe-area-inset-top)) 14px 48px}
+
+  /* header */
+  .masthead{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 16px;padding-bottom:8px;border-bottom:2px solid var(--ink)}
+  .masthead h1{font-family:"Archivo",sans-serif;font-weight:700;font-size:clamp(1.05rem,4vw,1.5rem);letter-spacing:-.01em;margin:0}
+  .masthead h1 span{color:var(--ink-soft);font-weight:600}
+  .meta{display:flex;align-items:center;gap:8px;font-size:.72rem;color:var(--ink-soft)}
+  .chip-co{font-family:"Archivo",sans-serif;font-weight:600;font-size:.66rem;letter-spacing:.03em;padding:2px 8px;border:1px solid var(--hair);border-radius:4px;color:var(--ink-soft)}
+
+  .topbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin-top:8px}
+  .seg{display:inline-flex;border:1px solid var(--hair);border-radius:8px;overflow:hidden;background:var(--surface)}
+  .seg button{font:inherit;font-family:"Archivo",sans-serif;font-weight:600;font-size:.76rem;padding:6px 14px;border:0;border-left:1px solid var(--hair);background:transparent;color:var(--ink-soft);cursor:pointer}
+  .seg button:first-child{border-left:0}
+  .seg button.on{background:var(--blue-bg);color:var(--blue-ink)}
+  .seg button:active{transform:translateY(1px)}
+  .statusbar{display:flex;align-items:center;gap:10px;font-size:.72rem;color:var(--ink-faint)}
+  .statusbar .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green-edge);margin-right:6px;vertical-align:middle}
+  .statusbar.stale .dot{background:var(--amber-edge)}
+  .statusbar.err .dot{background:var(--clay-edge)}
+  .btn{font:inherit;font-size:.75rem;font-weight:600;padding:5px 12px;border:1px solid var(--hair);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer}
+  .btn:active{transform:translateY(1px)}
+
+  section{margin-top:16px}
+  .band-label{font-family:"Archivo",sans-serif;font-weight:600;font-size:.7rem;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-faint);margin:0 0 6px;display:flex;align-items:center;gap:12px}
+  .band-label::after{content:"";flex:1;height:1px;background:var(--hair)}
+  .band-hint{margin:0 0 12px;font-size:.76rem;color:var(--ink-soft)}
+  .band-hint b{color:var(--ink);font-weight:600}
+
+  /* hero */
+  .hero{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .hero-main{border:1px solid;border-radius:var(--radius);padding:16px 18px;display:flex;flex-direction:column;gap:2px;box-shadow:var(--shadow)}
+  .hero-main.blue{background:var(--blue-bg);border-color:var(--blue-edge)}
+  .hero-main.amber{background:var(--amber-bg);border-color:var(--amber-edge)}
+  .hero-main .k{font-family:"Archivo",sans-serif;font-weight:600;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase}
+  .hero-main.blue .k{color:var(--blue-ink)} .hero-main.amber .k{color:var(--amber-ink)}
+  .hero-main .v{font-family:"IBM Plex Mono",monospace;font-weight:700;font-size:clamp(2.4rem,11vw,3.6rem);line-height:.95;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .hero-main.blue .v{color:var(--blue-ink)} .hero-main.amber .v{color:var(--amber-ink)}
+  .hero-main .sub{font-size:.76rem;color:var(--ink-soft)}
+  .hero-main .lnk{font-size:.74rem;font-weight:600;color:var(--blue-ink);margin-top:2px;text-decoration:none}
+  .hero-main .breakdown{margin-top:10px;padding-top:8px;border-top:1px solid var(--blue-edge);font-size:.74rem;color:var(--ink-soft);font-variant-numeric:tabular-nums;line-height:1.7}
+  .hero-main .breakdown b{color:var(--ink);font-family:"IBM Plex Mono",monospace;font-weight:600}
+  .hero-main .breakdown .off{color:var(--ink-faint)}
+
+  .kpi-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
+  .kpi{background:var(--surface);border:1px solid var(--hair);border-top:3px solid var(--slate-edge);border-radius:var(--radius);padding:11px 12px;display:flex;flex-direction:column;gap:3px}
+  .kpi .k{font-family:"Archivo",sans-serif;font-weight:600;font-size:.63rem;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft)}
+  .kpi .v{font-family:"IBM Plex Mono",monospace;font-weight:700;font-size:1.5rem;line-height:1.05;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  .kpi .v.link{font-family:"Archivo",sans-serif;font-size:.95rem;font-weight:600}
+  .kpi .note{font-size:.66rem;color:var(--ink-faint)}
+  .kpi.green{border-top-color:var(--green-edge)} .kpi.green .k{color:var(--green-ink)}
+  .kpi.amber{border-top-color:var(--amber-edge)} .kpi.amber .k{color:var(--amber-ink)} .kpi.amber .v{color:var(--amber-ink)}
+  .kpi.blue{border-top-color:var(--blue-edge)}   .kpi.blue .k{color:var(--blue-ink)}  .kpi.blue .v{color:var(--blue-ink)}
+  .kpi a{color:inherit;text-decoration:none}
+
+  /* agenda */
+  .agenda{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;background:var(--amber-bg);border:1px solid var(--amber-edge);border-left:4px solid var(--amber-edge);border-radius:var(--radius);padding:14px 18px;box-shadow:var(--shadow)}
+  .agenda .big{font-family:"IBM Plex Mono",monospace;font-weight:700;font-size:2.2rem;line-height:1;color:var(--amber-ink);font-variant-numeric:tabular-nums}
+  .agenda .txt strong{font-family:"Archivo",sans-serif;font-weight:600;display:block;font-size:.92rem}
+  .agenda .txt span{font-size:.77rem;color:var(--ink-soft)}
+  .agenda .over{color:var(--clay-ink);font-weight:600}
+
+  /* rows */
+  .rows{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+  .row{display:grid;grid-template-columns:52px 1fr;align-items:center;gap:12px;padding:11px 14px;border-radius:8px;border:1px solid var(--hair);border-left-width:3px;background:var(--surface)}
+  .row.a{background:var(--amber-bg);border-left-color:var(--amber-edge)}
+  .row.c{background:var(--clay-bg);border-left-color:var(--clay-edge)}
+  .row.g{background:var(--green-bg);border-left-color:var(--green-edge)}
+  .row.s{background:var(--surface);border-left-color:var(--slate-edge)}
+  .row .count{font-family:"IBM Plex Mono",monospace;font-weight:700;font-size:1.5rem;text-align:right;font-variant-numeric:tabular-nums}
+  .row.a .count{color:var(--amber-ink)} .row.c .count{color:var(--clay-ink)} .row.g .count{color:var(--green-ink)} .row.s .count{color:var(--ink-faint)}
+  .row .name{font-family:"Archivo",sans-serif;font-weight:600;font-size:.86rem}
+  .row .name small{display:block;font-family:"IBM Plex Sans",sans-serif;font-weight:400;font-size:.71rem;color:var(--ink-soft);margin-top:1px}
+  .row .name .lnk{font-size:.68rem;color:var(--blue-ink);font-weight:600;cursor:pointer;text-decoration:underline}
+
+  /* listas (impressão / rolar) */
+  .listbox{display:flex;flex-direction:column;gap:12px}
+  .listcard{border:1px solid var(--hair);border-radius:8px;overflow:hidden}
+  .lc-h{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 12px;background:var(--slate-bg);font-family:"Archivo",sans-serif;font-weight:600;font-size:.8rem}
+  .lc-h .n{font-family:"IBM Plex Mono",monospace;color:var(--ink-soft)}
+  .lc-wrap{overflow-x:auto}
+  table.lc{border-collapse:collapse;width:100%;font-size:.72rem}
+  table.lc th,table.lc td{text-align:left;padding:5px 10px;border-top:1px solid var(--hair);white-space:nowrap;color:var(--ink-soft)}
+  table.lc th{font-family:"Archivo",sans-serif;font-size:.64rem;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-faint);background:var(--surface);position:sticky;top:0}
+  table.lc td:first-child,table.lc th:first-child{white-space:normal;color:var(--ink);font-weight:500}
+  .lc-empty{padding:10px 12px;font-size:.75rem;color:var(--ink-faint)}
+
+  .updated{margin-top:26px;text-align:right;font-size:.71rem;color:var(--ink-faint)}
+  .loading{padding:40px 0;text-align:center;color:var(--ink-faint);font-size:.85rem}
+
+  @media (max-width:820px){
+    .hero{grid-template-columns:1fr}
+    .kpi-strip{grid-template-columns:1fr 1fr}
+    .rows{grid-template-columns:1fr}
+  }
+
+  @media print{
+    @page{size:A4 portrait;margin:9mm}
+    *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+    :root{--shadow:none}
+    body{background:#fff;font-size:10.5px}
+    .wrap{max-width:100%;padding:0}
+    .statusbar .btn,.no-print{display:none!important}
+    .hero{grid-template-columns:1fr 1fr!important}
+    .kpi-strip{grid-template-columns:repeat(4,1fr)!important}
+    .rows{grid-template-columns:1fr 1fr 1fr!important}
+    section,.hero,.hero-main,.kpi,.agenda,.rows,.row,.listcard{break-inside:avoid}
+    .band-label{break-after:avoid}
+    section{margin-top:12px}
+    .hero-main .v{font-size:2.4rem}
+    .agenda .big{font-size:1.9rem}
+    .row{padding:8px 10px}
+    .row .count{font-size:1.2rem}
+    table.lc th,table.lc td{padding:3px 7px;font-size:.66rem}
+    #listas{break-before:page}
   }
 </style>
 </head>
 <body>
+<div class="wrap">
 
-<header class="header">
-  <div class="header-top">
-    <div>
-      <h1>📋 Secretária Virtual</h1>
-      <div class="header-subtitle" id="last-update">Carregando...</div>
+  <header class="masthead">
+    <h1>Painel do Vendedor <span>— Carteira &amp; Missões</span></h1>
+    <div class="meta">
+      <span class="chip-co" id="chip-co">BNZ&nbsp;·&nbsp;CIAPLAC</span>
+      <span id="hoje">—</span>
     </div>
-    <div class="header-botoes">
-      <button class="btn-refresh btn-toggle-sidebar" onclick="toggleSidebar()" title="Ver pastas">☰ Pastas</button>
-      <button class="btn-refresh quick-urgentes" id="btn-urgentes" onclick="atalhoUrgentes()">🔥 Urgentes</button>
-      <button class="btn-refresh quick-agenda" onclick="atalhoAgenda('hoje')">📅 Hoje</button>
-      <button class="btn-refresh quick-agenda" onclick="atalhoAgenda('semana')">🗓️ Semana</button>
-      <button class="btn-refresh btn-vista" id="btn-vista" onclick="toggleVista()" title="Trocar entre cards e lista">▦ Cards</button>
-      <button class="btn-refresh" onclick="openAddModal()" title="Nova tarefa">➕ Nova</button>
-      <button class="btn-refresh" onclick="loadData()">↻ Atualizar</button>
+  </header>
+
+  <div class="topbar">
+    <div class="seg no-print" id="seg">
+      <button data-emp="" class="on">Total</button>
+      <button data-emp="BNZ">BNZ</button>
+      <button data-emp="CIAPLAC">CIAPLAC</button>
+    </div>
+    <div class="statusbar" id="statusbar">
+      <span><span class="dot"></span><span id="status-text">carregando…</span></span>
+      <button class="btn no-print" id="btn-refresh">Atualizar</button>
     </div>
   </div>
 
-  <div class="quick-bar">
-    <div class="search-com-filtro">
-      <input type="search" id="search-input" class="search-input-inline" placeholder="🔎 TODAS AS PASTAS..." oninput="setSearch(this.value)">
-      <button class="btn-filtro-icone" onclick="abrirModalFiltros('global')" title="Filtros de todas as pastas">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 4 20 4 14 13 14 20 10 20 10 13"/></svg>
-      </button>
-    </div>
-    <div class="search-com-filtro">
-      <input type="search" id="search-local-input" class="search-input-inline" placeholder="📍 PESQUISAR NA PASTA ATUAL..." oninput="setSearchLocal(this.value)">
-      <button class="btn-filtro-icone" onclick="abrirModalFiltros('local')" title="Filtros desta pasta">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 4 20 4 14 13 14 20 10 20 10 13"/></svg>
-      </button>
-    </div>
-    <button class="btn-refresh" onclick="setFilter('todos')">🔄 Limpar</button>
-  </div>
+  <div id="content" hidden>
 
-  <div class="chips-ativos" id="chips-ativos"></div>
-  <button class="pasta-atual-mobile" id="pasta-atual-mobile" onclick="toggleSidebar()"></button>
-</header>
-
-<div class="modal-overlay" id="modal-filtros" onclick="if(event.target===this) fecharModalFiltros()">
-  <div class="modal">
-    <div class="modal-titulo-linha">
-      <h3>🔽 Filtros</h3>
-      <button class="modal-fechar-x" onclick="fecharModalFiltros()" title="Fechar">✕</button>
-    </div>
-
-    <div class="filtros-secao" id="filtros-secao-local">
-      <div class="filtros-divisor" style="margin-top:0;padding-top:0;border-top:none">📍 Nesta pasta</div>
-      <div class="filtro-legenda">Agenda</div>
-      <button class="filter-btn" onclick="atalhoAgenda('hoje','local')">📅 Hoje</button>
-      <button class="filter-btn" onclick="atalhoAgenda('semana','local')">🗓️ Semana</button>
-      <div class="filters-break"></div>
-      <div class="filtro-legenda">Prioridade</div>
-      <button class="filter-btn" data-grupo="prioridade" data-valor="Urgente" onclick="setFilter('prioridade','Urgente')">🔴 Urgente</button>
-      <button class="filter-btn" data-grupo="prioridade" data-valor="Média" onclick="setFilter('prioridade','Média')">🟡 Média</button>
-      <button class="filter-btn" data-grupo="prioridade" data-valor="Baixa" onclick="setFilter('prioridade','Baixa')">🟢 Baixa</button>
-      <div class="filters-break"></div>
-      <div class="filtro-legenda">Status</div>
-      <button class="filter-btn" data-grupo="status" data-valor="Aberto" onclick="setFilter('status','Aberto')">Aberto</button>
-      <button class="filter-btn" data-grupo="status" data-valor="Em Andamento" onclick="setFilter('status','Em Andamento')">Em andamento</button>
-      <button class="filter-btn" data-grupo="status" data-valor="Iniciado" onclick="setFilter('status','Iniciado')">▶️ Iniciado</button>
-      <button class="filter-btn" data-grupo="status" data-valor="A conferir" onclick="setFilter('status','A conferir')">🔍 A conferir</button>
-      <button class="filter-btn" data-grupo="status" data-valor="Feito" onclick="setFilter('status','Feito')">✔️ Feito</button>
-      <button class="filter-btn" data-grupo="status" data-valor="Aguardando" onclick="setFilter('status','Aguardando')">🕓 Aguardando</button>
-      <button class="filter-btn" data-grupo="status" data-valor="Concluído" onclick="setFilter('status','Concluído')">Concluídas</button>
-      <div class="filters-break"></div>
-      <div class="filtro-legenda">Envolvidos</div>
-      <button class="filter-btn" id="btn-envolvidos" onclick="abrirModalEnvolvidos(false)">👤 Envolvidos</button>
-      <div class="filters-break"></div>
-      <div class="filtro-legenda">Tag</div>
-      <div id="tags-inline-local" class="opcoes-inline" style="justify-content:flex-start"></div>
-    </div>
-
-    <div class="filtros-secao" id="filtros-secao-global">
-      <div class="filtros-divisor" style="margin-top:0;padding-top:0;border-top:none">🌐 Em todas as pastas</div>
-      <div class="filtro-legenda">Prioridade</div>
-      <button class="filter-btn" data-grupo="prioridadeG" data-valor="Urgente" onclick="setFilter('prioridadeG','Urgente')">🔴 Urgente</button>
-      <button class="filter-btn" data-grupo="prioridadeG" data-valor="Média" onclick="setFilter('prioridadeG','Média')">🟡 Média</button>
-      <button class="filter-btn" data-grupo="prioridadeG" data-valor="Baixa" onclick="setFilter('prioridadeG','Baixa')">🟢 Baixa</button>
-      <div class="filters-break"></div>
-      <div class="filtro-legenda">Status</div>
-      <button class="filter-btn" data-grupo="statusG" data-valor="Aberto" onclick="setFilter('statusG','Aberto')">Aberto</button>
-      <button class="filter-btn" data-grupo="statusG" data-valor="Em Andamento" onclick="setFilter('statusG','Em Andamento')">Em andamento</button>
-      <button class="filter-btn" data-grupo="statusG" data-valor="Iniciado" onclick="setFilter('statusG','Iniciado')">▶️ Iniciado</button>
-      <button class="filter-btn" data-grupo="statusG" data-valor="A conferir" onclick="setFilter('statusG','A conferir')">🔍 A conferir</button>
-      <button class="filter-btn" data-grupo="statusG" data-valor="Feito" onclick="setFilter('statusG','Feito')">✔️ Feito</button>
-      <button class="filter-btn" data-grupo="statusG" data-valor="Aguardando" onclick="setFilter('statusG','Aguardando')">🕓 Aguardando</button>
-      <button class="filter-btn" data-grupo="statusG" data-valor="Concluído" onclick="setFilter('statusG','Concluído')">Concluídas</button>
-      <div class="filters-break"></div>
-      <div class="filtro-legenda">Envolvidos</div>
-      <button class="filter-btn" id="btn-envolvidos-g" onclick="abrirModalEnvolvidos(true)">👤 Envolvidos</button>
-      <div class="filters-break"></div>
-      <div class="filtro-legenda">Tag</div>
-      <div id="tags-inline-global" class="opcoes-inline" style="justify-content:flex-start"></div>
-    </div>
-
-    <button class="menu-mais-item" id="btn-ver-outra-secao" onclick="alternarSecaoFiltros()" style="text-align:center;font-weight:700"></button>
-
-    <button class="filter-btn active" data-grupo="todos" onclick="setFilter('todos')" id="btn-todas" style="width:100%;justify-content:center;margin-top:16px">🔄 Limpar todos os filtros</button>
-    <button class="modal-cancel" onclick="fecharModalFiltros()" style="margin-top:8px">Fechar</button>
-  </div>
-</div>
-
-<div class="app-body">
-  <div class="sidebar-overlay" id="sidebar-overlay" onclick="fecharSidebar()"></div>
-  <nav class="sidebar-pastas" id="sidebar-pastas"></nav>
-  <main class="main" id="main">
-    <div class="loading"><div class="spinner"></div>Carregando tarefas...</div>
-  </main>
-</div>
-
-<footer class="counters-footer" id="counters"></footer>
-
-<nav class="bottom-nav">
-  <button class="bottom-nav-item" onclick="toggleModoSelecao()" id="btn-modo-selecao" title="Selecionar várias tarefas de uma vez">
-    <span class="bottom-nav-icone">☑️</span>Selecionar
-  </button>
-  <button class="bottom-nav-item bottom-nav-central" onclick="openAddModal()" title="Nova tarefa">
-    <span class="bottom-nav-icone">➕</span>Nova Tarefa
-  </button>
-  <button class="bottom-nav-item" onclick="abrirModalMais()" title="Mais opções">
-    <span class="bottom-nav-icone">⋯</span>Mais
-  </button>
-</nav>
-
-<div class="selecao-barra" id="selecao-barra">
-  <span id="selecao-contagem">0 selecionadas</span>
-  <div class="selecao-botoes">
-    <select id="selecao-status" class="selecao-status-select" onchange="trocarStatusSelecionadas(this.value); this.value=''">
-      <option value="">Trocar status…</option>
-      <option value="Aberto">Aberto</option>
-      <option value="Em Andamento">Em andamento</option>
-      <option value="Iniciado">Iniciado (terceiros)</option>
-      <option value="A conferir">A conferir (terceiros)</option>
-      <option value="Feito">Feito (terceiros)</option>
-      <option value="Aguardando">Aguardando (preciso esperar algo)</option>
-      <option value="Concluído">Concluído</option>
-    </select>
-    <button class="btn-selecao-concluir" onclick="concluirSelecionadas()">✅ Concluir</button>
-    <button class="btn-selecao-concluir" onclick="compartilharSelecionadas()">📤 Compartilhar</button>
-    <button class="btn-selecao-excluir" onclick="excluirSelecionadas()">🗑️ Excluir</button>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modal-add">
-  <div class="modal">
-    <div class="modal-titulo-linha">
-      <h3 id="modal-add-title">✏️ Nova tarefa</h3>
-      <button class="modal-fechar-x" onclick="closeAddModal()" title="Fechar sem salvar">✕</button>
-    </div>
-
-    <div class="form-group">
-      <label>Pasta</label>
-      <select id="f-aba">
-        <option value="" disabled>Selecione a pasta...</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label>Divisão</label>
-      <select id="f-categoria">
-        <option value="">Carregando...</option>
-      </select>
-    </div>
-
-    <div class="form-group" id="f-nova-cat-group" style="display:none">
-      <label>Nome da nova divisão</label>
-      <input type="text" id="f-nova-cat" placeholder="Digite a divisão">
-    </div>
-
-    <div class="form-group">
-      <label id="f-tarefa-label">Tarefa *</label>
-      <input type="text" id="f-tarefa" placeholder="Descreva a tarefa">
-    </div>
-
-    <div class="form-group">
-      <label>Prioridade</label>
-      <div class="prio-btns">
-        <button class="prio-btn" data-p="Urgente" onclick="selPrio(this)">🔴 Urgente</button>
-        <button class="prio-btn" data-p="Média" onclick="selPrio(this)">🟡 Média</button>
-        <button class="prio-btn sel" data-p="Baixa" onclick="selPrio(this)">🟢 Baixa</button>
+    <div class="hero">
+      <div class="hero-main amber">
+        <span class="k">▸ 1º &nbsp; Em Negociação</span>
+        <span class="v" data-k="em_negociacao">–</span>
+        <span class="sub">fechar o que já está quente — sua maior chance de venda hoje</span>
+        <span class="lnk" data-goto="em_negociacao">↗ abrir lista</span>
+      </div>
+      <div class="hero-main blue">
+        <span class="k">Minha carteira ativa</span>
+        <span class="v" data-k="carteira_ativa">–</span>
+        <span class="sub">é o meu placar — em prospecção tem muito mais pra puxar</span>
+        <span class="breakdown">
+          <b data-k="c_ativos">–</b> ativos &nbsp;·&nbsp; <b data-k="c_negociacao">–</b> em negociação &nbsp;·&nbsp; <b data-k="c_semmov">–</b> sem movimentação
+          &nbsp;|&nbsp; <span class="off"><b data-k="c_inativos">–</b> inativos (fora do book)</span>
+        </span>
       </div>
     </div>
 
-    <div class="form-row">
-      <div class="form-group">
-        <label>Data prevista (opcional)</label>
-        <div class="campo-com-limpar">
-          <input type="date" id="f-data">
-          <button type="button" class="btn-limpar-campo" onclick="document.getElementById('f-data').value=''" title="Apagar data">✕</button>
+    <div class="kpi-strip">
+      <div class="kpi green">
+        <span class="k">Vendas do mês</span>
+        <span class="v" data-k="vendas_mes">–</span>
+        <span class="note">pedidos confirmados · mês atual</span>
+      </div>
+      <div class="kpi amber">
+        <span class="k">Alvos do mês</span>
+        <span class="v" data-k="alvos_mes" data-goto="alvos" style="cursor:pointer">–</span>
+        <span class="note">não compraram este mês ↗</span>
+      </div>
+      <div class="kpi blue">
+        <span class="k">Curva A</span>
+        <span class="v link"><a id="link-curva-a" href="#">Quem são ↗</a></span>
+        <span class="note">grandes contas · 12 meses móveis</span>
+      </div>
+      <div class="kpi blue">
+        <span class="k">Prospecção</span>
+        <span class="v link"><a id="link-prospeccao" href="#">Ver painel ↗</a></span>
+        <span class="note">potenciais pra puxar</span>
+      </div>
+    </div>
+
+    <section>
+      <p class="band-label">Agenda de hoje — o vendedor agradece</p>
+      <p class="band-hint">O que a inteligência <b>já agendou</b> pra você — as atividades da cadência de relacionamento.</p>
+      <div class="agenda">
+        <span class="big" data-k="atividades">–</span>
+        <span class="txt">
+          <strong>Atividades programadas</strong>
+          <span>ligações, follow-ups e visitas com data marcada · <span class="over"><span data-k="atividades_atrasadas">–</span> atrasadas</span></span>
+        </span>
+      </div>
+    </section>
+
+    <section>
+      <p class="band-label">Missões — disparos da cadência</p>
+      <p class="band-hint">Conta <b>só quem ainda não teve contato feito</b> — por isso não bate com a carteira. (Em Negociação não entra aqui, é tratativa ativa e está no topo.)</p>
+      <div class="rows">
+        <div class="row s">
+          <span class="count" data-k="contato_preventivo">–</span>
+          <span class="name">Contato Preventivo<small>entrou no período de nova compra — ligar antes de precisar</small><span class="lnk" data-goto="contato_preventivo">↗ abrir lista</span></span>
+        </div>
+        <div class="row g">
+          <span class="count" data-k="recuperacao">–</span>
+          <span class="name">Recuperação<small>passou da previsão de recompra — resgatar antes de esfriar</small><span class="lnk" data-goto="recuperacao">↗ abrir lista</span></span>
+        </div>
+        <div class="row s">
+          <span class="count" data-k="em_formacao">–</span>
+          <span class="name">Em Formação<small>cliente novo — ainda sem histórico pra calcular quando recompra</small><span class="lnk" data-goto="em_formacao">↗ abrir lista</span></span>
         </div>
       </div>
-      <div class="form-group">
-        <label>Hora início (opcional)</label>
-        <div class="campo-com-limpar">
-          <input type="time" id="f-hora">
-          <button type="button" class="btn-limpar-campo" onclick="document.getElementById('f-hora').value=''" title="Apagar hora">✕</button>
+    </section>
+
+    <section>
+      <p class="band-label">Alertas — pra ninguém ser esquecido</p>
+      <p class="band-hint">Aqui o número <b>empurra pro contato certo</b>: quem está escorregando da carteira e quem sumiu do radar.</p>
+      <div class="rows">
+        <div class="row c">
+          <span class="count" data-k="sem_movimentacao_30d">–</span>
+          <span class="name">Sem Movimentação +30 dias<small>caíram do "Ativos" — risco de perder</small><span class="lnk" data-goto="sem_movimentacao">↗ abrir lista</span></span>
+        </div>
+        <div class="row a">
+          <span class="count" data-k="sem_conversa_zap">–</span>
+          <span class="name">Sem conversa no Zap +20 dias<small>relacionamento esfriando — mandar mensagem</small><span class="lnk" data-goto="conversa_zap">↗ abrir lista</span></span>
+        </div>
+        <div class="row c">
+          <span class="count" data-k="inativos_missao">–</span>
+          <span class="name">Inativos<small>fora do ciclo — meta de resgate do mês</small><span class="lnk" data-goto="inativos">↗ abrir lista</span></span>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div class="form-row">
-      <div class="form-group">
-        <label>Data término (opcional — só se for período de vários dias)</label>
-        <div class="campo-com-limpar">
-          <input type="date" id="f-data-fim">
-          <button type="button" class="btn-limpar-campo" onclick="document.getElementById('f-data-fim').value=''" title="Apagar data término">✕</button>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Hora término (opcional — reunião com hora certa de acabar)</label>
-        <div class="campo-com-limpar">
-          <input type="time" id="f-hora-fim">
-          <button type="button" class="btn-limpar-campo" onclick="document.getElementById('f-hora-fim').value=''" title="Apagar hora término">✕</button>
-        </div>
-      </div>
-    </div>
+    <section id="listas">
+      <p class="band-label">Listas — pro Daniel imprimir tudo de uma vez</p>
+      <p class="band-hint">As mesmas listas na íntegra. Role e imprima a página inteira (Ctrl+P no PC, ou "Compartilhar → Imprimir" no celular).</p>
+      <div class="listbox" id="listbox"></div>
+    </section>
 
-    <div class="form-group" id="f-status-group" style="display:none">
-      <label>Status</label>
-      <select id="f-status" onchange="atualizarCampoDataConclusao()">
-        <option value="Aberto">Aberto</option>
-        <option value="Em Andamento">Em andamento</option>
-        <option value="Iniciado">Iniciado (terceiros)</option>
-        <option value="A conferir">A conferir (terceiros)</option>
-        <option value="Feito">Feito (terceiros)</option>
-        <option value="Aguardando">Aguardando (preciso esperar algo)</option>
-        <option value="Concluído">Concluído</option>
-      </select>
-    </div>
-
-    <div class="form-group" id="f-data-conclusao-group" style="display:none">
-      <label>Data de conclusão</label>
-      <input type="date" id="f-data-conclusao">
-    </div>
-
-    <div class="form-group">
-      <label>Envolvido (opcional)</label>
-      <input type="text" id="f-envolvido" placeholder="Ex: Daniel" oninput="atualizarBotaoLembreteModal()">
-    </div>
-
-    <div class="form-group">
-      <label>Tag (opcional — projeto/assunto, não é pessoa)</label>
-      <input type="text" id="f-tag" placeholder="Ex: ODOO">
-    </div>
-
-    <div class="form-group">
-      <label>Observação (opcional)</label>
-      <textarea id="f-obs" placeholder="Detalhes adicionais..."></textarea>
-    </div>
-
-    <button class="btn-lembrete-modal" id="btn-lembrete-modal" onclick="enviarLembreteModal()" style="display:none">🔔 Notificar novamente</button>
-
-    <button class="btn-salvar" id="btn-salvar" onclick="salvarTarefa()">Salvar tarefa</button>
-    <button class="btn-excluir-modal" id="btn-excluir-modal" onclick="excluirDoModal()" style="display:none">🗑️ Excluir tarefa</button>
-    <button class="modal-cancel" onclick="closeAddModal()" style="margin-top:8px">Cancelar</button>
+    <p class="updated">Atualizado em <span id="updated-at">—</span></p>
   </div>
-</div>
 
-<div class="modal-overlay" id="modal-categorias" onclick="if(event.target===this) fecharModalCategorias()">
-  <div class="modal">
-    <h3 id="modal-categorias-title">📁 Divisões</h3>
-    <button class="menu-mais-item" id="btn-categorias-alternar" onclick="abrirModalCategorias(true)">🌐 Ver todas as pastas</button>
-    <div id="lista-categorias"></div>
-    <button class="menu-mais-item" onclick="imprimirDivisoes()" style="margin-top:8px">🖨️ Imprimir esta lista</button>
-    <button class="modal-cancel" onclick="fecharModalCategorias()" style="margin-top:8px">Fechar</button>
-  </div>
-</div>
+  <div class="loading" id="loading">carregando o painel…</div>
 
-<div class="modal-overlay" id="modal-envolvidos" onclick="if(event.target===this) fecharModalEnvolvidos()">
-  <div class="modal">
-    <h3 id="modal-envolvidos-title">👤 Envolvidos</h3>
-    <div id="lista-envolvidos" class="opcoes-inline" style="justify-content:flex-start"></div>
-    <button class="modal-cancel" onclick="fecharModalEnvolvidos()" style="margin-top:14px">Fechar</button>
-  </div>
 </div>
-
-<div class="modal-overlay" id="modal-acoes-tarefa" onclick="if(event.target===this) fecharMenuAcoesTarefa()">
-  <div class="modal">
-    <h3>⋯ Mais ações</h3>
-    <button class="menu-mais-item" id="btn-acoes-duplicar">📄 Duplicar tarefa</button>
-    <button class="menu-mais-item" id="btn-acoes-compartilhar">↗️ Compartilhar no WhatsApp</button>
-    <button class="menu-mais-item" id="btn-acoes-lembrete" style="display:none"></button>
-    <button class="modal-cancel" onclick="fecharMenuAcoesTarefa()" style="margin-top:14px">Fechar</button>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modal-mais" onclick="if(event.target===this) fecharModalMais()">
-  <div class="modal">
-    <h3>⋯ Mais opções</h3>
-    <button class="menu-mais-item" onclick="fecharModalMais(); abrirModalCategorias()">📁 Ver divisões desta pasta</button>
-    <button class="menu-mais-item" onclick="fecharModalMais(); exportarCSV(false)">📊 Exportar esta pasta para Excel</button>
-    <button class="menu-mais-item" onclick="fecharModalMais(); exportarCSV(true)">📊🌐 Exportar TODAS as pastas para Excel</button>
-    <button class="menu-mais-item" onclick="fecharModalMais(); imprimir('reduzido')">🖨️ Imprimir (reduzido)</button>
-    <button class="menu-mais-item" onclick="fecharModalMais(); imprimir('tela')">🖨️ Imprimir (como na tela)</button>
-    <button class="menu-mais-item" onclick="fecharModalMais(); abrirModalNovaPasta()">➕📁 Nova pasta</button>
-    <label class="menu-mais-item" style="display:flex;align-items:center;gap:8px;cursor:pointer">
-      <input type="checkbox" id="chk-esconder-aguardando" onchange="alternarEsconderAguardando(this.checked)">
-      🕓 "🔥 Urgentes" esconde "Iniciado" e "Aguardando" (não é sua vez de agir ainda)
-    </label>
-    <button class="modal-cancel" onclick="fecharModalMais()" style="margin-top:14px">Fechar</button>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modal-nova-pasta" onclick="if(event.target===this) fecharModalNovaPasta()">
-  <div class="modal">
-    <h3>➕📁 Nova Pasta</h3>
-    <div class="form-group">
-      <label>Nome da pasta nova</label>
-      <input type="text" id="np-nome" placeholder="Ex: Obra 2, Curso de Inglês...">
-    </div>
-    <div class="form-group">
-      <label>Copiar tarefas de:</label>
-      <select id="np-origem">
-        <option value="">— Pasta vazia —</option>
-      </select>
-    </div>
-    <div style="display:flex;gap:10px;margin-top:14px">
-      <button class="modal-cancel" onclick="fecharModalNovaPasta()">Cancelar</button>
-      <button class="btn-salvar" onclick="criarPastaNova()">Criar</button>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
 
 <script>
-// ⚙️ CONFIGURAÇÃO — cole aqui a URL do Google Apps Script após deploy
-const API_URL = 'https://script.google.com/macros/s/AKfycbwHY-VQAb31qHvwCVkGaHWOgywUQumkvjRYorx0iGTj-xL3EQEwjn6sWFa2CHRJQgSSfg/exec';
+/* ============================================================================
+   CONFIGURAÇÃO — troque a URL abaixo pela do seu webhook no n8n
+   ex: https://SEU-N8N/webhook/painel-vendedor
+   ============================================================================ */
+const WEBHOOK_URL   = "https://auto.ialink.com.br/webhook/painel-vendedor";
+const REFRESH_MIN   = 5;      // re-busca sozinho a cada X minutos
+const LINK_CURVA_A   = "";    // URL da aba/painel da Curva A (deixe "" por enquanto)
+const LINK_PROSPECCAO= "";    // URL do Painel de Prospecção (deixe "" por enquanto)
 
-// Estado — lista de pastas começa com as 5 de sempre (pra já mostrar algo na tela),
-// e depois é sincronizada de verdade com o que existe na planilha (função sincronizarPastas)
-let ABAS = ['PESSOAL', 'OBRA', 'WORK', 'ODOO PROJETO', 'Projeto Ideias'];
-let ABA_LABEL = { 'PESSOAL': 'Pessoal', 'OBRA': 'Obra', 'WORK': 'Work', 'ODOO PROJETO': 'Odoo', 'Projeto Ideias': 'Ideias' };
-
-// Cores fixas das 5 pastas de sempre; pastas novas (criadas pelo botão "Nova Pasta") ganham
-// uma cor dessa paleta, na ordem em que forem criadas — sem precisar mexer em CSS pra cada uma
-const CORES_PASTAS_FIXAS = {
-  'PESSOAL': ['#4f46e5', '#eef2ff'],
-  'OBRA': ['#d97706', '#fef3c7'],
-  'WORK': ['#0891b2', '#cffafe'],
-  'ODOO PROJETO': ['#16a34a', '#dcfce7'],
-  'Projeto Ideias': ['#c026d3', '#fae8ff']
-};
-const PALETA_PASTAS_NOVAS = [
-  ['#e11d48', '#ffe4e6'], ['#0ea5e9', '#e0f2fe'], ['#65a30d', '#ecfccb'],
-  ['#7c3aed', '#ede9fe'], ['#ea580c', '#ffedd5'], ['#0f766e', '#ccfbf1']
+/* ---- definição das listas que aparecem embaixo ---- */
+const LISTAS = [
+  {k:"em_negociacao",      titulo:"Em Negociação"},
+  {k:"contato_preventivo", titulo:"Contato Preventivo"},
+  {k:"recuperacao",        titulo:"Recuperação"},
+  {k:"em_formacao",        titulo:"Em Formação"},
+  {k:"atividades",         titulo:"Atividades programadas"},
+  {k:"sem_movimentacao",   titulo:"Sem Movimentação +30 dias"},
+  {k:"conversa_zap",       titulo:"Sem conversa no Zap +20 dias"},
+  {k:"alvos",              titulo:"Alvos do mês — não compraram este mês"},
+  {k:"inativos",           titulo:"Inativos"}
 ];
-function corDaPasta(aba) {
-  if (CORES_PASTAS_FIXAS[aba]) return CORES_PASTAS_FIXAS[aba];
-  const novas = ABAS.filter(a => !CORES_PASTAS_FIXAS[a]);
-  const idx = Math.max(0, novas.indexOf(aba));
-  return PALETA_PASTAS_NOVAS[idx % PALETA_PASTAS_NOVAS.length];
+const COLS = {
+  padrao:     [["cliente","Cliente"],["fantasia","Nome Fantasia"],["zap","Zap"],["cidade","Cidade"],["uf","UF"],["marcadores","Marcadores"],["ultima_interacao","Últ. interação"]],
+  alvos:      [["cliente","Cliente"],["fantasia","Nome Fantasia"],["zap","Zap"],["cidade","Cidade"],["uf","UF"],["estagio","Estágio"],["ultimo_pedido","Último pedido"]],
+  atividades: [["cliente","Cliente"],["tipo","Tipo"],["resumo","Resumo"],["vencimento","Vencimento"],["estado","Estado"],["responsavel","Responsável"]]
+};
+
+/* ---- helpers ---- */
+const $  = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const fmtInt = n => (n==null||isNaN(n)) ? "–" : Number(n).toLocaleString("pt-BR");
+const fmtBRL = n => (n==null||isNaN(n)) ? "R$ –" : Number(n).toLocaleString("pt-BR",{style:"currency",currency:"BRL",maximumFractionDigits:0});
+const fmtDateTime = iso => { try{ return new Date(iso).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});}catch(e){return iso||"—";} };
+
+function setStatus(state, text){
+  const sb = $("#statusbar");
+  sb.classList.remove("stale","err");
+  if(state) sb.classList.add(state);
+  $("#status-text").textContent = text;
 }
 
-let allData = {};
-let abaAtual = 'PESSOAL';
-
-// Filtros LOCAIS — valem só dentro da aba aberta (linha de filtros embaixo das abas)
-let filtroPrioridade = new Set();
-let filtroStatus = new Set();
-let filtroEnvolvido = new Set();
-let filtroTag = new Set();
-
-// Filtros GLOBAIS — painel "Busca avançada", sempre cruzam todas as abas
-let filtroPrioridadeG = new Set();
-let filtroStatusG = new Set();
-let filtroEnvolvidoG = new Set();
-let filtroTagG = new Set();
-
-function algumFiltroAtivo() {
-  // Só os filtros GLOBAIS (+ busca por texto) forçam o modo cruzado entre abas
-  return filtroPrioridadeG.size > 0 || filtroStatusG.size > 0 || filtroEnvolvidoG.size > 0 || filtroTagG.size > 0 || !!searchTerm || (!!modoAgendaPeriodo && modoAgendaEscopo === 'global');
-}
-
-function nenhumFiltroAtivoTotal() {
-  return !algumFiltroAtivo() && filtroPrioridade.size === 0 && filtroStatus.size === 0 && filtroEnvolvido.size === 0 && filtroTag.size === 0;
-}
-
-// Atualiza o texto dos botões "Envolvidos" com a contagem de selecionados (ex: "Envolvidos (2)")
-function popularBotoesEnvolvidos() {
-  const btnLocal = document.getElementById('btn-envolvidos');
-  if (btnLocal) btnLocal.textContent = `👤 Envolvidos${filtroEnvolvido.size ? ` (${filtroEnvolvido.size})` : ''}`;
-  const btnGlobal = document.getElementById('btn-envolvidos-g');
-  if (btnGlobal) btnGlobal.textContent = `👤 Envolvidos${filtroEnvolvidoG.size ? ` (${filtroEnvolvidoG.size})` : ''}`;
-}
-
-// Popup de seleção de Envolvidos — evita empilhar um botão por pessoa quando a lista crescer
-function abrirModalEnvolvidos(global) {
-  const nomes = global
-    ? [...new Set(ABAS.flatMap(aba => allData[aba] || []).map(t => (t.Envolvido || '').trim()).filter(Boolean))].sort()
-    : [...new Set((allData[abaAtual] || []).map(t => (t.Envolvido || '').trim()).filter(Boolean))].sort();
-
-  document.getElementById('modal-envolvidos-title').textContent = global ? '👤 Envolvidos (todas as pastas)' : '👤 Envolvidos';
-  document.getElementById('lista-envolvidos').innerHTML = nomes.length
-    ? nomes.map(n => {
-        const ativo = (global ? filtroEnvolvidoG : filtroEnvolvido).has(n);
-        return `<button class="opcao-inline-btn${ativo ? ' sel' : ''}" onclick="selecionarEnvolvido('${n.replace(/'/g,"\\'")}', ${global})">👤 ${n}</button>`;
-      }).join('')
-    : '<p style="color:var(--text-muted);font-size:13px">Nenhum envolvido cadastrado ainda.</p>';
-  document.getElementById('modal-envolvidos').dataset.global = global;
-  document.getElementById('modal-envolvidos').classList.add('open');
-}
-
-function selecionarEnvolvido(nome, global) {
-  setFilter(global ? 'envolvidoG' : 'envolvido', nome);
-  abrirModalEnvolvidos(global); // reabre a lista já atualizada, sem fechar o popup
-}
-
-function fecharModalEnvolvidos() {
-  document.getElementById('modal-envolvidos').classList.remove('open');
-}
-
-// Tag é pra projeto/assunto (não pessoa — isso é Envolvido). Poucas tags esperadas, então
-// os nomes já aparecem direto, clicáveis, sem precisar abrir um popup à parte
-// Uma tarefa pode ter mais de uma Tag, separadas por vírgula (ex: "ODOO, Prospecção") —
-// isso devolve cada uma já separada e sem espaço sobrando, pra tratar cada uma individualmente
-function tagsDeTarefa(t) {
-  return (t.Tag || '').split(',').map(s => s.trim()).filter(Boolean);
-}
-
-function popularBotoesTag() {
-  const nomesLocal = [...new Set((allData[abaAtual] || []).flatMap(tagsDeTarefa))].sort();
-  const elLocal = document.getElementById('tags-inline-local');
-  if (elLocal) {
-    elLocal.innerHTML = nomesLocal.length
-      ? nomesLocal.map(n => `<button class="filter-btn${filtroTag.has(n) ? ' active' : ''}" onclick="setFilter('tag','${n.replace(/'/g,"\\'")}')">🏷️ ${n}</button>`).join('')
-      : '<p style="color:var(--text-muted);font-size:12px;margin:0">Nenhuma tag nesta pasta ainda.</p>';
-  }
-
-  const nomesGlobal = [...new Set(ABAS.flatMap(aba => allData[aba] || []).flatMap(tagsDeTarefa))].sort();
-  const elGlobal = document.getElementById('tags-inline-global');
-  if (elGlobal) {
-    elGlobal.innerHTML = nomesGlobal.length
-      ? nomesGlobal.map(n => `<button class="filter-btn${filtroTagG.has(n) ? ' active' : ''}" onclick="setFilter('tagG','${n.replace(/'/g,"\\'")}')">🏷️ ${n}</button>`).join('')
-      : '<p style="color:var(--text-muted);font-size:12px;margin:0">Nenhuma tag cadastrada ainda.</p>';
-  }
-}
-
-function abrirModalMais() {
-  document.getElementById('chk-esconder-aguardando').checked = esconderAguardandoDosUrgentes;
-  document.getElementById('modal-mais').classList.add('open');
-}
-
-function fecharModalMais() {
-  document.getElementById('modal-mais').classList.remove('open');
-}
-
-function abrirModalNovaPasta() {
-  const sel = document.getElementById('np-origem');
-  sel.innerHTML = '<option value="">— Pasta vazia —</option>' +
-    ABAS.map(a => `<option value="${a}">${ABA_LABEL[a] || a}</option>`).join('');
-  document.getElementById('np-nome').value = '';
-  document.getElementById('modal-nova-pasta').classList.add('open');
-}
-
-function fecharModalNovaPasta() {
-  document.getElementById('modal-nova-pasta').classList.remove('open');
-}
-
-async function criarPastaNova() {
-  const nome = document.getElementById('np-nome').value.trim();
-  const origem = document.getElementById('np-origem').value;
-  if (!nome) { showToast('⚠️ Digite um nome pra pasta'); return; }
-
-  try {
-    const resp = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'criarPasta', origem: origem, nomeNova: nome })
-    });
-    const data = await resp.json();
-    if (!data.ok) { showToast('⚠️ ' + (data.error || 'Erro ao criar pasta')); return; }
-
-    fecharModalNovaPasta();
-    showToast('✅ Pasta criada!');
-    await loadData();
-    switchTab(nome);
-  } catch (err) {
-    showToast('⚠️ Erro ao criar pasta');
-  }
-}
-
-let secaoFiltrosAtual = 'local';
-
-function mostrarSecaoFiltros(escopo) {
-  secaoFiltrosAtual = escopo;
-  document.getElementById('filtros-secao-local').style.display = escopo === 'local' ? 'block' : 'none';
-  document.getElementById('filtros-secao-global').style.display = escopo === 'global' ? 'block' : 'none';
-  document.getElementById('btn-ver-outra-secao').textContent = escopo === 'local'
-    ? '🌐 Ver filtros de todas as pastas'
-    : '📍 Ver filtros só desta pasta';
-}
-
-function alternarSecaoFiltros() {
-  mostrarSecaoFiltros(secaoFiltrosAtual === 'local' ? 'global' : 'local');
-}
-
-function abrirModalFiltros(escopo) {
-  mostrarSecaoFiltros(escopo || 'local');
-  popularBotoesTag();
-  document.getElementById('modal-filtros').classList.add('open');
-}
-
-function fecharModalFiltros() {
-  document.getElementById('modal-filtros').classList.remove('open');
-}
-
-// Se marcado, o atalho Urgentes esconde tarefas com Status "Aguardando" (não depende mais da pessoa agora)
-let esconderAguardandoDosUrgentes = JSON.parse(localStorage.getItem('esconderAguardandoDosUrgentes') || 'true');
-let modoUrgentesAtivo = false;
-let modoAgendaPeriodo = null; // null | 'hoje' | 'semana' — mostra o que tem Data Prevista nesse período + tudo que é Urgente
-let modoAgendaEscopo = 'global'; // 'global' (todas as pastas, atalho do cabeçalho) | 'local' (só a pasta aberta, filtro avançado)
-
-function alternarEsconderAguardando(marcado) {
-  esconderAguardandoDosUrgentes = marcado;
-  localStorage.setItem('esconderAguardandoDosUrgentes', JSON.stringify(marcado));
-  if (modoUrgentesAtivo) render();
-}
-
-function limparModosAtalho() {
-  modoUrgentesAtivo = false;
-  modoAgendaPeriodo = null;
-}
-
-// Atalho de um toque: mostra só as Urgentes, de todas as pastas
-function atalhoUrgentes() {
-  limparModosAtalho();
-  modoUrgentesAtivo = true;
-  filtroPrioridadeG = new Set(['Urgente']);
-  filtroStatusG = new Set();
-  filtroEnvolvidoG = new Set();
-  searchTerm = '';
-  const si = document.getElementById('search-input');
-  if (si) si.value = '';
-  atualizarBotoesFiltro();
-  popularBotoesEnvolvidos();
-  renderTabs();
-  render();
-  showToast('🔥 Mostrando urgentes de todas as pastas');
-}
-
-// Atalho: mostra o que está agendado (Data Prevista) pra hoje/semana, MAIS tudo que é Urgente (não importa a data)
-// escopo 'global' = todas as pastas (atalho do cabeçalho). 'local' = só a pasta aberta (dentro do Filtros).
-function atalhoAgenda(periodo, escopo) {
-  limparModosAtalho();
-  modoAgendaPeriodo = periodo;
-  modoAgendaEscopo = escopo || 'global';
-  filtroPrioridade = new Set();
-  filtroStatus = new Set();
-  filtroEnvolvido = new Set();
-  filtroPrioridadeG = new Set();
-  filtroStatusG = new Set();
-  filtroEnvolvidoG = new Set();
-  searchTerm = '';
-  const si = document.getElementById('search-input');
-  if (si) si.value = '';
-  if (modoAgendaEscopo === 'local') fecharModalFiltros();
-  atualizarBotoesFiltro();
-  popularBotoesEnvolvidos();
-  renderTabs();
-  render();
-  showToast(periodo === 'hoje' ? '📅 Mostrando o de hoje + urgentes' : '🗓️ Mostrando a semana + urgentes');
-}
-
-// Resume os filtros ativos numa linha de chips, pra sempre saber o que está filtrado
-function atualizarChipsAtivos() {
-  const cruzado = algumFiltroAtivo();
-  const chips = [];
-  if (cruzado) chips.push('🌐 Todas as pastas');
-  if (modoAgendaPeriodo) chips.push(modoAgendaPeriodo === 'hoje' ? '📅 Hoje + Urgente' : '🗓️ Semana + Urgente');
-  const prio = cruzado ? filtroPrioridadeG : filtroPrioridade;
-  const stat = cruzado ? filtroStatusG : filtroStatus;
-  const env = cruzado ? filtroEnvolvidoG : filtroEnvolvido;
-  const tag = cruzado ? filtroTagG : filtroTag;
-  prio.forEach(v => chips.push(`${{Urgente:'🔴',Média:'🟡',Baixa:'🟢'}[v] || ''} ${v}`));
-  stat.forEach(v => chips.push(v));
-  env.forEach(v => chips.push(`👤 ${v}`));
-  tag.forEach(v => chips.push(`🏷️ ${v}`));
-  const el = document.getElementById('chips-ativos');
-  if (el) {
-    el.innerHTML = chips.map(c => `<span class="chip-ativo">${c}</span>`).join('');
-  }
-}
-let searchTerm = '';       // busca global (barra de cima) — sempre cruza todas as abas
-let searchTermLocal = '';  // busca local (linha de filtros) — só dentro da aba atual
-let categoriasColapsadas = new Set();
-
-// Tira acentos pra pesquisa não fazer diferença entre "farmacia" e "farmácia"
-const MAPA_ACENTOS = { á:'a', à:'a', â:'a', ã:'a', ä:'a', é:'e', è:'e', ê:'e', ë:'e', í:'i', ì:'i', î:'i', ï:'i', ó:'o', ò:'o', ô:'o', õ:'o', ö:'o', ú:'u', ù:'u', û:'u', ü:'u', ç:'c' };
-function normalizarBusca(s) {
-  return String(s || '').toLowerCase().split('').map(ch => MAPA_ACENTOS[ch] || ch).join('');
-}
-
-// Digitar uma busca rápida assume que a pessoa quer ver isso agora — some com filtros de prioridade/status/envolvido antigos
-function limparFiltrosAoDigitar() {
-  modoUrgentesAtivo = false;
-  modoAgendaPeriodo = null;
-  filtroPrioridade = new Set();
-  filtroStatus = new Set();
-  filtroEnvolvido = new Set();
-  filtroPrioridadeG = new Set();
-  filtroStatusG = new Set();
-  filtroEnvolvidoG = new Set();
-  atualizarBotoesFiltro();
-}
-
-// Barra de cima: sempre pesquisa em TODAS as pastas
-function setSearch(v) {
-  const termo = normalizarBusca(v.trim());
-  if (termo) limparFiltrosAoDigitar();
-  searchTerm = termo;
-  fecharSidebar(); // garante que a gaveta de pastas nunca fique aberta cobrindo a tela ao digitar
-  renderTabs();
-  render();
-}
-
-// Barra de baixo: sempre pesquisa só na pasta atual
-function setSearchLocal(v) {
-  const termo = normalizarBusca(v.trim());
-  if (termo) limparFiltrosAoDigitar();
-  searchTermLocal = termo;
-  fecharSidebar();
-  render();
-}
-// { id: { status: statusAnterior, ts: timestamp } } — fica salvo no celular até a pessoa desfazer,
-// mesmo se fechar o app. Expira sozinho depois de alguns minutos pra não ficar "grudado" pra sempre
-// caso o app feche antes do timer de 8s conseguir limpar.
-const DESFAZER_VALIDADE_MS = 5 * 60 * 1000; // 5 minutos
-let desfazerDisponivel = {};
-try {
-  const salvo = JSON.parse(localStorage.getItem('desfazerDisponivel') || '{}');
-  const agora = Date.now();
-  for (const id in salvo) {
-    if (salvo[id] && (agora - salvo[id].ts) < DESFAZER_VALIDADE_MS) desfazerDisponivel[id] = salvo[id];
-  }
-} catch (e) {}
-
-function salvarDesfazer() {
-  try { localStorage.setItem('desfazerDisponivel', JSON.stringify(desfazerDisponivel)); } catch (e) {}
-}
-
-// ===== SELEÇÃO MÚLTIPLA =====
-let modoSelecao = false;
-let selecionados = new Set(); // chaves "aba::id"
-
-function toggleModoSelecao() {
-  modoSelecao = !modoSelecao;
-  if (!modoSelecao) selecionados.clear();
-  document.getElementById('btn-modo-selecao').classList.toggle('ativo', modoSelecao);
-  atualizarBarraSelecao();
-  render();
-}
-
-function toggleSelecionado(chave, marcado) {
-  if (marcado) selecionados.add(chave); else selecionados.delete(chave);
-  atualizarBarraSelecao();
-}
-
-function atualizarBarraSelecao() {
-  const barra = document.getElementById('selecao-barra');
-  const n = selecionados.size;
-  document.getElementById('selecao-contagem').textContent = `${n} selecionada${n === 1 ? '' : 's'}`;
-  barra.classList.toggle('show', modoSelecao && n > 0);
-}
-
-async function concluirSelecionadas() {
-  await trocarStatusSelecionadas('Concluído');
-}
-
-async function trocarStatusSelecionadas(novoStatus) {
-  if (!novoStatus || !selecionados.size) return;
-  const rotulo = { 'Aberto': 'Aberto', 'Em Andamento': 'Em andamento', 'Iniciado': 'Iniciado', 'A conferir': 'A conferir', 'Feito': 'Feito', 'Aguardando': 'Aguardando', 'Concluído': 'Concluído' }[novoStatus] || novoStatus;
-  if (!confirm(`Trocar ${selecionados.size} tarefa(s) para "${rotulo}"?`)) return;
-  const itens = [...selecionados].map(chave => {
-    const [aba, id] = chave.split('::');
-    return { aba, id };
-  });
-  await Promise.all(itens.map(({ aba, id }) =>
-    fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'updateStatus', aba, id, status: novoStatus })
-    }).catch(() => {})
-  ));
-  itens.forEach(({ aba, id }) => {
-    const tarefa = (allData[aba] || []).find(t => String(t.ID) === String(id));
-    if (tarefa) {
-      tarefa.Status = novoStatus;
-      if (novoStatus === 'Concluído') tarefa['Data conclusão'] = new Date().toLocaleDateString('pt-BR');
-    }
-  });
-  selecionados.clear();
-  atualizarBarraSelecao();
-  renderMantendoScroll();
-  showToast(`✅ Tarefas atualizadas para "${rotulo}"!`);
-}
-
-async function excluirSelecionadas() {
-  if (!selecionados.size) return;
-  if (!confirm(`Excluir ${selecionados.size} tarefa(s)? Essa ação não tem volta.`)) return;
-  const itens = [...selecionados].map(chave => {
-    const [aba, id] = chave.split('::');
-    return { aba, id };
-  });
-  await Promise.all(itens.map(({ aba, id }) =>
-    fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'deleteTask', aba, id })
-    }).catch(() => {})
-  ));
-  itens.forEach(({ aba, id }) => {
-    allData[aba] = (allData[aba] || []).filter(t => String(t.ID) !== String(id));
-  });
-  selecionados.clear();
-  atualizarBarraSelecao();
-  renderMantendoScroll();
-  showToast('🗑️ Tarefas excluídas!');
-}
-
-// Ordem das abas: salva no próprio celular, cada pessoa pode organizar do seu jeito
-let abaOrdem = [...ABAS];
-try {
-  const salvo = JSON.parse(localStorage.getItem('abaOrdem') || 'null');
-  if (Array.isArray(salvo) && salvo.length === ABAS.length && salvo.every(a => ABAS.includes(a))) {
-    abaOrdem = salvo;
-  }
-} catch (e) { /* localStorage indisponível — usa ordem padrão */ }
-abaAtual = abaOrdem[0];
-
-// Atualiza a lista de pastas (ABAS/ABA_LABEL) com o que realmente existe na planilha —
-// preserva a ordem que a pessoa já organizou e só acrescenta as pastas novas no final.
-// Deixa o nome bonito (Primeira Letra Maiúscula) mesmo se a aba na planilha estiver em CAIXA ALTA —
-// assim os usuários que só usam o app (sem acesso à planilha) sempre veem um nome consistente
-function formatarNomePasta(nome) {
-  return String(nome).trim().toUpperCase();
-}
-
-function sincronizarPastas(lista) {
-  if (!Array.isArray(lista) || !lista.length) return;
-  ABAS = lista;
-  lista.forEach(p => { if (!ABA_LABEL[p]) ABA_LABEL[p] = formatarNomePasta(p); });
-  const jaTinha = abaOrdem.filter(a => lista.includes(a));
-  const novas = lista.filter(a => !jaTinha.includes(a));
-  abaOrdem = [...jaTinha, ...novas];
-  if (!lista.includes(abaAtual)) abaAtual = abaOrdem[0];
-  popularSelectPastas();
-  renderTabs();
-  try { localStorage.setItem('pastasCache', JSON.stringify(lista)); } catch (e) {}
-}
-
-// Preenche o <select> "Pasta" do formulário de Nova/Editar tarefa com as pastas de verdade
-function popularSelectPastas() {
-  const sel = document.getElementById('f-aba');
-  if (!sel) return;
-  const valorAtual = sel.value;
-  sel.innerHTML = '<option value="" disabled>Selecione a pasta...</option>' +
-    ABAS.map(a => `<option value="${a}">${ABA_LABEL[a]}</option>`).join('');
-  if (ABAS.includes(valorAtual)) sel.value = valorAtual;
-}
-
-// Nome curto pra caber na sidebar sem estourar a largura — "Curso de Inglês" já é o limite bom
-function nomeCurtoPasta(aba) {
-  const nome = ABA_LABEL[aba] || aba;
-  return nome.length > 16 ? nome.slice(0, 16).trimEnd() + '…' : nome;
-}
-
-function renderTabs() {
-  // Enquanto a busca/filtro cruza todas as abas, nenhuma pasta fica com o contorno de "selecionada"
-  const cruzado = algumFiltroAtivo();
-  const html = abaOrdem.map((aba, i) => {
-    const [cor] = corDaPasta(aba);
-    const ativa = !cruzado && aba === abaAtual;
-    return `
-    <div class="sidebar-item ${ativa ? 'active' : ''}" data-aba="${aba}" style="order:${i}" title="${ABA_LABEL[aba]}">
-      <span style="color:${cor}">${iconeCategoria(aba)}</span><span class="sidebar-item-label" style="color:${cor}">${nomeCurtoPasta(aba)}</span>
-      <span class="sidebar-tab" style="background:${cor}"></span>
-    </div>
-  `;
-  }).join('');
-  const sidebar = document.getElementById('sidebar-pastas');
-  sidebar.innerHTML = `<div class="sidebar-titulo">PASTAS</div>${html}<div class="sidebar-nova-pasta" style="order:9999" onclick="abrirModalNovaPasta()">➕ Nova pasta</div>`;
-  document.querySelectorAll('.sidebar-item').forEach(w => {
-    w.addEventListener('pointerdown', onTabPointerDown);
-  });
-}
-
-// Faz a gaveta começar embaixo do cabeçalho (não cobrir ele) — o cabeçalho muda de altura
-// conforme quebra linha, então mede na hora em vez de fixar um valor
-function posicionarSidebar() {
-  const header = document.querySelector('.header');
-  const sidebar = document.getElementById('sidebar-pastas');
-  if (window.innerWidth >= 640 || !header || !sidebar) return; // no PC a sidebar já é fixa do lado, não precisa
-  const altura = header.getBoundingClientRect().height;
-  sidebar.style.top = altura + 'px';
-  sidebar.style.height = `calc(100% - ${altura}px)`;
-}
-
-function toggleSidebar() {
-  posicionarSidebar();
-  document.getElementById('sidebar-pastas').classList.toggle('open');
-  document.getElementById('sidebar-overlay').classList.toggle('open');
-}
-
-function fecharSidebar() {
-  document.getElementById('sidebar-pastas').classList.remove('open');
-  document.getElementById('sidebar-overlay').classList.remove('open');
-}
-
-// ===== ARRASTAR PASTAS (reordenar na sidebar, de cima pra baixo) =====
-let dragState = null;
-
-function onTabPointerDown(e) {
-  const wrap = e.currentTarget;
-  dragState = { aba: wrap.dataset.aba, wrap, startY: e.clientY, dragging: false };
-  wrap.setPointerCapture(e.pointerId);
-  wrap.addEventListener('pointermove', onTabPointerMove);
-  wrap.addEventListener('pointerup', onTabPointerUp);
-  wrap.addEventListener('pointercancel', onTabPointerUp);
-}
-
-function onTabPointerMove(e) {
-  if (!dragState) return;
-  const dy = e.clientY - dragState.startY;
-
-  if (!dragState.dragging && Math.abs(dy) > 10) {
-    dragState.dragging = true;
-    dragState.wrap.classList.add('dragging');
-  }
-  if (!dragState.dragging) return;
-
-  dragState.wrap.style.transform = `translateY(${dy}px)`;
-  dragState.wrap.style.zIndex = 10;
-
-  const outros = [...document.querySelectorAll('.sidebar-item')].filter(w => w !== dragState.wrap);
-  let novoIndex = abaOrdem.indexOf(dragState.aba);
-  outros.forEach(w => {
-    const r = w.getBoundingClientRect();
-    const centro = r.top + r.height / 2;
-    const idxOutro = abaOrdem.indexOf(w.dataset.aba);
-    if (e.clientY > centro && idxOutro > novoIndex) novoIndex = idxOutro;
-    else if (e.clientY < centro && idxOutro < novoIndex) novoIndex = idxOutro;
-  });
-
-  const atualIndex = abaOrdem.indexOf(dragState.aba);
-  if (novoIndex !== atualIndex) {
-    abaOrdem.splice(atualIndex, 1);
-    abaOrdem.splice(novoIndex, 0, dragState.aba);
-    outros.forEach(w => { w.style.order = abaOrdem.indexOf(w.dataset.aba); });
-  }
-}
-
-function onTabPointerUp(e) {
-  if (!dragState) return;
-  if (dragState.dragging) {
-    dragState.wrap.classList.remove('dragging');
-    dragState.wrap.style.transform = '';
-    dragState.wrap.style.zIndex = '';
-    try { localStorage.setItem('abaOrdem', JSON.stringify(abaOrdem)); } catch (e) {}
-    renderTabs();
-    showToast('✅ Ordem das pastas salva!');
-  } else {
-    switchTab(dragState.aba);
-    fecharSidebar();
-  }
-  dragState = null;
-}
-
-// PWA Service Worker
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
-}
-
-// ===== DADOS =====
-async function loadData() {
-  // Guarda onde a pessoa estava rolando pra não voltar pro topo depois de atualizar
-  const scrollY = window.scrollY;
-  // Guarda qual pasta foi pedida NO INÍCIO — se a pessoa trocar de pasta enquanto isso
-  // ainda carrega, o resultado tem que ser salvo na pasta certa, não na que está aberta
-  // no momento em que a resposta chega (senão os dados vêm trocados)
-  const abaAlvo = abaAtual;
-  showLoading();
-  try {
-    // Carrega rápido só a pasta atual + a lista de pastas, numa chamada SÓ (o Apps Script não
-    // roda 2 chamadas em paralelo de verdade, então juntar tudo evita pagar a demora de "aquecer" 2x)
-    const res = await fetch(`${API_URL}?action=getInicial&aba=${encodeURIComponent(abaAlvo)}`, { cache: 'no-store' });
-    const resp = JSON.parse(await res.text());
-
-    if (resp.ok && Array.isArray(resp.pastas)) sincronizarPastas(resp.pastas);
-    allData[abaAlvo] = resp.dados || [];
-
-    const now = new Date().toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    document.getElementById('last-update').textContent = `Atualizado às ${now}`;
-    popularBotoesEnvolvidos();
-    render();
-    requestAnimationFrame(() => window.scrollTo(0, scrollY));
-
-    carregarRestanteDasPastas();
-  } catch (e) {
-    document.getElementById('main').innerHTML =
-      `<div class="empty">⚠️ Erro ao carregar dados. Verifique sua conexão e tente novamente.<br><small>${e.message}</small></div>`;
-  }
-}
-
-// Busca os dados das outras pastas em segundo plano, sem travar a tela que já está aberta
-async function carregarRestanteDasPastas() {
-  try {
-    const res = await fetch(`${API_URL}?action=getAll`, { cache: 'no-store' });
-    allData = JSON.parse(await res.text());
-    popularBotoesEnvolvidos();
-    render();
-  } catch (e) {
-    // Silencioso — a pasta atual já carregou, não precisa travar o uso por causa disso
-  }
-}
-
-let vistaModo = localStorage.getItem('vistaModo') || 'cards';
-
-function aplicarVista() {
-  const main = document.getElementById('main');
-  const btn = document.getElementById('btn-vista');
-  main.classList.toggle('vista-lista', vistaModo === 'lista');
-  if (btn) btn.textContent = vistaModo === 'lista' ? '▦ Cards' : '☰ Lista';
-}
-
-function toggleVista() {
-  vistaModo = vistaModo === 'lista' ? 'cards' : 'lista';
-  localStorage.setItem('vistaModo', vistaModo);
-  aplicarVista();
-  render();
-}
-
-async function switchTab(aba) {
-  abaAtual = aba;
-  modoUrgentesAtivo = false;
-  modoAgendaPeriodo = null;
-  // Trocar de pasta limpa qualquer filtro ativo (local ou geral, tipo Urgentes) — evita confusão de achar que ainda tá filtrado
-  searchTerm = '';
-  searchTermLocal = '';
-  document.getElementById('search-input').value = '';
-  document.getElementById('search-local-input').value = '';
-  filtroPrioridade = new Set();
-  filtroStatus = new Set();
-  filtroEnvolvido = new Set();
-  filtroPrioridadeG = new Set();
-  filtroStatusG = new Set();
-  filtroEnvolvidoG = new Set();
-  atualizarBotoesFiltro();
-  renderTabs();
-  popularBotoesEnvolvidos();
-
-  // Se essa pasta ainda não chegou (o carregamento de fundo não terminou), busca ela na
-  // hora — senão aparece "Nenhuma tarefa encontrada" por um instante, o que assusta
-  if (allData[aba] === undefined) {
-    showLoading();
-    try {
-      const res = await fetch(`${API_URL}?action=getData&aba=${encodeURIComponent(aba)}`, { cache: 'no-store' });
-      allData[aba] = JSON.parse(await res.text());
-    } catch (e) {
-      allData[aba] = [];
-    }
-  }
-
-  popularBotoesEnvolvidos();
-  render();
-}
-
-function atualizarBotoesFiltro() {
-  const nenhumFiltro = nenhumFiltroAtivoTotal();
-  document.querySelectorAll('.filter-btn').forEach(b => {
-    if (b.dataset.grupo === 'todos') { b.classList.toggle('active', nenhumFiltro); return; }
-    if (b.dataset.grupo === 'prioridade') { b.classList.toggle('active', filtroPrioridade.has(b.dataset.valor)); return; }
-    if (b.dataset.grupo === 'status') { b.classList.toggle('active', filtroStatus.has(b.dataset.valor)); return; }
-    if (b.dataset.grupo === 'envolvido') { b.classList.toggle('active', filtroEnvolvido.has(b.dataset.valor)); return; }
-    if (b.dataset.grupo === 'tag') { b.classList.toggle('active', filtroTag.has(b.dataset.valor)); return; }
-    if (b.dataset.grupo === 'prioridadeG') { b.classList.toggle('active', filtroPrioridadeG.has(b.dataset.valor)); return; }
-    if (b.dataset.grupo === 'statusG') { b.classList.toggle('active', filtroStatusG.has(b.dataset.valor)); return; }
-    if (b.dataset.grupo === 'envolvidoG') { b.classList.toggle('active', filtroEnvolvidoG.has(b.dataset.valor)); return; }
-    if (b.dataset.grupo === 'tagG') { b.classList.toggle('active', filtroTagG.has(b.dataset.valor)); return; }
-  });
-  atualizarChipsAtivos();
-}
-
-function setFilter(grupo, valor) {
-  modoUrgentesAtivo = false;
-  modoAgendaPeriodo = null;
-  if (grupo === 'todos') {
-    filtroPrioridade = new Set();
-    filtroStatus = new Set();
-    filtroEnvolvido = new Set();
-    filtroTag = new Set();
-    filtroPrioridadeG = new Set();
-    filtroStatusG = new Set();
-    filtroEnvolvidoG = new Set();
-    filtroTagG = new Set();
-    searchTermLocal = '';
-    searchTerm = '';
-    document.getElementById('search-local-input').value = '';
-    document.getElementById('search-input').value = '';
-  } else if (grupo === 'prioridade') {
-    if (filtroPrioridade.has(valor)) filtroPrioridade.delete(valor); else filtroPrioridade.add(valor);
-  } else if (grupo === 'status') {
-    if (filtroStatus.has(valor)) filtroStatus.delete(valor); else filtroStatus.add(valor);
-  } else if (grupo === 'envolvido') {
-    if (filtroEnvolvido.has(valor)) filtroEnvolvido.delete(valor); else filtroEnvolvido.add(valor);
-  } else if (grupo === 'tag') {
-    if (filtroTag.has(valor)) filtroTag.delete(valor); else filtroTag.add(valor);
-  } else if (grupo === 'prioridadeG') {
-    if (filtroPrioridadeG.has(valor)) filtroPrioridadeG.delete(valor); else filtroPrioridadeG.add(valor);
-  } else if (grupo === 'statusG') {
-    if (filtroStatusG.has(valor)) filtroStatusG.delete(valor); else filtroStatusG.add(valor);
-  } else if (grupo === 'envolvidoG') {
-    if (filtroEnvolvidoG.has(valor)) filtroEnvolvidoG.delete(valor); else filtroEnvolvidoG.add(valor);
-  } else if (grupo === 'tagG') {
-    if (filtroTagG.has(valor)) filtroTagG.delete(valor); else filtroTagG.add(valor);
-  }
-
-  atualizarBotoesFiltro();
-  popularBotoesEnvolvidos();
-  popularBotoesTag();
-  renderTabs();
-  render();
-
-  // Confirmação visual de que o filtro foi aplicado (os botões já filtram na hora, sem precisar de Enter)
-  if (grupo === 'todos') {
-    showToast('🔄 Filtros limpos');
-  } else {
-    const total = tarefasDaTelaAtual().length;
-    showToast(total > 0 ? `✅ ${total} tarefa${total === 1 ? '' : 's'} encontrada${total === 1 ? '' : 's'}` : '⚠️ Nenhuma tarefa encontrada');
-  }
-}
-
-// Chama render() sem deixar a rolagem pular pro topo (usado ao concluir/desfazer/excluir uma tarefa específica)
-function renderMantendoScroll() {
-  const scrollY = window.scrollY;
-  render();
-  requestAnimationFrame(() => window.scrollTo(0, scrollY));
-}
-
-// ===== RENDER =====
-function render() {
-  atualizarPastaAtualMobile();
-  // Qualquer filtro ativo (prioridade, status, envolvido ou busca) passa a procurar em todas as abas
-  if (algumFiltroAtivo()) {
-    const cruzadas = ABAS.flatMap(aba => (allData[aba] || []).map(t => ({ ...t, _aba: aba })));
-    document.getElementById('counters').innerHTML = '';
-    renderTarefas(cruzadas);
-    return;
-  }
-  const tarefas = (allData[abaAtual] || []).map(t => ({ ...t, _aba: abaAtual }));
-  renderCounters(tarefas);
-  renderTarefas(tarefas);
-}
-
-// Mostra em qual pasta a pessoa está vendo — importante no celular, onde a barra de pastas fica escondida
-function atualizarPastaAtualMobile() {
-  const el = document.getElementById('pasta-atual-mobile');
-  if (!el) return;
-  if (algumFiltroAtivo()) {
-    el.innerHTML = `🌐 Vendo todas as pastas`;
-  } else {
-    const [cor] = corDaPasta(abaAtual);
-    el.innerHTML = `<span style="color:${cor}">${iconeCategoria(abaAtual)}</span> Você está em: <span style="color:${cor}">${ABA_LABEL[abaAtual] || abaAtual}</span>`;
-  }
-}
-
-function renderCounters(tarefas) {
-  const urgente = tarefas.filter(t => t.Prioridade === 'Urgente').length;
-  const aberto = tarefas.filter(t => t.Status === 'Aberto').length;
-  const andamento = tarefas.filter(t => (t.Status || '').trim().toLowerCase() === 'em andamento').length;
-  const concluido = tarefas.filter(t => t.Status === 'Concluído').length;
-  const total = tarefas.length;
-
-  document.getElementById('counters').innerHTML = `
-    <div class="contador-linha">
-      <span class="contador-item total">Total: <b>${total}</b></span>
-      <span class="contador-item urgente">Urgentes: <b>${urgente}</b></span>
-    </div>
-    <div class="contador-linha">
-      <span class="contador-item aberto">Abertas: <b>${aberto}</b></span>
-      <span class="contador-item andamento">Andamento: <b>${andamento}</b></span>
-      <span class="contador-item concluido">Concluídas: <b>${concluido}</b></span>
-    </div>
-  `;
-}
-
-// Aplica todos os filtros ativos numa lista de tarefas (usado no render e na exportação)
-function filtrarTarefas(tarefas) {
-  // Em modo cruzado (busca avançada ou texto ativos), usa os filtros GLOBAIS.
-  // Senão, usa os filtros LOCAIS (só dentro da aba aberta).
-  const cruzado = algumFiltroAtivo();
-  const prioridadeAtiva = cruzado ? filtroPrioridadeG : filtroPrioridade;
-  const statusAtivo = cruzado ? filtroStatusG : filtroStatus;
-  const envolvidoAtivo = cruzado ? filtroEnvolvidoG : filtroEnvolvido;
-  const tagAtiva = cruzado ? filtroTagG : filtroTag;
-
-  let filtradas = tarefas;
-
-  // Concluídas ficam ocultas por padrão — só aparecem se pedir esse filtro de propósito (relatório)
-  // Exceção: se ainda dá pra desfazer, continua visível até a pessoa decidir
-  if (!statusAtivo.has('Concluído')) {
-    filtradas = filtradas.filter(t =>
-      (t.Status || '').trim().toLowerCase() !== 'concluído' || desfazerDisponivel[t.ID]
-    );
-  }
-
-  if (prioridadeAtiva.size) filtradas = filtradas.filter(t => prioridadeAtiva.has(t.Prioridade));
-  if (statusAtivo.size) {
-    filtradas = filtradas.filter(t => {
-      const statusTarefa = (t.Status || '').trim().toLowerCase();
-      return [...statusAtivo].some(fs => fs.trim().toLowerCase() === statusTarefa);
-    });
-  }
-  if (envolvidoAtivo.size) {
-    filtradas = filtradas.filter(t => envolvidoAtivo.has((t.Envolvido || '').trim()));
-  }
-  if (tagAtiva.size) {
-    filtradas = filtradas.filter(t => tagsDeTarefa(t).some(tg => tagAtiva.has(tg)));
-  }
-
-  // Atalho "Urgentes": some "Iniciado" (terceiro começou, ainda não é sua vez) e "Aguardando" (esperando algo externo)
-  // Mantém "A conferir" e "Feito" porque aí é você quem precisa agir (conferir e dar baixa/concluir)
-  if (modoUrgentesAtivo && esconderAguardandoDosUrgentes) {
-    filtradas = filtradas.filter(t => !['Iniciado', 'Aguardando'].includes((t.Status || '').trim()));
-  }
-
-  // Atalho "Hoje"/"Semana": Prioridade e Data Prevista são coisas diferentes — mostra o que está
-  // agendado pra esse período MAIS qualquer coisa Urgente (mesmo sem data ou com data mais distante)
-  if (modoAgendaPeriodo) {
-    filtradas = filtradas.filter(t =>
-      (t.Prioridade || '').trim() === 'Urgente' || dataDentroDoPeriodo(t['Data Prevista'], modoAgendaPeriodo)
-    );
-    if (esconderAguardandoDosUrgentes) {
-      filtradas = filtradas.filter(t => !['Iniciado', 'Aguardando'].includes((t.Status || '').trim()));
-    }
-  }
-
-  if (searchTerm) {
-    filtradas = filtradas.filter(t =>
-      normalizarBusca(t.Tarefa).includes(searchTerm) ||
-      normalizarBusca(t['Divisão']).includes(searchTerm) ||
-      normalizarBusca(t.Observação).includes(searchTerm) ||
-      normalizarBusca(t.Envolvido).includes(searchTerm)
-    );
-  }
-
-  // Busca local (só dentro da aba atual) — só faz sentido quando não estamos no modo cruzado
-  if (!cruzado && searchTermLocal) {
-    filtradas = filtradas.filter(t =>
-      normalizarBusca(t.Tarefa).includes(searchTermLocal) ||
-      normalizarBusca(t['Divisão']).includes(searchTermLocal) ||
-      normalizarBusca(t.Observação).includes(searchTermLocal) ||
-      normalizarBusca(t.Envolvido).includes(searchTermLocal)
-    );
-  }
-
-  return filtradas;
-}
-
-// Pega a lista de tarefas de onde estamos olhando agora (aba atual ou todas cruzadas)
-function tarefasDaTelaAtual() {
-  const origem = algumFiltroAtivo()
-    ? ABAS.flatMap(aba => (allData[aba] || []).map(t => ({ ...t, _aba: aba })))
-    : (allData[abaAtual] || []).map(t => ({ ...t, _aba: abaAtual }));
-  return filtrarTarefas(origem);
-}
-
-function exportarCSV(tudo) {
-  const filtradas = tudo
-    ? ABAS.flatMap(aba => (allData[aba] || []).map(t => ({ ...t, _aba: aba })))
-    : tarefasDaTelaAtual();
-
-  if (!filtradas.length) { showToast('⚠️ Nenhuma tarefa pra exportar'); return; }
-
-  const colunas = tudo
-    ? ['Pasta', 'Tarefa', 'Divisão', 'Prioridade', 'Status', 'Data Prevista', 'Hora', 'Envolvido', 'Observação']
-    : ['Tarefa', 'Divisão', 'Prioridade', 'Status', 'Data Prevista', 'Hora', 'Envolvido', 'Observação'];
-
-  const linhas = [colunas.join(';')];
-  filtradas.forEach(t => {
-    linhas.push(colunas.map(c => {
-      const valor = c === 'Pasta' ? (ABA_LABEL[t._aba] || t._aba) : (t[c] || '');
-      return `"${String(valor).replace(/"/g, '""')}"`;
-    }).join(';'));
-  });
-
-  const bom = String.fromCharCode(0xFEFF); // BOM pro Excel reconhecer acentuação
-  const csv = bom + linhas.join('\r\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = tudo
-    ? `tarefas_TODAS_${new Date().toISOString().split('T')[0]}.csv`
-    : `tarefas_${abaAtual}_${new Date().toISOString().split('T')[0]}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('📊 Exportado!');
-}
-
-function renderTarefas(tarefas) {
-  const filtradas = filtrarTarefas(tarefas);
-
-  if (!filtradas.length) {
-    document.getElementById('main').innerHTML = searchTerm
-      ? `<div class="empty">Nenhuma tarefa encontrada para "${searchTerm}".</div>`
-      : '<div class="empty">Nenhuma tarefa encontrada.</div>';
-    return;
-  }
-
-  // Agrupar por categoria (+ aba, quando buscando/filtrando em todas).
-  // Quando cruzado, a aba vem PRIMEIRO na chave — assim a ordenação alfabética agrupa
-  // tudo de cada aba junto, em vez de intercalar tarefas de abas diferentes.
-  const cruzado = algumFiltroAtivo();
-  const grupos = {};
-  filtradas.forEach(t => {
-    const cat = cruzado
-      ? `${ABA_LABEL[t._aba]} — ${t['Divisão'] || 'Sem divisão'}`
-      : (t['Divisão'] || 'Sem divisão');
-    // Agrupa ignorando maiúscula/minúscula e espaço extra — senão "Higiene" e "HIGIENE" (ou com
-    // espaço a mais) viram dois grupos diferentes que parecem idênticos na tela (o título é
-    // sempre exibido em CAIXA ALTA via CSS, então a diferença fica escondida da pessoa)
-    const catKey = cat.trim().toLowerCase();
-    if (!grupos[catKey]) grupos[catKey] = { label: cat.trim(), items: [] };
-    grupos[catKey].items.push(t);
-  });
-
-  const priOrd = { 'Urgente': 0, 'Média': 1, 'Baixa': 2 };
-
-  // No modo Hoje/Semana, quem tem data+hora marcada vem primeiro (na ordem do relógio),
-  // e só depois vêm as urgentes sem data — senão a ordem alfabética das divisões esconde os horários
-  const ordenacaoPorAgenda = !!modoAgendaPeriodo;
-  const timestampTarefa = t => {
-    const d = paraDataObj(t['Data Prevista']);
-    if (!d) return Infinity;
-    const partes = String(t.Hora || '').trim().split(':');
-    if (partes.length >= 2) d.setHours(Number(partes[0]) || 0, Number(partes[1]) || 0, 0, 0);
-    return d.getTime();
+function fill(data){
+  const kpi = data.kpis || {};
+  const c   = kpi.carteira || {};
+  const m   = kpi.missoes || {};
+  const al  = kpi.alertas || {};
+  const map = {
+    em_negociacao: kpi.em_negociacao,
+    carteira_ativa: kpi.carteira_ativa,
+    c_ativos: c.ativos, c_negociacao: c.negociacao, c_semmov: c.sem_movimentacao, c_inativos: c.inativos,
+    alvos_mes: kpi.alvos_mes,
+    atividades: kpi.atividades, atividades_atrasadas: kpi.atividades_atrasadas,
+    contato_preventivo: m.contato_preventivo, recuperacao: m.recuperacao, em_formacao: m.em_formacao,
+    sem_movimentacao_30d: al.sem_movimentacao_30d, sem_conversa_zap: al.sem_conversa_zap, inativos_missao: al.inativos
   };
+  for(const [k,v] of Object.entries(map)){
+    const el = document.querySelector('[data-k="'+k+'"]');
+    if(el) el.textContent = fmtInt(v);
+  }
+  const vm = document.querySelector('[data-k="vendas_mes"]');
+  if(vm) vm.textContent = fmtBRL(kpi.vendas_mes);
 
-  const gruposOrdenados = ordenacaoPorAgenda
-    ? Object.entries(grupos).sort(([, a], [, b]) => {
-        const minA = Math.min(...a.items.map(timestampTarefa));
-        const minB = Math.min(...b.items.map(timestampTarefa));
-        return minA - minB;
-      })
-    : Object.entries(grupos).sort(([, a], [, b]) => a.label.localeCompare(b.label, 'pt-BR'));
+  $("#updated-at").textContent = fmtDateTime(data.atualizado_em);
+  $("#hoje").textContent = new Date(data.atualizado_em||Date.now()).toLocaleDateString("pt-BR");
 
-  const html = gruposOrdenados.map(([catKey, grupo]) => {
-    const { label: cat, items } = grupo;
-    if (ordenacaoPorAgenda) {
-      items.sort((a, b) => timestampTarefa(a) - timestampTarefa(b));
+  renderListas(data.listas || {});
+}
+
+function renderListas(listas){
+  const box = $("#listbox"); box.innerHTML = "";
+  for(const {k,titulo} of LISTAS){
+    const rows = listas[k] || [];
+    const cols = COLS[k] || COLS.padrao;
+    const card = document.createElement("div"); card.className = "listcard"; card.id = "lista-"+k;
+    const h = document.createElement("div"); h.className = "lc-h";
+    h.innerHTML = '<span>'+titulo+'</span><span class="n">'+rows.length+'</span>';
+    card.appendChild(h);
+    if(!rows.length){
+      const e = document.createElement("div"); e.className="lc-empty"; e.textContent="— nada nesta lista agora —";
+      card.appendChild(e);
     } else {
-      items.sort((a, b) => (priOrd[a.Prioridade] ?? 1) - (priOrd[b.Prioridade] ?? 1) || (a.Tarefa || '').localeCompare(b.Tarefa || '', 'pt-BR'));
-    }
-    const colapsado = categoriasColapsadas.has(catKey + abaAtual);
-    const itemsHtml = colapsado ? '' : items.map(t => cardHtml(t)).join('');
-    // Na busca cruzada, colore a categoria com a cor da aba de origem (tipo etiqueta do fichário)
-    const corAba = cruzado ? `color: ${corDaPasta(items[0]._aba)[0]};` : '';
-    return `
-      <div class="categoria-group">
-        <div class="categoria-header" onclick="toggleCategoria('${catKey}')">
-          <span class="categoria-title" style="${corAba}">${iconeCategoria(cat)} ${cat}</span>
-          <span class="categoria-toggle">${colapsado ? '▶' : '▼'}</span>
-          <button class="btn-nova-na-divisao" onclick="event.stopPropagation(); abrirNovaTarefaNaDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').replace(/'/g,"\\'")}')" title="Nova tarefa nesta divisão">➕</button>
-          <span class="categoria-count">${items.length}</span>
-        </div>
-        ${itemsHtml}
-      </div>
-    `;
-  }).join('');
-
-  const mainEl = document.getElementById('main');
-  mainEl.innerHTML = html;
-  mainEl.dataset.aba = abaAtual;
-  // Força o navegador a recalcular o layout na hora — sem isso, às vezes os cards
-  // ficam com altura/alinhamento errado até a pessoa clicar em algo de novo
-  void mainEl.offsetHeight;
-}
-
-// Evita o bug de new Date() interpretar "10/07/2026" como mês/dia (formato americano)
-// Converte "Data Prevista" da planilha (dd/MM/yyyy ou yyyy-MM-dd) num objeto Date, sem hora — só pra comparar dias
-function paraDataObj(dataRaw) {
-  const raw = String(dataRaw || '').trim();
-  if (!raw) return null;
-  const br = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
-  if (br) {
-    const [, dd, mm, yyyy] = br;
-    return new Date(yyyy.length === 2 ? '20' + yyyy : yyyy, mm - 1, dd);
-  }
-  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (iso) {
-    const [, yyyy, mm, dd] = iso;
-    return new Date(yyyy, mm - 1, dd);
-  }
-  return null;
-}
-
-// "hoje" = só o dia de hoje. "semana" = hoje até 6 dias à frente (os próximos 7 dias)
-function dataDentroDoPeriodo(dataRaw, periodo) {
-  const d = paraDataObj(dataRaw);
-  if (!d) return false;
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
-  d.setHours(0, 0, 0, 0);
-  if (periodo === 'hoje') return d.getTime() === hoje.getTime();
-  if (periodo === 'semana') {
-    const limite = new Date(hoje);
-    limite.setDate(limite.getDate() + 6);
-    return d >= hoje && d <= limite;
-  }
-  return false;
-}
-
-function formatarDataBR(dataRaw) {
-  const raw = String(dataRaw).trim();
-
-  // Formato brasileiro dd/MM/yyyy — o mais comum, vindo da planilha
-  const br = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
-  if (br) {
-    const [, dd, mm, yyyy] = br;
-    return `${dd.padStart(2,'0')}/${mm.padStart(2,'0')}/${yyyy.length === 2 ? '20' + yyyy : yyyy}`;
-  }
-
-  // Formato ISO yyyy-MM-dd — vindo do campo de data do formulário
-  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (iso) {
-    const [, yyyy, mm, dd] = iso;
-    return `${dd}/${mm}/${yyyy}`;
-  }
-
-  return raw;
-}
-
-function cardHtml(t) {
-  const prio = t.Prioridade || 'Média';
-  const status = t.Status || 'Aberto';
-  const concluido = status === 'Concluído';
-
-  const meta = [];
-  if (t['Data Prevista']) {
-    const dataRaw = t['Data Prevista'];
-    const dataFmt = formatarDataBR(dataRaw);
-    const horaRaw = t.Hora ? t.Hora.trim() : '';
-    const horaFmt = (() => {
-      if (!horaRaw) return '';
-      const d = new Date(horaRaw);
-      if (!isNaN(d)) return d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-      return horaRaw.substring(0, 5);
-    })();
-    meta.push(horaFmt ? `📅 ${dataFmt} às ${horaFmt}` : `📅 ${dataFmt}`);
-  }
-  if (t.Envolvido) meta.push(`👤 ${t.Envolvido}`);
-
-  const chaveSelecao = `${t._aba}::${t.ID}`;
-  const dadosJson = JSON.stringify(t).replace(/'/g,"&#39;");
-  const botoesTopo = `
-    <button class="btn-editar-topo" onclick='openEditModal(${dadosJson})' title="Editar tarefa">✏️</button>
-  `;
-  const btnMaisAcoes = `<button class="btn-mais-acoes" onclick='abrirMenuAcoesTarefa(${dadosJson})' title="Mais ações">⋯</button>`;
-  const emLista = vistaModo === 'lista';
-
-  // Corta por quantidade de caracteres (não só por pixel) — nome até 55, observação até 90 na lista
-  const cortar = (txt, max) => txt && txt.length > max ? txt.slice(0, max).trimEnd() + '…' : txt;
-  const nomeExibido = emLista ? cortar(t.Tarefa, 55) : t.Tarefa;
-  const observacaoHtml = t.Observação
-    ? `<span class="meta-item meta-obs">💬 ${emLista ? cortar(t.Observação, 90) : t.Observação}</span>`
-    : '';
-
-  const metaHtml = meta.length || observacaoHtml
-    ? `<div class="tarefa-meta">${meta.map(m => `<span class="meta-item">${m}</span>`).join('')}${observacaoHtml}</div>`
-    : '';
-
-  const badgesHtml = `
-    <div class="badges">
-      <span class="badge badge-prio-${prio}">${prio}</span>
-      <span class="badge badge-status-${status.replace(/\s/g,'')}">${status}</span>
-    </div>
-  `;
-  const desfazerHtml = desfazerDisponivel[t.ID] ? `
-    <button class="btn-desfazer" onclick="desfazerStatus('${t.ID}', this, '${t._aba}')">↩️ Desfazer (se clicou por engano)</button>
-  ` : '';
-  const linksHtml = `
-    <div class="mudar-status-links">
-      <span id="links-prioridade-${t.ID}">${linkPrioridadeOriginal(t.ID, t._aba)}</span>
-      <span id="links-status-${t.ID}">${linkStatusOriginal(t.ID, t._aba)}</span>
-    </div>
-  `;
-  // Vista em lista: junta cada badge com o link de trocar dela, lado a lado (Urgente + Prior. / Em Andamento + Status)
-  const camposParesHtml = `
-    <span class="campo-inline">
-      <span class="badge badge-prio-${prio}">${prio}</span>
-      <span id="links-prioridade-${t.ID}">${linkPrioridadeOriginal(t.ID, t._aba)}</span>
-    </span>
-    <span class="campo-inline">
-      <span class="badge badge-status-${status.replace(/\s/g,'')}">${status}</span>
-      <span id="links-status-${t.ID}">${linkStatusOriginal(t.ID, t._aba)}</span>
-    </span>
-  `;
-  const concluirHtml = !concluido ? `<button class="btn-concluir-grande" onclick="atualizarStatus('${t.ID}', this, '${t._aba}', 'Concluído')" id="btn-${t.ID}"><span class="link-trocar-txt-completo">✅ Marcar como concluída</span><span class="link-trocar-txt-curto">✅ Concluir</span></button>` : '';
-
-  if (emLista) {
-    const nomeAttr = String(t.Tarefa || '').replace(/"/g, '&quot;');
-    const nomeCurtoAttr = String(nomeExibido || '').replace(/"/g, '&quot;');
-    return `
-      <div class="tarefa-card prioridade-${prio} status-${status.replace(/\s/g,'')}" id="card-${t.ID}">
-        <div class="tarefa-top">
-          ${modoSelecao ? `<input type="checkbox" class="check-selecao" ${selecionados.has(chaveSelecao) ? 'checked' : ''} onchange="toggleSelecionado('${chaveSelecao}', this.checked)">` : ''}
-          <div class="tarefa-nome" data-full="${nomeAttr}" data-curto="${nomeCurtoAttr}" onclick="this.classList.toggle('expandido'); this.textContent = this.classList.contains('expandido') ? this.dataset.full : this.dataset.curto;" ondblclick='openEditModal(${dadosJson})'>${nomeExibido}</div>
-          ${botoesTopo}
-        </div>
-        ${metaHtml}
-        <div class="tarefa-lista-direita">
-          ${camposParesHtml}
-          ${desfazerHtml}
-          ${btnMaisAcoes}
-          ${concluirHtml}
-        </div>
-      </div>
-    `;
-  }
-
-  return `
-    <div class="tarefa-card prioridade-${prio} status-${status.replace(/\s/g,'')}" id="card-${t.ID}" ondblclick='openEditModal(${dadosJson})'>
-      <div class="tarefa-top">
-        ${modoSelecao ? `<input type="checkbox" class="check-selecao" ${selecionados.has(chaveSelecao) ? 'checked' : ''} onchange="toggleSelecionado('${chaveSelecao}', this.checked)">` : ''}
-        <div class="tarefa-nome" title="${t.Tarefa}">${nomeExibido}</div>
-        ${botoesTopo}
-      </div>
-      ${metaHtml}
-      <div class="tarefa-rodape">
-        <div class="campos-pares-card">${camposParesHtml}</div>
-        ${desfazerHtml}
-        <div class="tarefa-rodape-acoes">
-          ${btnMaisAcoes}
-          ${concluirHtml}
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-// Ícone da divisão pelo nome/palavra-chave — evita o 📁 genérico que confunde com "Pasta"
-function iconeCategoria(nome) {
-  const n = String(nome || '').toLowerCase();
-  const regras = [
-    [/bens|obriga|conta|pagamento|document|contrato|boleto/, '🏠'],
-    [/financ|orçamento|orcamento/, '💰'],
-    [/reuni[aã]o|comercial/, '👥'],
-    [/compra|mercado/, '🛒'],
-    [/projeto/, '📦'],
-    [/corpo|saúde|saude|médic|medic|dentista|fisio/, '❤️'],
-    [/filho|escola|estudo/, '🎒'],
-    [/casa|lavander|cozinha|lavabo|quarto|suite|garagem|banheiro|sala|closet|área|area/, '🏠'],
-    [/viagem/, '✈️'],
-    [/rua/, '🚗'],
-    [/pintura|marcenaria|marmoraria|acabamento|hidraul|el[eé]tric|paisag|pisos|piscina/, '🛠️'],
-    [/tecnologia|script|agente|sistema|odoo|implanta|configura|treinamento|suporte|teste|aprova[cç][aã]o/, '💻'],
-    [/conteúdo|conteudo|ecommerce/, '📢'],
-  ];
-  for (const [re, emoji] of regras) if (re.test(n)) return emoji;
-  return '🔹';
-}
-
-function toggleCategoria(cat) {
-  const key = cat + abaAtual;
-  if (categoriasColapsadas.has(key)) categoriasColapsadas.delete(key);
-  else categoriasColapsadas.add(key);
-  render();
-}
-
-// ===== AÇÕES =====
-function linkPrioridadeOriginal(id, aba) {
-  return `<button class="link-trocar" onclick="mostrarOpcoesPrioridade(this, '${id}', '${aba}')" title="Trocar Prioridade">✏️</button>`;
-}
-
-function linkStatusOriginal(id, aba) {
-  return `<button class="link-trocar" onclick="mostrarOpcoesStatus(this, '${id}', '${aba}')" title="Trocar Status">✏️</button>`;
-}
-
-function fecharOpcoesInline(id, aba, campo) {
-  const wrap = document.getElementById(`links-${campo}-${id}`);
-  if (!wrap) return;
-  wrap.innerHTML = campo === 'prioridade' ? linkPrioridadeOriginal(id, aba) : linkStatusOriginal(id, aba);
-}
-
-function mostrarOpcoesPrioridade(btn, id, aba) {
-  btn.parentElement.innerHTML = `
-    <div class="opcoes-inline">
-      <button class="opcao-inline-btn" onclick="trocarPrioridade('${id}','${aba}','Urgente')">🔴 Urgente</button>
-      <button class="opcao-inline-btn" onclick="trocarPrioridade('${id}','${aba}','Média')">🟡 Média</button>
-      <button class="opcao-inline-btn" onclick="trocarPrioridade('${id}','${aba}','Baixa')">🟢 Baixa</button>
-      <button class="opcao-inline-btn opcao-inline-cancelar" onclick="fecharOpcoesInline('${id}','${aba}','prioridade')">✕</button>
-    </div>
-  `;
-}
-
-function mostrarOpcoesStatus(btn, id, aba) {
-  btn.parentElement.innerHTML = `
-    <div class="opcoes-inline">
-      <button class="opcao-inline-btn" onclick="atualizarStatus('${id}', this, '${aba}', 'Aberto')">Aberto</button>
-      <button class="opcao-inline-btn" onclick="atualizarStatus('${id}', this, '${aba}', 'Em Andamento')">Em andamento</button>
-      <button class="opcao-inline-btn" onclick="atualizarStatus('${id}', this, '${aba}', 'Iniciado')">▶️ Iniciado</button>
-      <button class="opcao-inline-btn" onclick="atualizarStatus('${id}', this, '${aba}', 'A conferir')">🔍 A conferir</button>
-      <button class="opcao-inline-btn" onclick="atualizarStatus('${id}', this, '${aba}', 'Feito')">✔️ Feito</button>
-      <button class="opcao-inline-btn" onclick="atualizarStatus('${id}', this, '${aba}', 'Aguardando')">🕓 Aguardando</button>
-      <button class="opcao-inline-btn" onclick="atualizarStatus('${id}', this, '${aba}', 'Concluído')">Concluído</button>
-      <button class="opcao-inline-btn opcao-inline-cancelar" onclick="fecharOpcoesInline('${id}','${aba}','status')">✕</button>
-    </div>
-  `;
-}
-
-async function trocarPrioridade(id, aba, novaPrioridade) {
-  try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'editTask', aba, id, fields: { Prioridade: novaPrioridade } })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      const tarefa = (allData[aba] || []).find(t => String(t.ID) === String(id));
-      if (tarefa) tarefa.Prioridade = novaPrioridade;
-      renderMantendoScroll();
-      showToast('✅ Prioridade atualizada!');
-    } else {
-      showToast('⚠️ Erro: ' + (data.error || 'tente novamente'));
-    }
-  } catch (e) {
-    showToast('⚠️ Sem conexão');
-  }
-}
-
-async function atualizarStatus(id, btn, aba, novoStatus) {
-  aba = aba || abaAtual;
-  const textoOriginal = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = 'Salvando...';
-  try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'updateStatus', aba, id, status: novoStatus })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      // Atualiza localmente sem recarregar tudo
-      const tarefa = (allData[aba] || []).find(t => String(t.ID) === String(id));
-      if (tarefa) {
-        if (!desfazerDisponivel[id]) desfazerDisponivel[id] = { status: tarefa.Status, ts: Date.now() };
-        salvarDesfazer();
-        tarefa.Status = novoStatus;
-        if (novoStatus === 'Concluído') tarefa['Data conclusão'] = new Date().toLocaleDateString('pt-BR');
+      const wrap = document.createElement("div"); wrap.className="lc-wrap";
+      const t = document.createElement("table"); t.className="lc";
+      t.innerHTML = "<thead><tr>"+cols.map(c=>"<th>"+c[1]+"</th>").join("")+"</tr></thead>";
+      const tb = document.createElement("tbody");
+      for(const r of rows){
+        tb.innerHTML += "<tr>"+cols.map(c=>"<td>"+(r[c[0]]??"")+"</td>").join("")+"</tr>";
       }
-      renderMantendoScroll();
-      showToast(novoStatus === 'Concluído' ? '✅ Tarefa concluída!' : '▶️ Tarefa em andamento!');
-
-      // Concluída: some da lista sozinha depois de alguns segundos (dá tempo de desfazer antes)
-      if (novoStatus === 'Concluído') {
-        setTimeout(() => {
-          if (desfazerDisponivel[id]) {
-            delete desfazerDisponivel[id];
-            salvarDesfazer();
-            renderMantendoScroll();
-          }
-        }, 8000);
-      }
-    } else {
-      btn.disabled = false;
-      btn.textContent = textoOriginal;
-      showToast('⚠️ Erro: ' + (data.error || 'tente novamente'));
+      t.appendChild(tb); wrap.appendChild(t); card.appendChild(wrap);
     }
-  } catch (e) {
-    btn.disabled = false;
-    btn.textContent = textoOriginal;
-    showToast('⚠️ Sem conexão');
+    box.appendChild(card);
   }
 }
 
-async function desfazerStatus(id, btn, aba) {
-  const registro = desfazerDisponivel[id];
-  if (!registro) return;
-  const statusAnterior = registro.status;
-  aba = aba || abaAtual;
-  btn.disabled = true;
-  btn.textContent = 'Desfazendo...';
-  try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'updateStatus', aba, id, status: statusAnterior })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      const tarefa = (allData[aba] || []).find(t => String(t.ID) === String(id));
-      if (tarefa) tarefa.Status = statusAnterior;
-      delete desfazerDisponivel[id];
-      salvarDesfazer();
-      renderMantendoScroll();
-      showToast('↩️ Ação desfeita!');
-    } else {
-      btn.disabled = false;
-      btn.textContent = '↩️ Desfazer';
-      showToast('⚠️ Erro: ' + (data.error || 'tente novamente'));
-    }
-  } catch (e) {
-    btn.disabled = false;
-    btn.textContent = '↩️ Desfazer';
-    showToast('⚠️ Sem conexão');
-  }
-}
-
-// Menu "⋯" por tarefa — junta Duplicar/Compartilhar/Lembrete pra não poluir o card
-function abrirMenuAcoesTarefa(t) {
-  document.getElementById('btn-acoes-duplicar').onclick = () => { fecharMenuAcoesTarefa(); duplicarTarefa(t); };
-  document.getElementById('btn-acoes-compartilhar').onclick = () => { fecharMenuAcoesTarefa(); compartilharTarefa(t); };
-
-  const btnLembrete = document.getElementById('btn-acoes-lembrete');
-  if (t.Envolvido) {
-    btnLembrete.style.display = '';
-    btnLembrete.textContent = `🔔 Avisar ${t.Envolvido}`;
-    btnLembrete.onclick = () => { fecharMenuAcoesTarefa(); enviarLembrete(t.ID, t._aba, { disabled: false, textContent: '' }); };
-  } else {
-    btnLembrete.style.display = 'none';
-  }
-
-  document.getElementById('modal-acoes-tarefa').classList.add('open');
-}
-
-function fecharMenuAcoesTarefa() {
-  document.getElementById('modal-acoes-tarefa').classList.remove('open');
-}
-
-async function enviarLembrete(id, aba, btn) {
-  btn.disabled = true;
-  const original = btn.textContent;
-  btn.textContent = '⏳';
-  try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'enviarLembrete', aba, id })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      showToast('🔔 Lembrete enviado!');
-    } else {
-      showToast('⚠️ ' + (data.error || 'Erro ao enviar lembrete'));
-    }
-  } catch (e) {
-    showToast('⚠️ Sem conexão');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = original;
-  }
-}
-
-async function excluir(id, nome, btn, aba) {
-  aba = aba || abaAtual;
-  if (!confirm(`Excluir "${nome}"?`)) return false;
-  btn.disabled = true;
-  try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'deleteTask', aba, id })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      allData[aba] = (allData[aba] || []).filter(t => String(t.ID) !== String(id));
-      renderMantendoScroll();
-      showToast('🗑️ Tarefa excluída!');
-      return true;
-    } else {
-      btn.disabled = false;
-      showToast('⚠️ Erro: ' + (data.error || 'tente novamente'));
-      return false;
-    }
-  } catch (e) {
-    btn.disabled = false;
-    showToast('⚠️ Sem conexão');
-    return false;
-  }
-}
-
-// ===== NOVA TAREFA / EDITAR =====
-let editandoId = null;
-let editandoAba = null;
-
-async function openAddModal() {
-  editandoId = null;
-  editandoAba = null;
-  // Garante que os dados (e categorias) já foram carregados
-  if (!Object.keys(allData).length) {
-    showToast('⏳ Carregando divisões...');
-    await loadData();
-  }
-  document.getElementById('modal-add-title').textContent = '✏️ Nova tarefa';
-  document.getElementById('btn-salvar').textContent = 'Salvar tarefa';
-  document.getElementById('f-aba').disabled = false;
-  // Fica em branco de propósito — obriga a pessoa a escolher a pasta e a divisão conscientemente,
-  // em vez de salvar sem querer na aba/divisão que veio marcada sozinha
-  document.getElementById('f-aba').value = '';
-  document.getElementById('f-categoria').innerHTML = '<option value="" disabled selected>Escolha a pasta primeiro...</option>';
-  document.getElementById('f-tarefa-label').textContent = 'Tarefa *';
-  document.getElementById('f-tarefa').value = '';
-  document.getElementById('f-envolvido').value = '';
-  document.getElementById('f-tag').value = '';
-  document.getElementById('f-obs').value = '';
-  document.getElementById('f-data').value = '';
-  document.getElementById('f-hora').value = '';
-  document.getElementById('f-data-fim').value = '';
-  document.getElementById('f-hora-fim').value = '';
-  document.getElementById('f-status-group').style.display = 'none';
-  document.getElementById('f-data-conclusao-group').style.display = 'none';
-  document.getElementById('f-data-conclusao').value = '';
-  document.getElementById('btn-lembrete-modal').style.display = 'none';
-  document.getElementById('btn-excluir-modal').style.display = 'none';
-  document.querySelectorAll('.prio-btn').forEach(b => b.classList.toggle('sel', b.dataset.p === 'Baixa'));
-  document.getElementById('modal-add').classList.add('open');
-}
-
-// Abre "Nova tarefa" já com a Pasta e a Divisão escolhidas — usado pelo "➕" ao lado do nome da divisão na listagem
-async function abrirNovaTarefaNaDivisao(aba, divisao) {
-  await openAddModal();
-  document.getElementById('f-aba').value = aba;
-  preencherCategorias(aba);
-  atualizaLabelTarefa(aba);
-  document.getElementById('f-categoria').value = divisao;
-  document.getElementById('f-tarefa').focus();
-}
-
-// Monta o texto de uma tarefa pra compartilhar (WhatsApp, etc.)
-function textoTarefaParaCompartilhar(t) {
-  let msg = `*📋 Secretária Virtual*\n\n*Tarefa:* ${t.Tarefa}`;
-  if (t['Observação']) msg += `\n→ ${t['Observação']}`;
-
-  const pastaLabel = ABA_LABEL[t._aba] || t._aba || '';
-  const caminho = [pastaLabel, t['Divisão']].filter(Boolean).join(' / ');
-  if (caminho) msg += `\n📁 ${caminho}`;
-
-  if (t.Prioridade) {
-    const emoji = { Urgente: '🔴', Média: '🟡', Baixa: '🟢' }[t.Prioridade] || '';
-    msg += `\n${emoji} *${t.Prioridade}*${t.Status ? ` · ${t.Status}` : ''}`;
-  }
-  if (t['Data Prevista']) {
-    const horaFmt = (t.Hora || '').trim().substring(0, 5);
-    msg += `\n📅 ${formatarDataBR(t['Data Prevista'])}${horaFmt ? ` às ${horaFmt}` : ''}`;
-  }
-  if (t.Envolvido) msg += `\n👤 *Envolvido:* ${t.Envolvido}`;
-  return msg;
-}
-
-// Abre o WhatsApp com o texto já pronto — a pessoa escolhe pra quem mandar
-function abrirWhatsappCompartilhar(texto) {
-  window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
-}
-
-function compartilharTarefa(t) {
-  abrirWhatsappCompartilhar(textoTarefaParaCompartilhar(t));
-}
-
-// Compartilha todas as tarefas marcadas no modo "Selecionar", num texto só
-function compartilharSelecionadas() {
-  if (!selecionados.size) { showToast('⚠️ Selecione ao menos uma tarefa'); return; }
-  const textos = [...selecionados].map(chave => {
-    const [aba, id] = chave.split('::');
-    const t = (allData[aba] || []).find(x => String(x.ID) === String(id));
-    return t ? textoTarefaParaCompartilhar(t) : null;
-  }).filter(Boolean);
-  if (!textos.length) { showToast('⚠️ Nenhuma tarefa encontrada'); return; }
-  abrirWhatsappCompartilhar(textos.join('\n\n———\n\n'));
-}
-
-// Cria uma cópia da tarefa (mesma divisão/prioridade/status/envolvido) e já abre pra renomear
-async function duplicarTarefa(t) {
-  showToast('📄 Duplicando tarefa...');
-  const fields = {
-    Tarefa: t.Tarefa,
-    'Divisão': t['Divisão'] || '',
-    Prioridade: t.Prioridade || 'Média',
-    Status: t.Status || 'Aberto',
-    Envolvido: t.Envolvido || '',
-    'Data Prevista': t['Data Prevista'] || '',
-    Hora: t.Hora || '',
-    'Data Fim': t['Data Fim'] || '',
-    'Hora Fim': t['Hora Fim'] || '',
-    'Observação': t['Observação'] || ''
-  };
-  try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'addTask', aba: t._aba, fields })
-    });
-    const data = await res.json();
-    if (!data.ok) { showToast('⚠️ Erro: ' + (data.error || 'tente novamente')); return; }
-    await loadData();
-    const nova = (allData[t._aba] || []).find(x => String(x.ID) === String(data.id));
-    if (nova) openEditModal({ ...nova, _aba: t._aba });
-    showToast('✅ Tarefa duplicada — troca o nome e salva!');
-  } catch (e) {
-    showToast('⚠️ Sem conexão');
-  }
-}
-
-async function openEditModal(t) {
-  editandoId = t.ID;
-  editandoAba = t._aba;
-  if (!Object.keys(allData).length) await loadData();
-  document.getElementById('modal-add-title').textContent = '✏️ Editar tarefa';
-  document.getElementById('btn-salvar').textContent = 'Salvar alterações';
-  document.getElementById('f-aba').value = t._aba;
-  document.getElementById('f-aba').disabled = true;
-  preencherCategorias(t._aba);
-  atualizaLabelTarefa(t._aba);
-  document.getElementById('f-categoria').value = t['Divisão'] || '';
-  document.getElementById('f-tarefa').value = t.Tarefa || '';
-  document.getElementById('f-envolvido').value = t.Envolvido || '';
-  document.getElementById('f-tag').value = t.Tag || '';
-  document.getElementById('f-obs').value = t['Observação'] || '';
-  document.getElementById('f-data').value = parseDataParaInput(t['Data Prevista']);
-  document.getElementById('f-hora').value = (t.Hora || '').trim().substring(0, 5);
-  document.getElementById('f-data-fim').value = parseDataParaInput(t['Data Fim']);
-  document.getElementById('f-hora-fim').value = (t['Hora Fim'] || '').trim().substring(0, 5);
-  document.getElementById('f-status-group').style.display = 'block';
-  document.getElementById('f-status').value = t.Status || 'Aberto';
-  document.getElementById('f-data-conclusao').value = parseDataParaInput(t['Data conclusão']);
-  atualizarCampoDataConclusao();
-  atualizarBotaoLembreteModal();
-  document.getElementById('btn-excluir-modal').style.display = 'block';
-  document.getElementById('btn-excluir-modal').dataset.nome = t.Tarefa || '';
-  const prio = t.Prioridade || 'Média';
-  document.querySelectorAll('.prio-btn').forEach(b => b.classList.toggle('sel', b.dataset.p === prio));
-  document.getElementById('modal-add').classList.add('open');
-}
-
-async function enviarLembreteModal() {
-  if (!editandoId) return;
-  const btn = document.getElementById('btn-lembrete-modal');
-  await enviarLembrete(editandoId, editandoAba, btn);
-}
-
-// Mostra o botão de notificar só quando estiver editando E tiver alguém em "Envolvido"
-function atualizarBotaoLembreteModal() {
-  const temEnvolvido = document.getElementById('f-envolvido').value.trim().length > 0;
-  document.getElementById('btn-lembrete-modal').style.display = (editandoId && temEnvolvido) ? 'block' : 'none';
-}
-
-// Só mostra o campo de Data de conclusão quando o Status escolhido for "Concluído"
-function atualizarCampoDataConclusao() {
-  const concluido = document.getElementById('f-status').value === 'Concluído';
-  document.getElementById('f-data-conclusao-group').style.display = concluido ? 'block' : 'none';
-  if (concluido && !document.getElementById('f-data-conclusao').value) {
-    document.getElementById('f-data-conclusao').value = new Date().toISOString().split('T')[0];
-  }
-}
-
-async function excluirDoModal() {
-  if (!editandoId) return;
-  const btn = document.getElementById('btn-excluir-modal');
-  const nome = btn.dataset.nome || 'essa tarefa';
-  const excluiu = await excluir(editandoId, nome, btn, editandoAba);
-  if (excluiu) closeAddModal();
-}
-
-function parseDataParaInput(dataRaw) {
-  if (!dataRaw) return '';
-  const partes = String(dataRaw).split('/');
-  if (partes.length === 3) return `${partes[2]}-${partes[1]}-${partes[0]}`;
-  const d = new Date(dataRaw);
-  return !isNaN(d) ? d.toISOString().split('T')[0] : '';
-}
-
-function closeAddModal(e) {
-  if (!e || e.target === document.getElementById('modal-add')) {
-    document.getElementById('modal-add').classList.remove('open');
-  }
-}
-
-function atualizaLabelTarefa(aba) {
-  const isIdeias = aba === 'Projeto Ideias';
-  document.getElementById('f-tarefa-label').textContent = isIdeias ? 'Ideia *' : 'Tarefa *';
-  document.getElementById('f-tarefa').placeholder = isIdeias ? 'Descreva a ideia' : 'Descreva a tarefa';
-}
-
-async function abrirModalCategorias(global) {
-  if (!Object.keys(allData).length) {
-    showToast('⏳ Carregando divisões...');
-    await loadData();
-  }
-
-  let itensHtml;
-  if (global) {
-    document.getElementById('modal-categorias-title').textContent = '📁 Divisões — todas as pastas';
-    itensHtml = ABAS.map(aba => {
-      const cats = [...new Set((allData[aba] || []).map(t => t['Divisão']).filter(Boolean))].sort();
-      if (!cats.length) return '';
-      return `<li class="lista-categorias-grupo">${ABA_LABEL[aba]}</li>` +
-        cats.map(c => `<li>${iconeCategoria(c)} ${c}</li>`).join('');
-    }).join('');
-  } else {
-    document.getElementById('modal-categorias-title').textContent = `📁 Divisões — ${ABA_LABEL[abaAtual]}`;
-    const cats = [...new Set((allData[abaAtual] || []).map(t => t['Divisão']).filter(Boolean))].sort();
-    itensHtml = cats.map(c => `<li>${iconeCategoria(c)} ${c}</li>`).join('');
-  }
-
-  document.getElementById('lista-categorias').innerHTML = itensHtml
-    ? `<ul class="lista-categorias-ul">${itensHtml}</ul>`
-    : '<p style="color:var(--text-muted);font-size:13px">Nenhuma divisão cadastrada ainda.</p>';
-  document.getElementById('btn-categorias-alternar').textContent = global
-    ? '📍 Ver só desta pasta'
-    : '🌐 Ver todas as pastas';
-  document.getElementById('btn-categorias-alternar').onclick = () => abrirModalCategorias(!global);
-  document.getElementById('modal-categorias').classList.add('open');
-}
-
-function imprimirDivisoes() {
-  const titulo = document.getElementById('modal-categorias-title').textContent;
-  const conteudo = document.getElementById('lista-categorias').innerHTML;
-  const janela = window.open('', '_blank');
-  janela.document.write(`
-    <html>
-      <head>
-        <meta charset="utf-8">
-        <title>${titulo}</title>
-        <style>
-          body { font-family: Arial, sans-serif; padding: 24px; }
-          h1 { font-size: 18px; }
-          ul { list-style: none; padding: 0; }
-          li { padding: 8px 0; border-bottom: 1px solid #ddd; font-size: 14px; }
-        </style>
-      </head>
-      <body>
-        <h1>${titulo}</h1>
-        ${conteudo}
-      </body>
-    </html>
-  `);
-  janela.document.close();
-  janela.focus();
-  janela.print();
-}
-
-function fecharModalCategorias() {
-  document.getElementById('modal-categorias').classList.remove('open');
-}
-
-function preencherCategorias(aba, comPlaceholder) {
-  const tarefas = allData[aba] || [];
-  const cats = [...new Set(tarefas.map(t => t['Divisão']).filter(Boolean))].sort();
-  const sel = document.getElementById('f-categoria');
-  sel.innerHTML = (comPlaceholder ? '<option value="" disabled selected>Selecione a divisão...</option>' : '') +
-    cats.map(c => `<option value="${c}">${c}</option>`).join('') +
-    '<option value="__nova__">+ Nova divisão...</option>';
-  sel.onchange = () => {
-    const novo = sel.value === '__nova__';
-    document.getElementById('f-nova-cat-group').style.display = novo ? 'block' : 'none';
-  };
-  document.getElementById('f-nova-cat-group').style.display = 'none';
-}
-
-// Muda categorias ao trocar de aba no formulário
-document.getElementById('f-aba').addEventListener('change', function() {
-  preencherCategorias(this.value, true);
-  atualizaLabelTarefa(this.value);
+/* clique nos "↗ abrir lista" rola até a lista embaixo */
+document.addEventListener("click", e=>{
+  const g = e.target.closest("[data-goto]");
+  if(g){ const el = $("#lista-"+g.dataset.goto); if(el) el.scrollIntoView({behavior:"smooth",block:"start"}); }
 });
 
-function selPrio(btn) {
-  document.querySelectorAll('.prio-btn').forEach(b => b.classList.remove('sel'));
-  btn.classList.add('sel');
+const DEMO = {
+  atualizado_em: new Date().toISOString(),
+  kpis: { carteira_ativa:59, em_negociacao:9, alvos_mes:51, vendas_mes:98935.25, atividades:16, atividades_atrasadas:16,
+    carteira:{ativos:33,negociacao:9,sem_movimentacao:17,inativos:32},
+    missoes:{contato_preventivo:1,recuperacao:2,em_formacao:40},
+    alertas:{sem_movimentacao_30d:6,sem_conversa_zap:4,inativos:26} },
+  listas: { alvos:[{cliente:"(exemplo) GESSO SÃO JOSÉ",fantasia:"São José",zap:"5511…",cidade:"São Paulo",uf:"SP",marcadores:"BB CLIENTE AÇO",estagio:"Clientes Ativos",ultimo_pedido:"2026-08-12"}],
+    em_negociacao:[{cliente:"(exemplo) ANNA DECOR",fantasia:"Anna Decor",zap:"5519…",cidade:"Piracicaba",uf:"SP",marcadores:"",ultima_interacao:"2026-09-01"}],
+    contato_preventivo:[],recuperacao:[],em_formacao:[],sem_movimentacao:[],conversa_zap:[],inativos:[],
+    atividades:[{cliente:"(exemplo) BM NOGUEIRA",tipo:"Ligar",resumo:"follow-up cotação",vencimento:"2026-09-03",estado:"atrasada",responsavel:"Daniel Medeiros"}] }
+};
+
+/* ---- empresa selecionada (Total / BNZ / CIAPLAC) ---- */
+let empresa = "";
+try { empresa = localStorage.getItem("pv_empresa") || ""; } catch(e){}
+function setEmpresa(v){
+  empresa = v || "";
+  try { localStorage.setItem("pv_empresa", empresa); } catch(e){}
+  $$("#seg button").forEach(b => b.classList.toggle("on", (b.dataset.emp||"") === empresa));
+  $("#chip-co").textContent = empresa === "BNZ" ? "BNZ METAIS" : (empresa === "CIAPLAC" ? "CIAPLAC" : "BNZ · CIAPLAC");
+  load();
 }
 
-async function salvarTarefa() {
-  const aba = document.getElementById('f-aba').value;
-  if (!aba) { showToast('⚠️ Escolha a pasta'); return; }
-
-  const tarefa = document.getElementById('f-tarefa').value.trim();
-  if (!tarefa) { showToast('⚠️ Digite o nome da tarefa'); return; }
-
-  const catSel = document.getElementById('f-categoria').value;
-  const categoria = catSel === '__nova__'
-    ? document.getElementById('f-nova-cat').value.trim().toUpperCase()
-    : catSel;
-  if (!categoria) { showToast('⚠️ Informe a divisão'); return; }
-
-  const prioridade = document.querySelector('.prio-btn.sel')?.dataset.p || 'Média';
-  // Converte de yyyy-mm-dd (input type=date) pro formato brasileiro dd/mm/aaaa antes de salvar na planilha
-  const dataPrevistaRaw = document.getElementById('f-data').value;
-  const dataPrevista = dataPrevistaRaw ? formatarDataBR(dataPrevistaRaw) : '';
-  const hora = document.getElementById('f-hora').value;
-  const dataFimRaw = document.getElementById('f-data-fim').value;
-  const dataFim = dataFimRaw ? formatarDataBR(dataFimRaw) : '';
-  const horaFim = document.getElementById('f-hora-fim').value;
-  const obs = document.getElementById('f-obs').value.trim();
-  const envolvido = document.getElementById('f-envolvido').value.trim();
-  const tag = document.getElementById('f-tag').value.trim();
-  const editando = !!editandoId;
-
-  const btn = document.getElementById('btn-salvar');
-  const textoOriginal = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = 'Salvando...';
-
-  const fields = {
-    Tarefa: tarefa,
-    'Divisão': categoria,
-    Prioridade: prioridade,
-    'Data Prevista': dataPrevista || '',
-    Hora: hora || '',
-    'Data Fim': dataFim || '',
-    'Hora Fim': horaFim || '',
-    Envolvido: envolvido,
-    Tag: tag,
-    'Observação': obs
-  };
-  if (!editando) {
-    fields.Status = 'Aberto';
-  } else {
-    const novoStatus = document.getElementById('f-status').value;
-    fields.Status = novoStatus;
-    if (novoStatus !== 'Concluído') {
-      fields['Data conclusão'] = '';
-    } else {
-      const dataConclusaoRaw = document.getElementById('f-data-conclusao').value;
-      fields['Data conclusão'] = dataConclusaoRaw
-        ? formatarDataBR(dataConclusaoRaw)
-        : new Date().toLocaleDateString('pt-BR');
-    }
+async function load(){
+  if(WEBHOOK_URL.startsWith("COLE_AQUI")){
+    setStatus("stale","DEMONSTRAÇÃO — configure WEBHOOK_URL no arquivo pra ligar no Odoo");
+    fill(DEMO);
+    $("#loading").hidden = true;
+    $("#content").hidden = false;
+    return;
   }
-
-  try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(editando
-        ? { action: 'editTask', aba: editandoAba, id: editandoId, fields }
-        : { action: 'addTask', aba, fields }
-      )
-    });
-    const data = await res.json();
-    if (data.ok) {
-      closeAddModal();
-      showToast(editando ? '✅ Tarefa atualizada!' : '✅ Tarefa criada!');
-
-      // Atualiza só a tarefa em memória em vez de recarregar tudo — evita a tela branca
-      if (editando) {
-        const tarefaAtual = (allData[editandoAba] || []).find(t => String(t.ID) === String(editandoId));
-        if (tarefaAtual) Object.assign(tarefaAtual, fields);
-      } else {
-        if (!allData[aba]) allData[aba] = [];
-        allData[aba].push(Object.assign({ ID: data.id, 'Data criação': new Date().toLocaleDateString('pt-BR') }, fields));
-      }
-      renderMantendoScroll();
-    } else {
-      showToast('⚠️ Erro: ' + (data.error || 'tente novamente'));
-    }
-  } catch (e) {
-    showToast('⚠️ Sem conexão');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = textoOriginal;
+  try{
+    setStatus(null,"atualizando…");
+    const url = WEBHOOK_URL + (empresa ? (WEBHOOK_URL.includes("?") ? "&" : "?") + "empresa=" + empresa : "");
+    const r = await fetch(url, {cache:"no-store"});
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    const data = await r.json();
+    fill(data);
+    $("#loading").hidden = true;
+    $("#content").hidden = false;
+    const age = (Date.now() - new Date(data.atualizado_em||Date.now()).getTime())/60000;
+    const rot = empresa ? " · " + (empresa === "BNZ" ? "BNZ" : "CIAPLAC") : " · Total";
+    setStatus(age>20 ? "stale" : null, "ao vivo" + rot + " · " + fmtDateTime(data.atualizado_em));
+  }catch(err){
+    setStatus("err","erro ao carregar — tentando de novo em 1 min ("+err.message+")");
+    if($("#content").hidden) $("#loading").textContent = "Não consegui carregar. Verifique o webhook. ("+err.message+")";
+    setTimeout(load, 60000);
   }
 }
 
-// ===== PRINT =====
-// "reduzido" = uma linha compacta por tarefa. "tela" = mantém cards/lista igual você vê no app.
-function imprimir(modo) {
-  const vistaOriginal = vistaModo;
-  // O formato reduzido foi feito pro HTML do card — se a tela tava em lista, força card só pra impressão
-  if (modo === 'reduzido' && vistaOriginal === 'lista') { vistaModo = 'cards'; aplicarVista(); render(); }
-
-  document.body.classList.remove('print-reduzido', 'print-tela', 'vista-lista-print');
-  document.body.classList.add(modo === 'tela' ? 'print-tela' : 'print-reduzido');
-  if (modo === 'tela' && vistaOriginal === 'lista') document.body.classList.add('vista-lista-print');
-
-  window.print();
-
-  setTimeout(() => {
-    document.body.classList.remove('print-reduzido', 'print-tela', 'vista-lista-print');
-    if (vistaModo !== vistaOriginal) { vistaModo = vistaOriginal; aplicarVista(); render(); }
-  }, 500);
-}
-
-// ===== UTILS =====
-function showLoading() {
-  document.getElementById('main').innerHTML = '<div class="loading"><div class="spinner"></div>Carregando tarefas...</div>';
-}
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-// Inicia
-// Usa a última lista de pastas conhecida (salva no aparelho) antes mesmo da resposta do servidor chegar,
-// pra não mostrar por 1-2s a lista antiga/errada enquanto carrega de verdade
-try {
-  const pastasCache = JSON.parse(localStorage.getItem('pastasCache') || 'null');
-  if (Array.isArray(pastasCache) && pastasCache.length) sincronizarPastas(pastasCache);
-} catch (e) {}
-renderTabs();
-aplicarVista();
-loadData();
-
-// Mede a altura real do cabeçalho e mantém uma variável CSS atualizada — usada pra sidebar
-// (no PC) grudar embaixo do cabeçalho em vez de por cima dele. O cabeçalho muda de altura
-// conforme os botões quebram linha ou os chips de filtro aparecem, então observa sempre.
-function atualizarAlturaHeader() {
-  const header = document.querySelector('.header');
-  if (header) document.documentElement.style.setProperty('--header-h', header.getBoundingClientRect().height + 'px');
-}
-atualizarAlturaHeader();
-window.addEventListener('resize', atualizarAlturaHeader);
-if (window.ResizeObserver) {
-  new ResizeObserver(atualizarAlturaHeader).observe(document.querySelector('.header'));
-}
+if(LINK_CURVA_A)    { $("#link-curva-a").href = LINK_CURVA_A; }
+if(LINK_PROSPECCAO) { $("#link-prospeccao").href = LINK_PROSPECCAO; }
+$("#btn-refresh").addEventListener("click", load);
+$("#seg").addEventListener("click", e => { const b = e.target.closest("button[data-emp]"); if(b) setEmpresa(b.dataset.emp); });
+$$("#seg button").forEach(b => b.classList.toggle("on", (b.dataset.emp||"") === empresa));
+$("#chip-co").textContent = empresa === "BNZ" ? "BNZ METAIS" : (empresa === "CIAPLAC" ? "CIAPLAC" : "BNZ · CIAPLAC");
+load();
+setInterval(load, REFRESH_MIN*60000);
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) load(); });
 </script>
 </body>
 </html>
