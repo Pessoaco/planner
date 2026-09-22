@@ -1457,7 +1457,11 @@
       /* Gruda embaixo do cabeçalho, não em cima dele — a altura real é medida via JS
          porque o cabeçalho muda de tamanho conforme os botões quebram linha */
       top: var(--header-h, 0px);
-      height: calc(100vh - var(--header-h, 0px));
+      /* max-height (não height fixo): perto do fim da página o espaço restante encolhe,
+         e uma altura fixa forçava o sticky a "subir" por cima do cabeçalho pra caber.
+         Com max-height ela só ocupa o que o conteúdo (lista de pastas) realmente precisa. */
+      max-height: calc(100vh - var(--header-h, 0px));
+      overflow-y: auto;
       width: 170px;
       flex-shrink: 0;
       transform: none;
