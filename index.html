@@ -264,6 +264,9 @@
   .quick-urgentes:active { background: var(--danger); color: white; }
   .quick-agenda { background: var(--primary-light); color: var(--primary); font-weight: 700; }
   .quick-agenda:active { background: var(--primary); color: white; }
+  /* Botão de destaque — a ação mais usada (criar tarefa) não pode ter a mesma cara discreta dos botões secundários */
+  .btn-nova-destaque { background: var(--primary); color: white; font-weight: 700; }
+  .btn-nova-destaque:active { background: #3c35b5; }
 
   /* Resumo dos filtros ativos, uma linha pequena abaixo da busca */
   .chips-ativos {
@@ -1313,6 +1316,10 @@
     transition: all 0.3s;
     z-index: 400;
     white-space: nowrap;
+    /* Some com opacity:0, mas continuava OCUPANDO espaço clicável por cima de tudo (z-index alto),
+       bloqueando silenciosamente botões embaixo dela (ex: "Fechar" de Mais ações). Toast nunca
+       precisa ser clicável, então pointer-events:none resolve sem afetar a exibição normal. */
+    pointer-events: none;
   }
 
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -1527,11 +1534,11 @@
     </div>
     <div class="header-botoes">
       <button class="btn-refresh btn-toggle-sidebar" onclick="toggleSidebar()" title="Ver pastas">☰ Pastas</button>
+      <button class="btn-refresh btn-nova-destaque" onclick="openAddModal()" title="Nova tarefa">➕ Nova Tarefa</button>
       <button class="btn-refresh quick-urgentes" id="btn-urgentes" onclick="atalhoUrgentes()">🔥 Urgentes</button>
       <button class="btn-refresh quick-agenda" onclick="atalhoAgenda('hoje')">📅 Hoje</button>
       <button class="btn-refresh quick-agenda" onclick="atalhoAgenda('semana')">🗓️ Semana</button>
       <button class="btn-refresh btn-vista" id="btn-vista" onclick="toggleVista()" title="Trocar entre cards e lista">▦ Cards</button>
-      <button class="btn-refresh" onclick="openAddModal()" title="Nova tarefa">➕ Nova</button>
       <button class="btn-refresh" onclick="loadData()">↻ Atualizar</button>
     </div>
   </div>
