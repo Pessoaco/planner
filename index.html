@@ -1176,7 +1176,8 @@
   .form-group select:focus,
   .form-group textarea:focus { border-color: var(--primary); }
 
-  .form-group textarea { resize: none; height: 60px; }
+  /* resize:vertical traz de volta a setinha do canto pra puxar e ver observações longas inteiras */
+  .form-group textarea { resize: vertical; height: 60px; min-height: 60px; max-height: 70vh; }
 
   .prio-btns {
     display: flex;
