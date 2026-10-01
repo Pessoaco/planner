@@ -3239,7 +3239,10 @@ async function openAddModal() {
   document.getElementById('f-hora').value = '';
   document.getElementById('f-data-fim').value = '';
   document.getElementById('f-hora-fim').value = '';
-  document.getElementById('f-status-group').style.display = 'none';
+  // Status fica visível também ao criar — às vezes a tarefa já nasce "Em andamento"
+  // (ex: já começou a resolver, só falta anotar o resto) e esperar editar depois é fácil esquecer
+  document.getElementById('f-status-group').style.display = 'block';
+  document.getElementById('f-status').value = 'Aberto';
   document.getElementById('f-data-conclusao-group').style.display = 'none';
   document.getElementById('f-data-conclusao').value = '';
   document.getElementById('btn-lembrete-modal').style.display = 'none';
@@ -3542,19 +3545,17 @@ async function salvarTarefa() {
     Tag: tag,
     'Observação': obs
   };
-  if (!editando) {
-    fields.Status = 'Aberto';
+  // Le o status escolhido tanto ao criar quanto ao editar — ao criar, o campo já vem
+  // visível e pré-marcado em "Aberto", mas da pra mudar na hora (ex: "Em andamento")
+  const novoStatus = document.getElementById('f-status').value;
+  fields.Status = novoStatus;
+  if (novoStatus !== 'Concluído') {
+    fields['Data conclusão'] = '';
   } else {
-    const novoStatus = document.getElementById('f-status').value;
-    fields.Status = novoStatus;
-    if (novoStatus !== 'Concluído') {
-      fields['Data conclusão'] = '';
-    } else {
-      const dataConclusaoRaw = document.getElementById('f-data-conclusao').value;
-      fields['Data conclusão'] = dataConclusaoRaw
-        ? formatarDataBR(dataConclusaoRaw)
-        : new Date().toLocaleDateString('pt-BR');
-    }
+    const dataConclusaoRaw = document.getElementById('f-data-conclusao').value;
+    fields['Data conclusão'] = dataConclusaoRaw
+      ? formatarDataBR(dataConclusaoRaw)
+      : new Date().toLocaleDateString('pt-BR');
   }
 
   try {
