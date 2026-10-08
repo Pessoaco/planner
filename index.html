@@ -537,6 +537,35 @@
     color: var(--text-muted);
   }
 
+  /* Versão: cinza neutro, bem discreta, só pra conferir se GitHub/Code.gs já atualizaram */
+  .versao-linha { color: #9ca3af; font-size: 10px; margin-top: 4px; }
+
+  /* Faixa "Desfazer" que aparece depois de mover tarefas de pasta */
+  .banner-desfazer-mover {
+    display: none;
+    position: fixed;
+    left: 50%;
+    bottom: 84px;
+    transform: translateX(-50%);
+    z-index: 260;
+    align-items: center;
+    gap: 10px;
+    background: #1f2937;
+    color: white;
+    padding: 10px 14px;
+    border-radius: 14px;
+    font-size: 13px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    max-width: calc(100vw - 24px);
+  }
+  .banner-desfazer-mover.show { display: flex; }
+  .btn-banner-desfazer {
+    background: var(--primary); color: white; border: none; border-radius: 8px;
+    padding: 6px 12px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap;
+  }
+  .btn-banner-desfazer:disabled { opacity: 0.6; cursor: wait; }
+  .btn-banner-fechar { background: transparent; border: none; color: #9ca3af; font-size: 16px; cursor: pointer; padding: 2px 4px; }
+
   .contador-linha {
     display: flex;
     justify-content: center;
@@ -1850,6 +1879,12 @@
   </div>
 </div>
 
+<div class="banner-desfazer-mover" id="banner-desfazer-mover">
+  <span id="banner-desfazer-texto"></span>
+  <button class="btn-banner-desfazer" id="btn-desfazer-mover" onclick="desfazerMover()">↩️ Desfazer</button>
+  <button class="btn-banner-fechar" onclick="esconderBannerMover()" title="Dispensar">✕</button>
+</div>
+
 <div class="modal-overlay" id="modal-mover" onclick="if(event.target===this) fecharModalMover()">
   <div class="modal">
     <h3>📁 Mover para outra pasta</h3>
@@ -1862,6 +1897,7 @@
       <label>Divisão no destino (opcional)</label>
       <input type="text" id="mover-divisao" list="mover-divisoes" placeholder="Vazio = manter a divisão atual de cada tarefa" autocomplete="off">
       <datalist id="mover-divisoes"></datalist>
+      <small style="display:block;margin-top:6px;font-size:12px;color:var(--text-muted)">✔ Se deixar vazio, cada tarefa <b>continua com a mesma divisão</b> que tem hoje (ex: Casa). Só preencha se quiser trocar.</small>
     </div>
     <div style="display:flex;gap:10px;margin-top:14px">
       <button class="modal-cancel" onclick="fecharModalMover()">Cancelar</button>
@@ -1901,6 +1937,10 @@ function corDaPasta(aba) {
   return PALETA_PASTAS_NOVAS[idx % PALETA_PASTAS_NOVAS.length];
 }
 
+// Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
+// aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
+const APP_VERSION = 'v1';
+let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
 
@@ -2316,6 +2356,13 @@ async function confirmarMover() {
       showToast('❌ ' + (data.error || 'Não foi possível mover'));
       return;
     }
+    // Guarda de onde cada tarefa saiu (pasta + divisão) pra poder desfazer
+    const registro = itens.map(it => {
+      const t = (allData[it.aba] || []).find(x => String(x.ID) === String(it.id));
+      return { id: it.id, abaOrigem: it.aba, divisaoOrigem: t ? (t['Divisão'] || '') : null };
+    });
+    salvarUltimoMover({ destino, registro, ts: Date.now() });
+
     // Atualiza a tela na hora, sem esperar recarregar tudo do servidor
     const ids = new Set(itens.map(it => it.aba + '::' + it.id));
     if (!allData[destino]) allData[destino] = [];
@@ -2343,6 +2390,90 @@ async function confirmarMover() {
   } finally {
     btn.disabled = false;
     btn.textContent = textoOriginal;
+  }
+}
+
+// ----- Desfazer "Mover" -----
+const MOVER_DESFAZER_MS = 10 * 60 * 1000; // 10 minutos
+let ultimoMover = null;
+
+function salvarUltimoMover(info) {
+  ultimoMover = info;
+  try { localStorage.setItem('ultimoMover', JSON.stringify(info)); } catch (e) {}
+  mostrarBannerMover();
+}
+
+function limparUltimoMover() {
+  ultimoMover = null;
+  try { localStorage.removeItem('ultimoMover'); } catch (e) {}
+  esconderBannerMover();
+}
+
+function mostrarBannerMover() {
+  if (!ultimoMover || (Date.now() - ultimoMover.ts) > MOVER_DESFAZER_MS) { limparUltimoMover(); return; }
+  const n = ultimoMover.registro.length;
+  document.getElementById('banner-desfazer-texto').textContent =
+    `📁 ${n} tarefa${n === 1 ? '' : 's'} movida${n === 1 ? '' : 's'} para ${ABA_LABEL[ultimoMover.destino] || ultimoMover.destino}`;
+  document.getElementById('banner-desfazer-mover').classList.add('show');
+}
+
+function esconderBannerMover() {
+  const b = document.getElementById('banner-desfazer-mover');
+  if (b) b.classList.remove('show');
+}
+
+// Se recarregou a página logo depois de mover, a faixa de desfazer volta (vale por 10 minutos)
+try {
+  const salvoMover = JSON.parse(localStorage.getItem('ultimoMover') || 'null');
+  if (salvoMover && salvoMover.registro && (Date.now() - salvoMover.ts) < MOVER_DESFAZER_MS) ultimoMover = salvoMover;
+  else localStorage.removeItem('ultimoMover');
+} catch (e) { /* sem localStorage: só não restaura a faixa */ }
+window.addEventListener('load', () => { if (ultimoMover) mostrarBannerMover(); });
+
+async function desfazerMover() {
+  if (!ultimoMover) return;
+  const { destino, registro } = ultimoMover;
+  // Uma chamada por pasta de origem (cada tarefa volta pra pasta e divisão de onde saiu)
+  const grupos = {};
+  registro.forEach(r => { (grupos[r.abaOrigem] = grupos[r.abaOrigem] || []).push(r); });
+  if (!confirm(`Devolver ${registro.length} tarefa(s) para a pasta de origem?`)) return;
+
+  const btn = document.getElementById('btn-desfazer-mover');
+  btn.disabled = true;
+  btn.textContent = 'Desfazendo...';
+  try {
+    for (const abaOrigem of Object.keys(grupos)) {
+      const itens = grupos[abaOrigem].map(r => {
+        const it = { aba: destino, id: r.id };
+        if (r.divisaoOrigem !== null && r.divisaoOrigem !== undefined) it.divisao = r.divisaoOrigem;
+        return it;
+      });
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'moveTasks', itens, destino: abaOrigem })
+      });
+      const data = JSON.parse(await res.text());
+      if (!data.ok) throw new Error(data.error || 'falhou');
+      // Atualiza a tela na hora
+      if (!allData[abaOrigem]) allData[abaOrigem] = [];
+      grupos[abaOrigem].forEach(r => {
+        const idx = (allData[destino] || []).findIndex(t => String(t.ID) === String(r.id));
+        if (idx >= 0) {
+          const [t] = allData[destino].splice(idx, 1);
+          if (r.divisaoOrigem !== null && r.divisaoOrigem !== undefined) t['Divisão'] = r.divisaoOrigem;
+          allData[abaOrigem].push(t);
+        }
+      });
+    }
+    limparUltimoMover();
+    renderMantendoScroll();
+    showToast('↩️ Tarefas devolvidas para a pasta de origem!');
+  } catch (e) {
+    showToast('❌ Não consegui desfazer tudo: ' + e.message + ' — use Atualizar pra ver onde as tarefas ficaram');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '↩️ Desfazer';
   }
 }
 
@@ -2513,6 +2644,8 @@ async function loadData() {
     // roda 2 chamadas em paralelo de verdade, então juntar tudo evita pagar a demora de "aquecer" 2x)
     const res = await fetch(`${API_URL}?action=getInicial&aba=${encodeURIComponent(abaAlvo)}`, { cache: 'no-store' });
     const resp = JSON.parse(await res.text());
+    // Code.gs antigo (ainda não republicado) não manda "versao" — o rodapé mostra isso
+    serverVersion = resp.versao || 'desatualizado';
 
     if (resp.ok && Array.isArray(resp.pastas)) sincronizarPastas(resp.pastas);
     allData[abaAlvo] = resp.dados || [];
@@ -2708,6 +2841,10 @@ function renderCounters(tarefas) {
       <span class="contador-item aberto">Abertas: <b>${aberto}</b></span>
       <span class="contador-item andamento">Andamento: <b>${andamento}</b></span>
       <span class="contador-item concluido">Concluídas: <b>${concluido}</b></span>
+    </div>
+    <div class="contador-linha versao-linha">
+      <span>App ${APP_VERSION}</span>
+      <span>Servidor ${serverVersion === null ? '…' : serverVersion}</span>
     </div>
   `;
 }
