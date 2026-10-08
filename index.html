@@ -1969,7 +1969,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v10';
+const APP_VERSION = 'v11';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
@@ -2269,6 +2269,19 @@ function toggleModoSelecao() {
   atualizarBarraSelecao();
   render();
 }
+
+// ESC cancela a seleção (desmarca tudo, some a barra de baixo e saem as caixinhas) — igual clicar em "Selecionar" de novo.
+// Fica de fora quando: há janela aberta (ESC não mexe nela) ou a pessoa está digitando num campo / abrindo uma lista.
+// A caixinha de marcar (checkbox) NÃO conta como campo de digitação: depois de marcar, o foco fica nela e o ESC tem que funcionar.
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape' || !modoSelecao) return;
+  const alvo = e.target;
+  const digitando = alvo && ((alvo.tagName === 'INPUT' && alvo.type !== 'checkbox') || alvo.tagName === 'TEXTAREA' || alvo.tagName === 'SELECT');
+  if (digitando) return;
+  if (document.querySelector('.modal-overlay.open')) return;
+  toggleModoSelecao();
+  showToast('☐ Seleção cancelada');
+});
 
 function toggleSelecionado(chave, marcado) {
   if (marcado) selecionados.add(chave); else selecionados.delete(chave);
@@ -2845,6 +2858,13 @@ function setFilter(grupo, valor) {
   modoUrgentesAtivo = false;
   modoAgendaPeriodo = null;
   if (grupo === 'todos') {
+    // "Limpar" também cancela a seleção (marcadas + barra de baixo + caixinhas) — o render logo abaixo redesenha
+    if (modoSelecao || selecionados.size) {
+      modoSelecao = false;
+      selecionados.clear();
+      document.getElementById('btn-modo-selecao').classList.remove('ativo');
+      atualizarBarraSelecao();
+    }
     filtroPrioridade = new Set();
     filtroStatus = new Set();
     filtroEnvolvido = new Set();
