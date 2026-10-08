@@ -1968,7 +1968,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v7';
+const APP_VERSION = 'v8';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
@@ -2760,9 +2760,11 @@ async function switchTab(aba) {
   filtroPrioridade = new Set();
   filtroStatus = new Set();
   filtroEnvolvido = new Set();
+  filtroTag = new Set(); // a Tag também precisa sair: ficava ligada e mantinha a tela em "todas as pastas"
   filtroPrioridadeG = new Set();
   filtroStatusG = new Set();
   filtroEnvolvidoG = new Set();
+  filtroTagG = new Set();
   atualizarBotoesFiltro();
   renderTabs();
   popularBotoesEnvolvidos();
