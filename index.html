@@ -1968,7 +1968,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v6';
+const APP_VERSION = 'v7';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
@@ -3085,6 +3085,7 @@ function renderTarefas(tarefas) {
           <span class="categoria-title" style="${corAba}">${iconeCategoria(cat)} ${cat}</span>
           <span class="categoria-toggle">${colapsado ? '▶' : '▼'}</span>
           <button class="btn-nova-na-divisao" onclick="event.stopPropagation(); abrirNovaTarefaNaDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').replace(/'/g,"\\'")}')" title="Nova tarefa nesta divisão">➕</button>
+          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao" onclick="event.stopPropagation(); abrirCopiarDivisaoDe('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Copiar esta divisão inteira (abertas e concluídas) como lista modelo">📋</button>` : ''}
           <span class="categoria-count">${items.length}</span>
         </div>
         ${itemsHtml}
@@ -3727,8 +3728,11 @@ let copiarDivisaoCtx = null;
 
 function abrirCopiarDivisao(btn) {
   const li = btn.closest('li');
-  const aba = li.dataset.aba;
-  const nome = decodeURIComponent(li.dataset.div);
+  abrirCopiarDivisaoDe(li.dataset.aba, decodeURIComponent(li.dataset.div));
+}
+
+// Abre a janela de copiar pra uma divisão — chamada pelo 📋 do título da divisão e pelo 📋 da lista de divisões
+function abrirCopiarDivisaoDe(aba, nome) {
   const doGrupo = (allData[aba] || []).filter(t => String(t['Divisão'] || '').trim() === nome);
   const fechadas = doGrupo.filter(t => ['concluído', 'cancelado'].includes(String(t.Status || '').trim().toLowerCase())).length;
   copiarDivisaoCtx = { aba, nome };
@@ -3786,7 +3790,8 @@ async function confirmarCopiarDivisao() {
       loadData(); // não deu pra conferir a lista aqui: recarrega do servidor
     }
     fecharCopiarDivisao();
-    abrirModalCategorias(!!window.__categoriasGlobal);
+    // Só atualiza a lista de divisões se ela já estava aberta (quando copia pelo título, não abre sozinha)
+    if (document.getElementById('modal-categorias').classList.contains('open')) abrirModalCategorias(!!window.__categoriasGlobal);
     renderMantendoScroll();
     showToast(`✅ ${data.copiadas} tarefa${data.copiadas === 1 ? '' : 's'} copiada${data.copiadas === 1 ? '' : 's'} para "${novaDivisao}" (${ABA_LABEL[destino] || destino})`);
   } catch (e) {
