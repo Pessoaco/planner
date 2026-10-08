@@ -1851,6 +1851,9 @@
   <div class="modal">
     <h3>⋯ Mais opções</h3>
     <button class="menu-mais-item" onclick="fecharModalMais(); abrirModalCategorias()">📁 Ver divisões desta pasta</button>
+    <button class="menu-mais-item" onclick="fecharModalMais(); abrirModalNovaPasta(abaAtual)">📋 Copiar esta pasta inteira (cria uma pasta nova)</button>
+    <button class="menu-mais-item" onclick="fecharModalMais(); renomearPasta()">✏️ Renomear esta pasta</button>
+    <button class="menu-mais-item" onclick="fecharModalMais(); adicionarTagNaPasta()">🏷️ Adicionar uma tag em todas as tarefas desta pasta</button>
     <button class="menu-mais-item" onclick="fecharModalMais(); ordenarPastasAZ()">🔤 Pastas em ordem alfabética</button>
     <button class="menu-mais-item" onclick="fecharModalMais(); exportarCSV(false)">📊 Exportar esta pasta para Excel</button>
     <button class="menu-mais-item" onclick="fecharModalMais(); exportarCSV(true)">📊🌐 Exportar TODAS as pastas para Excel</button>
@@ -1877,6 +1880,11 @@
       <select id="np-origem">
         <option value="">— Pasta vazia —</option>
       </select>
+      <small style="display:block;margin-top:6px;font-size:12px;color:var(--text-muted)">Ao copiar, vão <b>todas</b> as tarefas (abertas e concluídas) como <b>Aberto</b>, com a observação. <b>Tag</b>, datas, envolvido e agenda são limpos. A pasta original não muda.</small>
+    </div>
+    <div class="form-group">
+      <label>Tag para todas as tarefas copiadas (opcional)</label>
+      <input type="text" id="np-tag" placeholder="Ex: Obra — vazio = sem tag" autocomplete="off">
     </div>
     <div style="display:flex;gap:10px;margin-top:14px">
       <button class="modal-cancel" onclick="fecharModalNovaPasta()">Cancelar</button>
@@ -1969,7 +1977,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v11';
+const APP_VERSION = 'v13';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
@@ -2064,12 +2072,16 @@ function fecharModalMais() {
   document.getElementById('modal-mais').classList.remove('open');
 }
 
-function abrirModalNovaPasta() {
+// origemPadrao (opcional): já deixa marcada a pasta a copiar — usado pelo "Copiar esta pasta inteira" do menu Mais
+function abrirModalNovaPasta(origemPadrao) {
   const sel = document.getElementById('np-origem');
   sel.innerHTML = '<option value="">— Pasta vazia —</option>' +
     ABAS.map(a => `<option value="${a}">${ABA_LABEL[a] || a}</option>`).join('');
+  sel.value = (typeof origemPadrao === 'string' && ABAS.includes(origemPadrao)) ? origemPadrao : '';
   document.getElementById('np-nome').value = '';
+  document.getElementById('np-tag').value = '';
   document.getElementById('modal-nova-pasta').classList.add('open');
+  document.getElementById('np-nome').focus();
 }
 
 function fecharModalNovaPasta() {
@@ -2085,7 +2097,7 @@ async function criarPastaNova() {
     const resp = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'criarPasta', origem: origem, nomeNova: nome })
+      body: JSON.stringify({ action: 'criarPasta', origem: origem, nomeNova: nome, tag: (document.getElementById('np-tag').value || '').trim() })
     });
     const data = await resp.json();
     if (!data.ok) { showToast('⚠️ ' + (data.error || 'Erro ao criar pasta')); return; }
@@ -2096,6 +2108,87 @@ async function criarPastaNova() {
     switchTab(nome);
   } catch (err) {
     showToast('⚠️ Erro ao criar pasta');
+  }
+}
+
+// ----- Renomear a pasta aberta (as tarefas e o histórico continuam; só o nome muda) -----
+async function renomearPasta() {
+  const de = abaAtual;
+  const entrada = prompt(`Novo nome para a pasta "${ABA_LABEL[de] || de}":\n(as tarefas e o histórico não mudam)`, de);
+  if (entrada === null) return;
+  const para = entrada.trim();
+  if (!para || para === de) return;
+  if (/[\[\]\*\?\/\\:]/.test(para)) { showToast('⚠️ O nome não pode ter : \\ / ? * [ ]'); return; }
+
+  showToast('⏳ Renomeando a pasta...');
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'renamePasta', de, para })
+    });
+    const data = JSON.parse(await res.text());
+    if (!data.ok) { showToast('❌ ' + (data.error || 'Não foi possível renomear')); return; }
+
+    // Atualiza tudo aqui na hora (nome na lista, dados, ordem, pasta aberta)
+    ABAS = ABAS.map(a => a === de ? para : a);
+    ABA_LABEL[para] = formatarNomePasta(para);
+    delete ABA_LABEL[de];
+    if (allData[de] !== undefined) { allData[para] = allData[de]; delete allData[de]; }
+    abaOrdem = abaOrdem.map(a => a === de ? para : a);
+    if (!ordemPersonalizada) abaOrdem.sort(compararPastasPorNome);
+    if (abaAtual === de) abaAtual = para;
+    selecionados.clear();
+    atualizarBarraSelecao();
+    limparUltimoMover(); // o "Desfazer" do mover citava o nome antigo
+    try {
+      localStorage.setItem('pastasCache', JSON.stringify(ABAS));
+      if (localStorage.getItem('abaOrdem')) localStorage.setItem('abaOrdem', JSON.stringify(abaOrdem));
+    } catch (e) {}
+    popularSelectPastas();
+    renderTabs();
+    render();
+    showToast(`✅ Pasta renomeada para "${ABA_LABEL[para]}"`);
+  } catch (e) {
+    showToast('❌ Erro ao renomear — use Atualizar pra conferir');
+  }
+}
+
+// ----- Soma uma tag em TODAS as tarefas da pasta aberta (as tags que já existem são mantidas) -----
+async function adicionarTagNaPasta() {
+  const aba = abaAtual;
+  const rotulo = ABA_LABEL[aba] || aba;
+  const total = (allData[aba] || []).length;
+  const entrada = prompt(`Tag para adicionar em TODAS as ${total} tarefas da pasta "${rotulo}" (abertas e concluídas).\nUma tag só (ex: Obra). As tags que já existem são mantidas.`, '');
+  if (entrada === null) return;
+  const tag = entrada.trim();
+  if (!tag) return;
+  if (/[,;]/.test(tag)) { showToast('⚠️ Use uma tag só por vez (sem vírgula)'); return; }
+  if (!confirm(`Adicionar a tag "${tag}" em todas as tarefas da pasta ${rotulo}?`)) return;
+
+  showToast('⏳ Adicionando a tag...');
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'addTagPasta', aba, tag })
+    });
+    const data = JSON.parse(await res.text());
+    if (!data.ok) { showToast('❌ ' + (data.error || 'Não foi possível adicionar a tag')); return; }
+
+    (allData[aba] || []).forEach(t => {
+      if (!String(t.Tarefa || '').trim()) return;
+      const lista = tagsDeTarefa(t);
+      if (lista.some(x => x.toLowerCase() === tag.toLowerCase())) return;
+      t.Tag = lista.length ? lista.join(', ') + ', ' + tag : tag;
+    });
+    popularBotoesTag();
+    renderMantendoScroll();
+    showToast(data.alteradas
+      ? `✅ Tag "${tag}" adicionada em ${data.alteradas} tarefa${data.alteradas === 1 ? '' : 's'}`
+      : `ℹ️ Todas as tarefas já tinham a tag "${tag}"`);
+  } catch (e) {
+    showToast('❌ Erro ao adicionar a tag — use Atualizar pra conferir');
   }
 }
 
@@ -2827,8 +2920,10 @@ async function switchTab(aba) {
   if (allData[aba] === undefined) {
     showLoading();
     try {
-      const res = await fetch(`${API_URL}?action=getData&aba=${encodeURIComponent(aba)}`, { cache: 'no-store' });
-      allData[aba] = JSON.parse(await res.text());
+      // Mesma chamada da abertura do app (getInicial): é a que sempre respondeu direitinho nos testes
+      const res = await fetch(`${API_URL}?action=getInicial&aba=${encodeURIComponent(aba)}`, { cache: 'no-store' });
+      const resp = JSON.parse(await res.text());
+      allData[aba] = resp.dados || [];
     } catch (e) {
       allData[aba] = [];
     }
