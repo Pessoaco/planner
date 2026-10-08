@@ -1969,7 +1969,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v9';
+const APP_VERSION = 'v10';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
@@ -2275,6 +2275,24 @@ function toggleSelecionado(chave, marcado) {
   atualizarBarraSelecao();
 }
 
+// Botão ☑ do título da divisão: seleciona de uma vez todas as tarefas dessa divisão que estão na tela
+// (respeita filtros/busca; as concluídas escondidas não entram). Clicar de novo desmarca todas.
+// Ligar o modo de seleção sozinho evita marcar 150 tarefas uma por uma, principalmente no celular.
+function selecionarDivisao(aba, nome) {
+  const visiveis = tarefasDaTelaAtual().filter(t => t._aba === aba && String(t['Divisão'] || '').trim() === nome);
+  if (!visiveis.length) { showToast('ℹ️ Nenhuma tarefa dessa divisão na tela'); return; }
+  const chaves = visiveis.map(t => `${t._aba}::${t.ID}`);
+  const todasMarcadas = chaves.every(k => selecionados.has(k));
+  if (!modoSelecao) {
+    modoSelecao = true;
+    document.getElementById('btn-modo-selecao').classList.add('ativo');
+  }
+  chaves.forEach(k => { if (todasMarcadas) selecionados.delete(k); else selecionados.add(k); });
+  atualizarBarraSelecao();
+  renderMantendoScroll();
+  showToast(todasMarcadas ? `☐ ${chaves.length} desmarcada${chaves.length === 1 ? '' : 's'}` : `☑ ${chaves.length} tarefa${chaves.length === 1 ? '' : 's'} selecionada${chaves.length === 1 ? '' : 's'}`);
+}
+
 function atualizarBarraSelecao() {
   const barra = document.getElementById('selecao-barra');
   const n = selecionados.size;
@@ -2321,20 +2339,41 @@ async function excluirSelecionadas() {
     const [aba, id] = chave.split('::');
     return { aba, id };
   });
-  await Promise.all(itens.map(({ aba, id }) =>
-    fetch(API_URL, {
+  showToast(`⏳ Excluindo ${itens.length} tarefa${itens.length === 1 ? '' : 's'}...`);
+  try {
+    // UMA chamada só pra todas (150 chamadas separadas eram lentas e podiam falhar no meio)
+    const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'deleteTask', aba, id })
-    }).catch(() => {})
-  ));
-  itens.forEach(({ aba, id }) => {
-    allData[aba] = (allData[aba] || []).filter(t => String(t.ID) !== String(id));
-  });
+      body: JSON.stringify({ action: 'deleteTasks', itens })
+    });
+    const data = JSON.parse(await res.text());
+    if (data.ok) {
+      // só tira da tela o que o servidor confirmou (não some tarefa que não foi apagada de verdade)
+      const naoAchadas = new Set((data.naoEncontradas || []).map(String));
+      itens.forEach(({ aba, id }) => {
+        if (naoAchadas.has(String(id))) return;
+        allData[aba] = (allData[aba] || []).filter(t => String(t.ID) !== String(id));
+      });
+      showToast(`🗑️ ${data.apagadas} linha${data.apagadas === 1 ? '' : 's'} excluída${data.apagadas === 1 ? '' : 's'}!`);
+    } else if (/inv[aá]lida/i.test(String(data.error || ''))) {
+      // Servidor (Code.gs) ainda não republicado: usa o jeito antigo, tarefa por tarefa
+      await Promise.all(itens.map(({ aba, id }) =>
+        fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'deleteTask', aba, id }) }).catch(() => {})
+      ));
+      itens.forEach(({ aba, id }) => { allData[aba] = (allData[aba] || []).filter(t => String(t.ID) !== String(id)); });
+      showToast('🗑️ Tarefas excluídas!');
+    } else {
+      showToast('❌ ' + (data.error || 'Não foi possível excluir') + ' — nada foi apagado');
+      return;
+    }
+  } catch (e) {
+    showToast('❌ Erro ao excluir — use Atualizar pra conferir o que foi apagado');
+    return;
+  }
   selecionados.clear();
   atualizarBarraSelecao();
   renderMantendoScroll();
-  showToast('🗑️ Tarefas excluídas!');
 }
 
 // ===== MOVER TAREFAS ENTRE PASTAS =====
@@ -3089,6 +3128,7 @@ function renderTarefas(tarefas) {
           <span class="categoria-toggle">${colapsado ? '▶' : '▼'}</span>
           <button class="btn-nova-na-divisao" onclick="event.stopPropagation(); abrirNovaTarefaNaDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').replace(/'/g,"\\'")}')" title="Nova tarefa nesta divisão">➕</button>
           ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao" onclick="event.stopPropagation(); abrirCopiarDivisaoDe('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Copiar esta divisão inteira (abertas e concluídas) como lista modelo">📋</button>` : ''}
+          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao" onclick="event.stopPropagation(); selecionarDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Selecionar (ou desmarcar) todas as tarefas desta divisão que aparecem na tela">☑</button>` : ''}
           <span class="categoria-count">${items.length}</span>
         </div>
         ${itemsHtml}
