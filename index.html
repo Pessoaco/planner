@@ -1665,6 +1665,7 @@
     </select>
     <button class="btn-selecao-concluir" onclick="concluirSelecionadas()">✅ Concluir</button>
     <button class="btn-selecao-concluir" onclick="compartilharSelecionadas()">📤 Compartilhar</button>
+    <button class="btn-selecao-concluir" onclick="abrirModalMover()">📁 Mover</button>
     <button class="btn-selecao-excluir" onclick="excluirSelecionadas()">🗑️ Excluir</button>
   </div>
 </div>
@@ -1845,6 +1846,26 @@
     <div style="display:flex;gap:10px;margin-top:14px">
       <button class="modal-cancel" onclick="fecharModalNovaPasta()">Cancelar</button>
       <button class="btn-salvar" onclick="criarPastaNova()">Criar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-mover" onclick="if(event.target===this) fecharModalMover()">
+  <div class="modal">
+    <h3>📁 Mover para outra pasta</h3>
+    <p id="mover-resumo" style="font-size:13px;color:var(--text-muted);margin:0 0 12px"></p>
+    <div class="form-group">
+      <label>Pasta de destino</label>
+      <select id="mover-destino" onchange="atualizarDivisoesMover()"></select>
+    </div>
+    <div class="form-group">
+      <label>Divisão no destino (opcional)</label>
+      <input type="text" id="mover-divisao" list="mover-divisoes" placeholder="Vazio = manter a divisão atual de cada tarefa" autocomplete="off">
+      <datalist id="mover-divisoes"></datalist>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="modal-cancel" onclick="fecharModalMover()">Cancelar</button>
+      <button class="btn-salvar" id="btn-confirmar-mover" onclick="confirmarMover()">Mover</button>
     </div>
   </div>
 </div>
@@ -2244,6 +2265,85 @@ async function excluirSelecionadas() {
   atualizarBarraSelecao();
   renderMantendoScroll();
   showToast('🗑️ Tarefas excluídas!');
+}
+
+// ===== MOVER TAREFAS ENTRE PASTAS =====
+function abrirModalMover() {
+  if (!selecionados.size) { showToast('⚠️ Selecione ao menos uma tarefa'); return; }
+  const n = selecionados.size;
+  document.getElementById('mover-resumo').textContent = `${n} tarefa${n === 1 ? '' : 's'} selecionada${n === 1 ? '' : 's'}. Elas mantêm status, datas e histórico — só mudam de pasta.`;
+  const sel = document.getElementById('mover-destino');
+  sel.innerHTML = '<option value="" disabled selected>Escolha a pasta...</option>' +
+    ABAS.map(a => `<option value="${a}">${ABA_LABEL[a] || a}</option>`).join('');
+  document.getElementById('mover-divisao').value = '';
+  document.getElementById('mover-divisoes').innerHTML = '';
+  document.getElementById('modal-mover').classList.add('open');
+}
+
+function fecharModalMover() {
+  document.getElementById('modal-mover').classList.remove('open');
+}
+
+// Sugere as divisões que já existem na pasta de destino (mas aceita digitar uma nova)
+function atualizarDivisoesMover() {
+  const destino = document.getElementById('mover-destino').value;
+  const divs = [...new Set((allData[destino] || []).map(t => (t['Divisão'] || '').trim()).filter(Boolean))].sort();
+  document.getElementById('mover-divisoes').innerHTML = divs.map(d => `<option value="${d.replace(/"/g, '&quot;')}"></option>`).join('');
+}
+
+async function confirmarMover() {
+  const destino = document.getElementById('mover-destino').value;
+  if (!destino) { showToast('⚠️ Escolha a pasta de destino'); return; }
+  const itens = [...selecionados].map(chave => {
+    const [aba, id] = chave.split('::');
+    return { aba, id };
+  }).filter(it => it.aba !== destino);
+  if (!itens.length) { showToast('ℹ️ Essas tarefas já estão nessa pasta'); return; }
+  const divisao = document.getElementById('mover-divisao').value.trim();
+
+  const btn = document.getElementById('btn-confirmar-mover');
+  const textoOriginal = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Movendo...';
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'moveTasks', itens, destino, divisao })
+    });
+    const data = JSON.parse(await res.text());
+    if (!data.ok) {
+      showToast('❌ ' + (data.error || 'Não foi possível mover'));
+      return;
+    }
+    // Atualiza a tela na hora, sem esperar recarregar tudo do servidor
+    const ids = new Set(itens.map(it => it.aba + '::' + it.id));
+    if (!allData[destino]) allData[destino] = [];
+    Object.keys(allData).forEach(aba => {
+      if (aba === destino) return;
+      const ficam = [];
+      (allData[aba] || []).forEach(t => {
+        if (ids.has(aba + '::' + t.ID)) {
+          if (divisao) t['Divisão'] = divisao;
+          allData[destino].push(t);
+        } else {
+          ficam.push(t);
+        }
+      });
+      allData[aba] = ficam;
+    });
+    fecharModalMover();
+    selecionados.clear();
+    atualizarBarraSelecao();
+    renderMantendoScroll();
+    const aviso = (data.naoEncontradas && data.naoEncontradas.length) ? ` (${data.naoEncontradas.length} não encontrada${data.naoEncontradas.length === 1 ? '' : 's'})` : '';
+    showToast(`✅ ${data.movidas} tarefa${data.movidas === 1 ? '' : 's'} movida${data.movidas === 1 ? '' : 's'} para ${ABA_LABEL[destino] || destino}!${aviso}`);
+  } catch (e) {
+    showToast('❌ Erro ao mover — confira se as tarefas continuam na pasta de origem');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = textoOriginal;
+  }
 }
 
 // Ordem das abas: salva no próprio celular, cada pessoa pode organizar do seu jeito
