@@ -1850,6 +1850,7 @@
   <div class="modal">
     <h3>⋯ Mais opções</h3>
     <button class="menu-mais-item" onclick="fecharModalMais(); abrirModalCategorias()">📁 Ver divisões desta pasta</button>
+    <button class="menu-mais-item" onclick="fecharModalMais(); ordenarPastasAZ()">🔤 Pastas em ordem alfabética</button>
     <button class="menu-mais-item" onclick="fecharModalMais(); exportarCSV(false)">📊 Exportar esta pasta para Excel</button>
     <button class="menu-mais-item" onclick="fecharModalMais(); exportarCSV(true)">📊🌐 Exportar TODAS as pastas para Excel</button>
     <button class="menu-mais-item" onclick="fecharModalMais(); imprimir('reduzido')">🖨️ Imprimir (reduzido)</button>
@@ -1879,6 +1880,30 @@
     <div style="display:flex;gap:10px;margin-top:14px">
       <button class="modal-cancel" onclick="fecharModalNovaPasta()">Cancelar</button>
       <button class="btn-salvar" onclick="criarPastaNova()">Criar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-copiar-div" onclick="if(event.target===this) fecharCopiarDivisao()">
+  <div class="modal">
+    <h3>📋 Copiar divisão</h3>
+    <p id="copiar-resumo" style="font-size:13px;color:var(--text-muted);margin:0 0 12px"></p>
+    <div class="form-group">
+      <label>Pasta de destino</label>
+      <select id="copiar-destino"></select>
+    </div>
+    <div class="form-group">
+      <label>Nome da divisão nova</label>
+      <input type="text" id="copiar-nome" placeholder="Ex: Obra do Seu João" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label>Tag para todas as cópias (opcional)</label>
+      <input type="text" id="copiar-tag" placeholder="Vazio = as cópias ficam sem tag" autocomplete="off">
+    </div>
+    <small style="display:block;margin:2px 0 6px;font-size:12px;color:var(--text-muted)">As cópias nascem como <b>Aberto</b>, com a observação. <b>Tag</b>, datas, concluída, envolvido e agenda são limpos. O original não muda.</small>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="modal-cancel" onclick="fecharCopiarDivisao()">Cancelar</button>
+      <button class="btn-salvar" id="btn-confirmar-copiar" onclick="confirmarCopiarDivisao()">Copiar</button>
     </div>
   </div>
 </div>
@@ -1943,7 +1968,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v3';
+const APP_VERSION = 'v6';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
@@ -2482,14 +2507,33 @@ async function desfazerMover() {
 }
 
 // Ordem das abas: salva no próprio celular, cada pessoa pode organizar do seu jeito
+// Regra: sem ordem escolhida pela pessoa = ordem alfabética. Se ela arrastar uma pasta, a ordem dela
+// passa a valer (e é lembrada); pasta nova entra no fim da ordem dela. A 1ª da lista é a que o app abre.
 let abaOrdem = [...ABAS];
+let ordemPersonalizada = false;
 try {
   const salvo = JSON.parse(localStorage.getItem('abaOrdem') || 'null');
-  if (Array.isArray(salvo) && salvo.length === ABAS.length && salvo.every(a => ABAS.includes(a))) {
+  // Não exige mais o mesmo tamanho da lista fixa antiga: com pastas novas a ordem salva era descartada
+  // ao recarregar. sincronizarPastas() ajusta depois com as pastas que realmente existem.
+  if (Array.isArray(salvo) && salvo.length && salvo.every(a => typeof a === 'string')) {
     abaOrdem = salvo;
+    ordemPersonalizada = true;
   }
 } catch (e) { /* localStorage indisponível — usa ordem padrão */ }
 abaAtual = abaOrdem[0];
+
+function compararPastasPorNome(a, b) {
+  return (ABA_LABEL[a] || a).localeCompare(ABA_LABEL[b] || b, 'pt-BR', { sensitivity: 'base' });
+}
+
+// Volta pra ordem alfabética (esquece a ordem arrastada) — também vale pras pastas novas
+function ordenarPastasAZ() {
+  try { localStorage.removeItem('abaOrdem'); } catch (e) {}
+  ordemPersonalizada = false;
+  abaOrdem = [...abaOrdem].sort(compararPastasPorNome);
+  renderTabs();
+  showToast('🔤 Pastas em ordem alfabética');
+}
 
 // Atualiza a lista de pastas (ABAS/ABA_LABEL) com o que realmente existe na planilha —
 // preserva a ordem que a pessoa já organizou e só acrescenta as pastas novas no final.
@@ -2499,14 +2543,22 @@ function formatarNomePasta(nome) {
   return String(nome).trim().toUpperCase();
 }
 
-function sincronizarPastas(lista) {
+function sincronizarPastas(lista, aoAbrir) {
   if (!Array.isArray(lista) || !lista.length) return;
   ABAS = lista;
   lista.forEach(p => { if (!ABA_LABEL[p]) ABA_LABEL[p] = formatarNomePasta(p); });
   const jaTinha = abaOrdem.filter(a => lista.includes(a));
   const novas = lista.filter(a => !jaTinha.includes(a));
-  abaOrdem = [...jaTinha, ...novas];
-  if (!lista.includes(abaAtual)) abaAtual = abaOrdem[0];
+  // Sem ordem escolhida: tudo em ordem alfabética. Com ordem escolhida: a dela, e as novas no fim (A–Z entre si).
+  abaOrdem = ordemPersonalizada
+    ? [...jaTinha, ...novas.sort(compararPastasPorNome)]
+    : [...lista].sort(compararPastasPorNome);
+  // Na abertura do app (chamada vinda do cache) abre na 1ª pasta da lista; depois disso não troca de pasta sozinho
+  if (aoAbrir) {
+    abaAtual = abaOrdem[0];
+  } else if (!lista.includes(abaAtual)) {
+    abaAtual = abaOrdem[0];
+  }
   popularSelectPastas();
   renderTabs();
   try { localStorage.setItem('pastasCache', JSON.stringify(lista)); } catch (e) {}
@@ -2620,6 +2672,7 @@ function onTabPointerUp(e) {
     dragState.wrap.style.transform = '';
     dragState.wrap.style.zIndex = '';
     try { localStorage.setItem('abaOrdem', JSON.stringify(abaOrdem)); } catch (e) {}
+    ordemPersonalizada = true; // a partir daqui a ordem dela manda (as próximas sincronizações não reordenam)
     renderTabs();
     showToast('✅ Ordem das pastas salva!');
   } else {
@@ -3662,10 +3715,86 @@ function linhaDivisaoHtml(aba, nome) {
   return `<li class="linha-divisao" data-aba="${aba}" data-div="${encodeURIComponent(nome)}">
     <span>${iconeCategoria(nome)} ${nome}</span>
     <span class="acoes-divisao">
+      <button class="btn-renomear-div" onclick="abrirCopiarDivisao(this)" title="Copiar esta divisão (lista modelo)">📋</button>
       <button class="btn-renomear-div" onclick="renomearDivisao(this)" title="Renomear esta divisão">✏️</button>
       <button class="btn-renomear-div" onclick="excluirDivisao(this)" title="Excluir esta divisão">🗑️</button>
     </span>
   </li>`;
+}
+
+// ----- Copiar divisão (lista modelo: ex. a obra anterior vira a base da obra nova) -----
+let copiarDivisaoCtx = null;
+
+function abrirCopiarDivisao(btn) {
+  const li = btn.closest('li');
+  const aba = li.dataset.aba;
+  const nome = decodeURIComponent(li.dataset.div);
+  const doGrupo = (allData[aba] || []).filter(t => String(t['Divisão'] || '').trim() === nome);
+  const fechadas = doGrupo.filter(t => ['concluído', 'cancelado'].includes(String(t.Status || '').trim().toLowerCase())).length;
+  copiarDivisaoCtx = { aba, nome };
+  document.getElementById('copiar-resumo').textContent =
+    `"${nome}" (pasta ${ABA_LABEL[aba] || aba}): ${doGrupo.length} tarefa${doGrupo.length === 1 ? '' : 's'} — ${doGrupo.length - fechadas} em aberto e ${fechadas} concluída${fechadas === 1 ? '' : 's'}. Todas serão copiadas.`;
+  const sel = document.getElementById('copiar-destino');
+  sel.innerHTML = ABAS.map(a => `<option value="${a}">${ABA_LABEL[a] || a}</option>`).join('');
+  sel.value = aba;
+  document.getElementById('copiar-nome').value = `${nome} (cópia)`;
+  document.getElementById('copiar-tag').value = '';
+  document.getElementById('modal-copiar-div').classList.add('open');
+  document.getElementById('copiar-nome').focus();
+}
+
+function fecharCopiarDivisao() {
+  document.getElementById('modal-copiar-div').classList.remove('open');
+}
+
+async function confirmarCopiarDivisao() {
+  if (!copiarDivisaoCtx) return;
+  const { aba, nome } = copiarDivisaoCtx;
+  const destino = document.getElementById('copiar-destino').value;
+  const novaDivisao = document.getElementById('copiar-nome').value.trim();
+  const novaTag = document.getElementById('copiar-tag').value.trim();
+  if (!destino) { showToast('⚠️ Escolha a pasta de destino'); return; }
+  if (!novaDivisao) { showToast('⚠️ Dê um nome pra divisão nova'); return; }
+
+  const btn = document.getElementById('btn-confirmar-copiar');
+  const textoOriginal = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Copiando...';
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'copyDivisao', aba, divisao: nome, destino, novaDivisao, novaTag })
+    });
+    const data = JSON.parse(await res.text());
+    if (!data.ok) {
+      showToast('❌ ' + (data.error || 'Não foi possível copiar'));
+      return;
+    }
+    // Atualiza a tela na hora: clona as tarefas daqui, na mesma ordem em que o servidor copiou
+    const origem = (allData[aba] || []).filter(t => String(t['Divisão'] || '').trim() === nome);
+    if (Array.isArray(data.ids) && data.ids.length === origem.length) {
+      if (!allData[destino]) allData[destino] = [];
+      const hoje = new Date().toLocaleDateString('pt-BR');
+      origem.forEach((t, i) => {
+        const c = { ...t, ID: data.ids[i], Status: 'Aberto', 'Data criação': hoje, 'Divisão': novaDivisao,
+          'Data Prevista': '', Hora: '', 'Data Fim': '', 'Hora Fim': '', 'Data conclusão': '', Envolvido: '',
+          'ID Evento Calendário': '', _recorrenciaRRule: '', Tag: novaTag };
+        allData[destino].push(c);
+      });
+    } else {
+      loadData(); // não deu pra conferir a lista aqui: recarrega do servidor
+    }
+    fecharCopiarDivisao();
+    abrirModalCategorias(!!window.__categoriasGlobal);
+    renderMantendoScroll();
+    showToast(`✅ ${data.copiadas} tarefa${data.copiadas === 1 ? '' : 's'} copiada${data.copiadas === 1 ? '' : 's'} para "${novaDivisao}" (${ABA_LABEL[destino] || destino})`);
+  } catch (e) {
+    showToast('❌ Erro ao copiar — use Atualizar pra conferir');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = textoOriginal;
+  }
 }
 
 // Exclui a divisão da pasta. Só deixa se NÃO sobrou tarefa em aberto nela — as concluídas (que ficam
@@ -3680,11 +3809,18 @@ async function excluirDivisao(btn) {
   const fechadas = doGrupo.filter(ehFechada);
   const abertas = doGrupo.length - fechadas.length;
 
+  let forcar = false;
   if (abertas > 0) {
-    alert(`A divisão "${nome}" ainda tem ${abertas} tarefa${abertas === 1 ? '' : 's'} em aberto na pasta ${rotuloPasta}.\n\nPrimeiro mova essas tarefas para outra pasta (Selecionar → Mover) ou conclua/exclua. Depois dá pra excluir a divisão.`);
-    return;
-  }
-  if (!confirm(`Excluir a divisão "${nome}" da pasta ${rotuloPasta}?\n\nEla não tem mais tarefas em aberto — só ${fechadas.length} já concluída${fechadas.length === 1 ? '' : 's'}/cancelada${fechadas.length === 1 ? '' : 's'} (histórico), que serão apagadas junto.\n\nNão tem volta.`)) return;
+    // Ainda tem tarefa em aberto: só apaga tudo com confirmação dupla (OK + digitar o nome da divisão)
+    if (!confirm(`A divisão "${nome}" tem ${abertas} tarefa${abertas === 1 ? '' : 's'} EM ABERTO e ${fechadas.length} concluída${fechadas.length === 1 ? '' : 's'} na pasta ${rotuloPasta}.\n\nQuer excluir a divisão E TODAS essas ${doGrupo.length} tarefas?\n\nNão tem volta. (Se quiser guardar as abertas, cancele e use Selecionar → Mover.)`)) return;
+    const digitado = prompt(`Para confirmar, digite o nome da divisão:\n${nome}`);
+    if (digitado === null) return;
+    if (digitado.trim().toLowerCase() !== nome.trim().toLowerCase()) {
+      showToast('ℹ️ Nome diferente — nada foi apagado');
+      return;
+    }
+    forcar = true;
+  } else if (!confirm(`Excluir a divisão "${nome}" da pasta ${rotuloPasta}?\n\nEla não tem mais tarefas em aberto — só ${fechadas.length} já concluída${fechadas.length === 1 ? '' : 's'}/cancelada${fechadas.length === 1 ? '' : 's'} (histórico), que serão apagadas junto.\n\nNão tem volta.`)) return;
 
   btn.disabled = true;
   btn.textContent = '⏳';
@@ -3692,7 +3828,7 @@ async function excluirDivisao(btn) {
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'deleteDivisao', aba, nome })
+      body: JSON.stringify({ action: 'deleteDivisao', aba, nome, forcar })
     });
     const data = JSON.parse(await res.text());
     if (!data.ok) {
@@ -3970,7 +4106,7 @@ function showToast(msg) {
 // pra não mostrar por 1-2s a lista antiga/errada enquanto carrega de verdade
 try {
   const pastasCache = JSON.parse(localStorage.getItem('pastasCache') || 'null');
-  if (Array.isArray(pastasCache) && pastasCache.length) sincronizarPastas(pastasCache);
+  if (Array.isArray(pastasCache) && pastasCache.length) sincronizarPastas(pastasCache, true);
 } catch (e) {}
 renderTabs();
 aplicarVista();
