@@ -336,6 +336,10 @@
     font-size: 14px;
   }
   .lista-categorias-ul li:last-child { border-bottom: none; }
+  .lista-categorias-ul li.linha-divisao { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .btn-renomear-div { background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px 8px; opacity: 0.55; }
+  .btn-renomear-div:hover { opacity: 1; }
+  .acoes-divisao { white-space: nowrap; }
   .lista-categorias-grupo {
     background: var(--gray-light);
     font-weight: 700;
@@ -1939,7 +1943,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v1';
+const APP_VERSION = 'v3';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
@@ -3652,7 +3656,107 @@ function atualizaLabelTarefa(aba) {
   document.getElementById('f-tarefa').placeholder = isIdeias ? 'Descreva a ideia' : 'Descreva a tarefa';
 }
 
+// Uma linha da lista de divisões, com o ✏️ pra renomear (a divisão é só o texto das tarefas, então
+// renomear = trocar esse texto em todas as tarefas daquela pasta)
+function linhaDivisaoHtml(aba, nome) {
+  return `<li class="linha-divisao" data-aba="${aba}" data-div="${encodeURIComponent(nome)}">
+    <span>${iconeCategoria(nome)} ${nome}</span>
+    <span class="acoes-divisao">
+      <button class="btn-renomear-div" onclick="renomearDivisao(this)" title="Renomear esta divisão">✏️</button>
+      <button class="btn-renomear-div" onclick="excluirDivisao(this)" title="Excluir esta divisão">🗑️</button>
+    </span>
+  </li>`;
+}
+
+// Exclui a divisão da pasta. Só deixa se NÃO sobrou tarefa em aberto nela — as concluídas (que ficam
+// escondidas e são o que mantém a divisão "viva" na lista) são apagadas junto, depois de confirmar.
+async function excluirDivisao(btn) {
+  const li = btn.closest('li');
+  const aba = li.dataset.aba;
+  const nome = decodeURIComponent(li.dataset.div);
+  const rotuloPasta = ABA_LABEL[aba] || aba;
+  const doGrupo = (allData[aba] || []).filter(t => String(t['Divisão'] || '').trim() === nome);
+  const ehFechada = t => ['concluído', 'cancelado'].includes(String(t.Status || '').trim().toLowerCase());
+  const fechadas = doGrupo.filter(ehFechada);
+  const abertas = doGrupo.length - fechadas.length;
+
+  if (abertas > 0) {
+    alert(`A divisão "${nome}" ainda tem ${abertas} tarefa${abertas === 1 ? '' : 's'} em aberto na pasta ${rotuloPasta}.\n\nPrimeiro mova essas tarefas para outra pasta (Selecionar → Mover) ou conclua/exclua. Depois dá pra excluir a divisão.`);
+    return;
+  }
+  if (!confirm(`Excluir a divisão "${nome}" da pasta ${rotuloPasta}?\n\nEla não tem mais tarefas em aberto — só ${fechadas.length} já concluída${fechadas.length === 1 ? '' : 's'}/cancelada${fechadas.length === 1 ? '' : 's'} (histórico), que serão apagadas junto.\n\nNão tem volta.`)) return;
+
+  btn.disabled = true;
+  btn.textContent = '⏳';
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'deleteDivisao', aba, nome })
+    });
+    const data = JSON.parse(await res.text());
+    if (!data.ok) {
+      showToast('❌ ' + (data.error || 'Não foi possível excluir'));
+      btn.disabled = false;
+      btn.textContent = '🗑️';
+      return;
+    }
+    allData[aba] = (allData[aba] || []).filter(t => !(String(t['Divisão'] || '').trim() === nome && ehFechada(t)));
+    abrirModalCategorias(!!window.__categoriasGlobal);
+    renderMantendoScroll();
+    showToast(`✅ Divisão "${nome}" excluída`);
+  } catch (e) {
+    showToast('❌ Erro ao excluir — use Atualizar pra conferir');
+    btn.disabled = false;
+    btn.textContent = '🗑️';
+  }
+}
+
+async function renomearDivisao(btn) {
+  const li = btn.closest('li');
+  const aba = li.dataset.aba;
+  const atual = decodeURIComponent(li.dataset.div);
+  const entrada = prompt(`Novo nome para a divisão "${atual}" (pasta ${ABA_LABEL[aba] || aba}):`, atual);
+  if (entrada === null) return;
+  const novo = entrada.trim();
+  if (!novo || novo === atual) return;
+
+  const tarefasAfetadas = (allData[aba] || []).filter(t => String(t['Divisão'] || '').trim() === atual);
+  const jaExiste = (allData[aba] || []).some(t => {
+    const d = String(t['Divisão'] || '').trim();
+    return d !== atual && d.toLowerCase() === novo.toLowerCase();
+  });
+  const aviso = jaExiste ? `\n\nJá existe uma divisão "${novo}" nessa pasta — as tarefas serão juntadas nela.` : '';
+  if (!confirm(`Renomear "${atual}" para "${novo}"?\n${tarefasAfetadas.length} tarefa(s) da pasta ${ABA_LABEL[aba] || aba} serão alteradas.${aviso}`)) return;
+
+  btn.disabled = true;
+  btn.textContent = '⏳';
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'renameDivisao', aba, de: atual, para: novo })
+    });
+    const data = JSON.parse(await res.text());
+    if (!data.ok) {
+      showToast('❌ ' + (data.error || 'Não foi possível renomear'));
+      btn.disabled = false;
+      btn.textContent = '✏️';
+      return;
+    }
+    tarefasAfetadas.forEach(t => { t['Divisão'] = novo; });
+    abrirModalCategorias(!!window.__categoriasGlobal);
+    renderMantendoScroll();
+    showToast(`✅ Divisão renomeada (${data.alteradas} tarefa${data.alteradas === 1 ? '' : 's'})`);
+  } catch (e) {
+    showToast('❌ Erro ao renomear — use Atualizar pra conferir');
+    btn.disabled = false;
+    btn.textContent = '✏️';
+  }
+}
+
 async function abrirModalCategorias(global) {
+  window.__categoriasGlobal = !!global;
   if (!Object.keys(allData).length) {
     showToast('⏳ Carregando divisões...');
     await loadData();
@@ -3665,12 +3769,12 @@ async function abrirModalCategorias(global) {
       const cats = [...new Set((allData[aba] || []).map(t => t['Divisão']).filter(Boolean))].sort();
       if (!cats.length) return '';
       return `<li class="lista-categorias-grupo">${ABA_LABEL[aba]}</li>` +
-        cats.map(c => `<li>${iconeCategoria(c)} ${c}</li>`).join('');
+        cats.map(c => linhaDivisaoHtml(aba, c)).join('');
     }).join('');
   } else {
     document.getElementById('modal-categorias-title').textContent = `📁 Divisões — ${ABA_LABEL[abaAtual]}`;
     const cats = [...new Set((allData[abaAtual] || []).map(t => t['Divisão']).filter(Boolean))].sort();
-    itensHtml = cats.map(c => `<li>${iconeCategoria(c)} ${c}</li>`).join('');
+    itensHtml = cats.map(c => linhaDivisaoHtml(abaAtual, c)).join('');
   }
 
   document.getElementById('lista-categorias').innerHTML = itensHtml
@@ -3685,7 +3789,8 @@ async function abrirModalCategorias(global) {
 
 function imprimirDivisoes() {
   const titulo = document.getElementById('modal-categorias-title').textContent;
-  const conteudo = document.getElementById('lista-categorias').innerHTML;
+  // Tira os botões ✏️ (são só da tela, não vão pro papel)
+  const conteudo = document.getElementById('lista-categorias').innerHTML.replace(/<button[\s\S]*?<\/button>/g, '');
   const janela = window.open('', '_blank');
   janela.document.write(`
     <html>
