@@ -1850,11 +1850,6 @@
 <div class="modal-overlay" id="modal-mais" onclick="if(event.target===this) fecharModalMais()">
   <div class="modal">
     <h3>⋯ Mais opções</h3>
-    <button class="menu-mais-item" onclick="fecharModalMais(); abrirModalCategorias()">📁 Ver divisões desta pasta</button>
-    <button class="menu-mais-item" onclick="fecharModalMais(); abrirModalNovaPasta(abaAtual)">📋 Copiar esta pasta inteira (cria uma pasta nova)</button>
-    <button class="menu-mais-item" onclick="fecharModalMais(); renomearPasta()">✏️ Renomear esta pasta</button>
-    <button class="menu-mais-item" onclick="fecharModalMais(); adicionarTagNaPasta()">🏷️ Adicionar uma tag em todas as tarefas desta pasta</button>
-    <button class="menu-mais-item" onclick="fecharModalMais(); ordenarPastasAZ()">🔤 Pastas em ordem alfabética</button>
     <button class="menu-mais-item" onclick="fecharModalMais(); exportarCSV(false)">📊 Exportar esta pasta para Excel</button>
     <button class="menu-mais-item" onclick="fecharModalMais(); exportarCSV(true)">📊🌐 Exportar TODAS as pastas para Excel</button>
     <button class="menu-mais-item" onclick="fecharModalMais(); imprimir('reduzido')">🖨️ Imprimir (reduzido)</button>
@@ -1865,6 +1860,18 @@
       🕓 "🔥 Urgentes" esconde "Iniciado" e "Aguardando" (não é sua vez de agir ainda)
     </label>
     <button class="modal-cancel" onclick="fecharModalMais()" style="margin-top:14px">Fechar</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-opcoes-pasta" onclick="if(event.target===this) fecharOpcoesPasta()">
+  <div class="modal">
+    <h3 id="opcoes-pasta-titulo">⋯ Opções da pasta</h3>
+    <button class="menu-mais-item" onclick="fecharOpcoesPasta(); abrirModalCategorias()">📁 Ver divisões desta pasta</button>
+    <button class="menu-mais-item" onclick="fecharOpcoesPasta(); abrirModalNovaPasta(abaAtual)">📋 Copiar esta pasta inteira (cria uma pasta nova)</button>
+    <button class="menu-mais-item" onclick="fecharOpcoesPasta(); renomearPasta()">✏️ Renomear esta pasta</button>
+    <button class="menu-mais-item" onclick="fecharOpcoesPasta(); adicionarTagNaPasta()">🏷️ Adicionar uma tag em todas as tarefas desta pasta</button>
+    <button class="menu-mais-item" onclick="fecharOpcoesPasta(); ordenarPastasAZ()">🔤 Pastas em ordem alfabética</button>
+    <button class="modal-cancel" onclick="fecharOpcoesPasta()" style="margin-top:14px">Fechar</button>
   </div>
 </div>
 
@@ -1977,7 +1984,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v13';
+const APP_VERSION = 'v14';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
@@ -2070,6 +2077,17 @@ function abrirModalMais() {
 
 function fecharModalMais() {
   document.getElementById('modal-mais').classList.remove('open');
+}
+
+function abrirOpcoesPasta() {
+  if (typeof fecharSidebar === 'function') fecharSidebar();
+  const nome = (ABA_LABEL && ABA_LABEL[abaAtual]) || abaAtual;
+  document.getElementById('opcoes-pasta-titulo').textContent = '⋯ Opções da pasta — ' + nome;
+  document.getElementById('modal-opcoes-pasta').classList.add('open');
+}
+
+function fecharOpcoesPasta() {
+  document.getElementById('modal-opcoes-pasta').classList.remove('open');
 }
 
 // origemPadrao (opcional): já deixa marcada a pasta a copiar — usado pelo "Copiar esta pasta inteira" do menu Mais
@@ -2740,7 +2758,7 @@ function renderTabs() {
   `;
   }).join('');
   const sidebar = document.getElementById('sidebar-pastas');
-  sidebar.innerHTML = `<div class="sidebar-titulo">PASTAS</div>${html}<div class="sidebar-nova-pasta" style="order:9999" onclick="abrirModalNovaPasta()">➕ Nova pasta</div>`;
+  sidebar.innerHTML = `<div class="sidebar-titulo">PASTAS</div>${html}<div class="sidebar-nova-pasta" style="order:9999" onclick="abrirModalNovaPasta()">➕ Nova pasta</div><div class="sidebar-nova-pasta" style="order:10000" onclick="abrirOpcoesPasta()">⋯ Opções da pasta</div>`;
   document.querySelectorAll('.sidebar-item').forEach(w => {
     w.addEventListener('pointerdown', onTabPointerDown);
   });
