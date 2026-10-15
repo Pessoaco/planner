@@ -1792,6 +1792,8 @@
     <div class="form-group">
       <label>Observação (opcional)</label>
       <textarea id="f-obs" placeholder="Detalhes adicionais..."></textarea>
+      <div id="obs-lista-resumo" class="meta-lista" style="display:none;margin-top:2px"></div>
+      <button type="button" class="menu-mais-item" id="btn-obs-lista" style="display:none;margin-top:6px" onclick="obsParaLista()">☑ Transformar em lista de itens (com quadradinho para marcar)</button>
     </div>
 
     <div class="form-group" id="f-status-group" style="display:none">
@@ -2012,7 +2014,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v15';
+const APP_VERSION = 'v17';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
@@ -3728,6 +3730,9 @@ async function openAddModal() {
     showToast('⏳ Carregando divisões...');
     await loadData();
   }
+  document.getElementById('btn-obs-lista').style.display = 'none';
+  document.getElementById('obs-lista-resumo').style.display = 'none';
+  document.getElementById('f-obs').style.display = '';
   document.getElementById('modal-add-title').textContent = '✏️ Nova tarefa';
   document.getElementById('btn-salvar').textContent = 'Salvar tarefa';
   document.getElementById('f-aba').disabled = false;
@@ -3858,6 +3863,15 @@ async function openEditModal(t) {
   document.getElementById('f-envolvido').value = t.Envolvido || '';
   document.getElementById('f-tag').value = t.Tag || '';
   document.getElementById('f-obs').value = t['Observação'] || '';
+  const btnObsLista = document.getElementById('btn-obs-lista');
+  btnObsLista.style.display = '';
+  const ehLista = ehListaObs(t['Observação']);
+  // Se já é lista, o texto cru ("- [ ] item") fica escondido: a lista se vê e se mexe na janela própria
+  document.getElementById('f-obs').style.display = ehLista ? 'none' : '';
+  const resumoForm = document.getElementById('obs-lista-resumo');
+  resumoForm.style.display = ehLista ? '' : 'none';
+  if (ehLista) resumoForm.textContent = '☑ ' + resumoListaObs(t['Observação']).replace(' — abrir lista', '');
+  btnObsLista.textContent = ehLista ? '☑ Abrir a lista (marcar itens, ⭐, enviar)' : '☑ Transformar em lista de itens (com quadradinho para marcar)';
   document.getElementById('f-data').value = parseDataParaInput(t['Data Prevista']);
   document.getElementById('f-hora').value = (t.Hora || '').trim().substring(0, 5);
   document.getElementById('f-data-fim').value = parseDataParaInput(t['Data Fim']);
@@ -4348,6 +4362,16 @@ function escLista(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&l
 let listaAba = null, listaId = null, listaLinhas = [], listaTimer = null;
 
 function tarefaDaLista() { return (allData[listaAba] || []).find(t => String(t.ID) === String(listaId)); }
+
+// Botão dentro do formulário de editar: guarda o texto digitado na observação e abre a lista dessa tarefa
+async function obsParaLista() {
+  const aba = editandoAba, id = editandoId;
+  const t = (allData[aba] || []).find(x => String(x.ID) === String(id));
+  if (!t) return;
+  t['Observação'] = document.getElementById('f-obs').value.trim();
+  closeAddModal();
+  abrirLista(aba, id, true);
+}
 
 function abrirLista(aba, id, converter) {
   listaAba = aba; listaId = id;
