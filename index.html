@@ -175,6 +175,17 @@
   .sidebar-item.active .sidebar-tab { width: 9px; }
   .sidebar-item.dragging { opacity: 0.85; box-shadow: 0 4px 10px rgba(0,0,0,0.2); background: var(--gray-light); }
 
+  /* ----- Lista marcável (observação com itens "- [ ] ...") ----- */
+  .meta-lista { cursor:pointer; background:var(--primary-bg, #eef2ff); color:var(--primary, #4f46e5); border-radius:8px; padding:3px 9px; font-weight:600; }
+  .lista-item { display:flex; align-items:center; gap:8px; padding:8px 4px; border-bottom:1px solid var(--border, #e5e7eb); }
+  .lista-item input[type=checkbox] { width:20px; height:20px; flex:none; cursor:pointer; }
+  .lista-item .lista-txt { flex:1; word-break:break-word; }
+  .lista-item.feito .lista-txt { text-decoration:line-through; opacity:.55; }
+  .lista-item button { background:none; border:none; font-size:18px; cursor:pointer; padding:2px 6px; opacity:.45; }
+  .lista-item button.on { opacity:1; }
+  .lista-sep { font-size:12px; font-weight:700; color:var(--text-muted, #6b7280); margin:12px 0 2px; }
+  .lista-add { display:flex; gap:6px; margin:10px 0; }
+  .lista-add input { flex:1; }
   .sidebar-nova-pasta {
     display: flex;
     align-items: center;
@@ -1778,6 +1789,11 @@
       </div>
     </div>
 
+    <div class="form-group">
+      <label>Observação (opcional)</label>
+      <textarea id="f-obs" placeholder="Detalhes adicionais..."></textarea>
+    </div>
+
     <div class="form-group" id="f-status-group" style="display:none">
       <label>Status</label>
       <select id="f-status" onchange="atualizarCampoDataConclusao()">
@@ -1806,10 +1822,6 @@
       <input type="text" id="f-tag" placeholder="Ex: ODOO">
     </div>
 
-    <div class="form-group">
-      <label>Observação (opcional)</label>
-      <textarea id="f-obs" placeholder="Detalhes adicionais..."></textarea>
-    </div>
 
     <button class="btn-lembrete-modal" id="btn-lembrete-modal" onclick="enviarLembreteModal()" style="display:none">🔔 Notificar novamente</button>
 
@@ -1840,10 +1852,26 @@
 <div class="modal-overlay" id="modal-acoes-tarefa" onclick="if(event.target===this) fecharMenuAcoesTarefa()">
   <div class="modal">
     <h3>⋯ Mais ações</h3>
+    <button class="menu-mais-item" id="btn-acoes-lista">☑ Abrir lista</button>
     <button class="menu-mais-item" id="btn-acoes-duplicar">📄 Duplicar tarefa</button>
     <button class="menu-mais-item" id="btn-acoes-compartilhar">↗️ Compartilhar no WhatsApp</button>
     <button class="menu-mais-item" id="btn-acoes-lembrete" style="display:none"></button>
     <button class="modal-cancel" onclick="fecharMenuAcoesTarefa()" style="margin-top:14px">Fechar</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-lista" onclick="if(event.target===this) fecharLista()">
+  <div class="modal">
+    <h3 id="lista-titulo">☑ Lista</h3>
+    <div id="lista-resumo" style="font-size:13px;color:var(--text-muted);margin-bottom:4px"></div>
+    <div class="lista-add">
+      <textarea id="lista-novo" rows="2" style="min-height:0" placeholder="Novo item (Enter adiciona). Pode colar vários, um por linha" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();adicionarItemLista()}" onpaste="setTimeout(adicionarItemLista,0)"></textarea>
+      <button class="menu-mais-item" style="width:auto;margin:0" onclick="adicionarItemLista()">➕</button>
+    </div>
+    <div id="lista-corpo"></div>
+    <button class="menu-mais-item" onclick="enviarLista('tudo')">📤 Enviar a lista toda (⭐ primeiro)</button>
+    <button class="menu-mais-item" onclick="enviarLista('estrelas')">⭐ Enviar só o que tem estrela</button>
+    <button class="modal-cancel" onclick="fecharLista()" style="margin-top:14px">Fechar</button>
   </div>
 </div>
 
@@ -1984,7 +2012,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v14';
+const APP_VERSION = 'v15';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
@@ -3362,8 +3390,11 @@ function cardHtml(t) {
   // Corta por quantidade de caracteres (não só por pixel) — nome até 55, observação até 90 na lista
   const cortar = (txt, max) => txt && txt.length > max ? txt.slice(0, max).trimEnd() + '…' : txt;
   const nomeExibido = emLista ? cortar(t.Tarefa, 55) : t.Tarefa;
-  const observacaoHtml = t.Observação
-    ? `<span class="meta-item meta-obs">💬 ${emLista ? cortar(t.Observação, 90) : t.Observação}</span>`
+  const resumoLista = ehListaObs(t.Observação) ? resumoListaObs(t.Observação) : null;
+  const observacaoHtml = resumoLista
+    ? `<span class="meta-item meta-lista" onclick="event.stopPropagation(); abrirLista('${t._aba}','${t.ID}')">☑ ${resumoLista}</span>`
+    : t.Observação
+    ?`<span class="meta-item meta-obs">💬 ${emLista ? cortar(t.Observação, 90) : t.Observação}</span>`
     : '';
 
   const metaHtml = meta.length || observacaoHtml
@@ -3611,6 +3642,9 @@ async function desfazerStatus(id, btn, aba) {
 
 // Menu "⋯" por tarefa — junta Duplicar/Compartilhar/Lembrete pra não poluir o card
 function abrirMenuAcoesTarefa(t) {
+  const btnLista = document.getElementById('btn-acoes-lista');
+  btnLista.textContent = ehListaObs(t['Observação']) ? '☑ Abrir lista' : (t['Observação'] ? '☑ Transformar a observação em lista' : '☑ Criar lista nesta tarefa');
+  btnLista.onclick = () => { fecharMenuAcoesTarefa(); abrirLista(t._aba, t.ID, true); };
   document.getElementById('btn-acoes-duplicar').onclick = () => { fecharMenuAcoesTarefa(); duplicarTarefa(t); };
   document.getElementById('btn-acoes-compartilhar').onclick = () => { fecharMenuAcoesTarefa(); compartilharTarefa(t); };
 
@@ -4274,6 +4308,148 @@ async function salvarTarefa() {
     btn.disabled = false;
     btn.textContent = textoOriginal;
   }
+}
+
+// ===== LISTA MARCÁVEL =====
+// A lista fica na própria Observação, em texto simples (uma linha por item):  "- [ ] item", "- [x] item comprado",
+// "- [ ] ⭐ item prioridade". Assim continua legível na planilha e no WhatsApp, e tarefas antigas não mudam.
+function ehListaObs(obs) { return /^\s*-\s*\[[ xX]\]/m.test(String(obs || '')); }
+
+function parseListaObs(obs) {
+  return String(obs || '').split('\n').map(l => {
+    const m = l.match(/^\s*-\s*\[( |x|X)\]\s?(.*)$/);
+    if (!m) return { item: false, texto: l };
+    let tx = m[2].trim();
+    const estrela = tx.startsWith('⭐');
+    if (estrela) tx = tx.replace(/^⭐\s*/, '');
+    return { item: true, feito: m[1] !== ' ', estrela, texto: tx };
+  }).filter(x => x.item || x.texto.trim());
+}
+
+function serializarListaObs(linhas) {
+  return linhas.map(i => i.item ? `- [${i.feito ? 'x' : ' '}] ${i.estrela ? '⭐ ' : ''}${i.texto}` : i.texto).join('\n');
+}
+
+function resumoListaObs(obs) {
+  const itens = parseListaObs(obs).filter(i => i.item);
+  const feitos = itens.filter(i => i.feito).length;
+  const estrelas = itens.filter(i => i.estrela && !i.feito).length;
+  return `${feitos} de ${itens.length} marcados${estrelas ? ` · ⭐ ${estrelas}` : ''} — abrir lista`;
+}
+
+// Texto livre (uma linha por item) -> itens de lista. Tira marcadores como "•", "-", "*".
+function textoParaItensLista(txt) {
+  return String(txt || '').split('\n').map(l => l.replace(/^\s*[-•*·]\s+/, '').trim()).filter(Boolean)
+    .map(t => ({ item: true, feito: false, estrela: t.startsWith('⭐'), texto: t.replace(/^⭐\s*/, '') }));
+}
+
+function escLista(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+let listaAba = null, listaId = null, listaLinhas = [], listaTimer = null;
+
+function tarefaDaLista() { return (allData[listaAba] || []).find(t => String(t.ID) === String(listaId)); }
+
+function abrirLista(aba, id, converter) {
+  listaAba = aba; listaId = id;
+  const t = tarefaDaLista();
+  if (!t) { showToast('⚠️ Tarefa não encontrada — use Atualizar'); return; }
+  if (ehListaObs(t['Observação'])) {
+    listaLinhas = parseListaObs(t['Observação']);
+  } else {
+    // Observação comum: cada linha vira um item (nada se perde, o texto continua igual)
+    listaLinhas = textoParaItensLista(t['Observação']);
+    if (converter && listaLinhas.length) salvarListaAgora();
+  }
+  document.getElementById('lista-titulo').textContent = '☑ ' + (t.Tarefa || 'Lista');
+  document.getElementById('lista-novo').value = '';
+  renderLista();
+  document.getElementById('modal-lista').classList.add('open');
+}
+
+function fecharLista() {
+  document.getElementById('modal-lista').classList.remove('open');
+  if (listaTimer) { clearTimeout(listaTimer); listaTimer = null; salvarListaAgora(); }
+  renderMantendoScroll();
+}
+
+function renderLista() {
+  const itens = listaLinhas.map((l, i) => ({ ...l, i })).filter(l => l.item);
+  const feitos = itens.filter(l => l.feito).length;
+  document.getElementById('lista-resumo').textContent = itens.length
+    ? `${feitos} de ${itens.length} marcados · ⭐ = fazer/comprar primeiro` : 'Lista vazia — escreva o primeiro item abaixo.';
+  const linha = l => `<div class="lista-item${l.feito ? ' feito' : ''}">
+      <input type="checkbox" ${l.feito ? 'checked' : ''} onchange="alternarItemLista(${l.i})">
+      <span class="lista-txt">${escLista(l.texto)}</span>
+      <button class="${l.estrela ? 'on' : ''}" onclick="estrelaItemLista(${l.i})" title="Prioridade">⭐</button>
+      <button onclick="removerItemLista(${l.i})" title="Tirar da lista">✕</button>
+    </div>`;
+  const estrelas = itens.filter(l => !l.feito && l.estrela);
+  const outros = itens.filter(l => !l.feito && !l.estrela);
+  const comprados = itens.filter(l => l.feito);
+  let html = '';
+  if (estrelas.length) html += `<div class="lista-sep">⭐ PRIMEIRO</div>` + estrelas.map(linha).join('');
+  if (outros.length) html += (estrelas.length ? `<div class="lista-sep">DEPOIS</div>` : '') + outros.map(linha).join('');
+  if (comprados.length) html += `<div class="lista-sep">✔ JÁ MARCADOS</div>` + comprados.map(linha).join('');
+  const notas = listaLinhas.filter(l => !l.item);
+  if (notas.length) html += `<div class="lista-sep">NOTAS</div>` + notas.map(n => `<div style="padding:4px;font-size:13px">${escLista(n.texto)}</div>`).join('');
+  document.getElementById('lista-corpo').innerHTML = html;
+}
+
+function salvarListaDepois() {
+  renderLista();
+  const t = tarefaDaLista();
+  if (t) t['Observação'] = serializarListaObs(listaLinhas);
+  if (listaTimer) clearTimeout(listaTimer);
+  listaTimer = setTimeout(() => { listaTimer = null; salvarListaAgora(); }, 700);
+}
+
+async function salvarListaAgora() {
+  const t = tarefaDaLista();
+  if (!t) return;
+  const obs = serializarListaObs(listaLinhas);
+  t['Observação'] = obs;
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'editTask', aba: listaAba, id: listaId, fields: { 'Observação': obs } })
+    });
+    const data = JSON.parse(await res.text());
+    if (!data.ok) showToast('⚠️ Não consegui salvar a lista: ' + (data.error || 'tente de novo'));
+  } catch (e) {
+    showToast('⚠️ Sem conexão — a última marcação pode não ter sido salva');
+  }
+}
+
+function alternarItemLista(i) { listaLinhas[i].feito = !listaLinhas[i].feito; salvarListaDepois(); }
+function estrelaItemLista(i) { listaLinhas[i].estrela = !listaLinhas[i].estrela; salvarListaDepois(); }
+function removerItemLista(i) {
+  if (!confirm('Tirar "' + listaLinhas[i].texto + '" da lista?')) return;
+  listaLinhas.splice(i, 1); salvarListaDepois();
+}
+function adicionarItemLista() {
+  const campo = document.getElementById('lista-novo');
+  const novos = textoParaItensLista(campo.value);
+  if (!novos.length) return;
+  listaLinhas.push(...novos);
+  campo.value = '';
+  salvarListaDepois();
+  campo.focus();
+}
+
+// "tudo": ⭐ primeiro e depois o resto (só o que ainda falta). "estrelas": só o que tem ⭐ e falta.
+function enviarLista(modo) {
+  const t = tarefaDaLista();
+  const faltam = listaLinhas.filter(l => l.item && !l.feito);
+  const est = faltam.filter(l => l.estrela), resto = faltam.filter(l => !l.estrela);
+  if (modo === 'estrelas' && !est.length) { showToast('⭐ Nenhum item com estrela — toque na ⭐ dos itens que vêm primeiro'); return; }
+  let msg = `*📋 ${t ? t.Tarefa : 'Lista'}*\n`;
+  if (modo === 'estrelas') {
+    msg += '\n⭐ *Prioridade:*\n' + est.map(l => `⬜ ${l.texto}`).join('\n');
+  } else {
+    if (est.length) msg += '\n⭐ *PRIMEIRO (prioridade):*\n' + est.map(l => `⬜ ⭐ ${l.texto}`).join('\n') + '\n';
+    if (resto.length) msg += (est.length ? '\n*Depois:*\n' : '\n') + resto.map(l => `⬜ ${l.texto}`).join('\n');
+  }
+  abrirWhatsappCompartilhar(msg);
 }
 
 // ===== PRINT =====
