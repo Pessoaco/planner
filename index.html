@@ -1803,8 +1803,14 @@
     <div class="form-group">
       <label>Observação (opcional)</label>
       <textarea id="f-obs" placeholder="Detalhes adicionais..."></textarea>
-      <div id="obs-lista-resumo" class="meta-lista" style="display:none;margin-top:2px"></div>
-      <button type="button" class="menu-mais-item" id="btn-obs-lista" style="display:none;margin-top:6px" onclick="obsParaLista()">☑ Transformar em lista de itens (com quadradinho para marcar)</button>
+      <div id="obs-lista-editor" style="display:none">
+        <div id="obs-lista-itens"></div>
+        <div class="lista-add">
+          <input type="text" id="obs-lista-novo" placeholder="+ Novo item (toque Enter para adicionar)" onkeydown="if(event.key==='Enter'){event.preventDefault();addItemForm()}">
+          <button type="button" class="menu-mais-item" style="width:auto;margin:0" onclick="addItemForm()">➕</button>
+        </div>
+      </div>
+      <button type="button" class="menu-mais-item" id="btn-obs-lista" style="margin-top:6px" onclick="alternarListaNoForm()">☑ Mostrar como lista (com quadradinhos)</button>
     </div>
 
     <div class="form-group" id="f-status-group" style="display:none">
@@ -2027,7 +2033,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v24';
+const APP_VERSION = 'v26';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
@@ -2918,6 +2924,31 @@ async function buscarJsonComRetentativa(url, tentativas, aoTentar) {
   throw ultimoErro || new Error('Sem resposta do servidor');
 }
 
+// ----- Última cópia no aparelho -----
+// O servidor do Google às vezes leva 10-30 s pra responder. Então o app guarda a última cópia das tarefas neste
+// aparelho e MOSTRA NA HORA, enquanto busca a versão nova por trás (como o Keep). As edições continuam indo pro servidor.
+let cacheTimer = null;
+function agendarSalvarCache() {
+  if (cacheTimer) clearTimeout(cacheTimer);
+  cacheTimer = setTimeout(() => {
+    cacheTimer = null;
+    try { if (Object.keys(allData).length) localStorage.setItem('dadosCache', JSON.stringify({ t: Date.now(), d: allData })); } catch (e) {}
+  }, 2000);
+}
+function restaurarCacheDados() {
+  try {
+    const c = JSON.parse(localStorage.getItem('dadosCache') || 'null');
+    if (c && c.d && typeof c.d === 'object') { allData = c.d; return true; }
+  } catch (e) {}
+  return false;
+}
+const ultimaBusca = {}; // pasta -> quando foi buscada no servidor pela última vez (pra não pedir de novo a cada clique)
+
+function mostrarErroPasta(aba) {
+  document.getElementById('main').innerHTML =
+    `<div class="empty">⚠️ O servidor do Google está demorando para responder.<br><small>Suas tarefas estão salvas, só não deu para buscar agora.</small><br><br><button class="menu-mais-item" style="width:auto;display:inline-block" onclick="switchTab('${String(aba).replace(/'/g, "\\'")}')">🔄 Tentar de novo</button></div>`;
+}
+
 async function loadData() {
   // Guarda onde a pessoa estava rolando pra não voltar pro topo depois de atualizar
   const scrollY = window.scrollY;
@@ -2925,7 +2956,9 @@ async function loadData() {
   // ainda carrega, o resultado tem que ser salvo na pasta certa, não na que está aberta
   // no momento em que a resposta chega (senão os dados vêm trocados)
   const abaAlvo = abaAtual;
-  showLoading();
+  const temCopia = Array.isArray(allData[abaAlvo]);
+  if (!temCopia) showLoading();
+  else document.getElementById('last-update').textContent = 'Atualizando...';
   try {
     // Carrega rápido só a pasta atual + a lista de pastas, numa chamada SÓ (o Apps Script não
     // roda 2 chamadas em paralelo de verdade, então juntar tudo evita pagar a demora de "aquecer" 2x)
@@ -2938,6 +2971,7 @@ async function loadData() {
 
     if (resp.ok && Array.isArray(resp.pastas)) sincronizarPastas(resp.pastas);
     allData[abaAlvo] = resp.dados || [];
+    ultimaBusca[abaAlvo] = Date.now();
 
     const now = new Date().toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     document.getElementById('last-update').textContent = `Atualizado às ${now}`;
@@ -2947,16 +2981,25 @@ async function loadData() {
 
     carregarRestanteDasPastas();
   } catch (e) {
-    document.getElementById('main').innerHTML =
-      `<div class="empty">⚠️ Erro ao carregar dados. Verifique sua conexão e tente novamente.<br><small>${e.message}</small></div>`;
+    if (temCopia) {
+      // Já tem a última cópia na tela: não apaga, só avisa
+      document.getElementById('last-update').textContent = 'Mostrando a última cópia (servidor lento)';
+      showToast('⏳ O servidor está lento — mostrando a última cópia. Use Atualizar daqui a pouco.');
+    } else {
+      document.getElementById('main').innerHTML =
+        `<div class="empty">⚠️ Erro ao carregar dados. Verifique sua conexão e tente novamente.<br><small>${e.message}</small><br><br><button class="menu-mais-item" style="width:auto;display:inline-block" onclick="loadData()">🔄 Tentar de novo</button></div>`;
+    }
   }
 }
 
 // Busca os dados das outras pastas em segundo plano, sem travar a tela que já está aberta
 async function carregarRestanteDasPastas() {
   try {
-    const res = await fetch(`${API_URL}?action=getAll`, { cache: 'no-store' });
-    allData = JSON.parse(await res.text());
+    const todos = await buscarJsonComRetentativa(`${API_URL}?action=getAll`, 2);
+    if (todos && typeof todos === 'object' && !Array.isArray(todos)) {
+      // Pastas que o servidor devolveu: atualiza. (Não joga fora a que está na tela se ela não veio.)
+      Object.keys(todos).forEach(k => { if (Array.isArray(todos[k])) { allData[k] = todos[k]; ultimaBusca[k] = Date.now(); } });
+    }
     popularBotoesEnvolvidos();
     render();
   } catch (e) {
@@ -3009,9 +3052,21 @@ async function switchTab(aba) {
       // Mesma chamada da abertura do app (getInicial): é a que sempre respondeu direitinho nos testes
       const resp = await buscarJsonComRetentativa(`${API_URL}?action=getInicial&aba=${encodeURIComponent(aba)}`, 3);
       allData[aba] = resp.dados || [];
+      ultimaBusca[aba] = Date.now();
     } catch (e) {
-      allData[aba] = [];
+      // NÃO grava pasta vazia: parecia que a pasta estava sem tarefas. Mostra o aviso com botão de tentar de novo.
+      if (abaAtual === aba) mostrarErroPasta(aba);
+      return;
     }
+  } else if (!ultimaBusca[aba] || Date.now() - ultimaBusca[aba] > 60000) {
+    // Já tem a última cópia: mostra na hora e atualiza por trás (no máximo 1 vez por minuto por pasta)
+    ultimaBusca[aba] = Date.now();
+    buscarJsonComRetentativa(`${API_URL}?action=getInicial&aba=${encodeURIComponent(aba)}`, 2).then(resp => {
+      if (resp && Array.isArray(resp.dados)) {
+        allData[aba] = resp.dados;
+        if (abaAtual === aba && !modoSelecao) { popularBotoesEnvolvidos(); renderMantendoScroll(); }
+      }
+    }).catch(() => { ultimaBusca[aba] = 0; });
   }
 
   popularBotoesEnvolvidos();
@@ -3099,6 +3154,7 @@ function renderMantendoScroll() {
 
 // ===== RENDER =====
 function render() {
+  agendarSalvarCache();
   atualizarPastaAtualMobile();
   // Qualquer filtro ativo (prioridade, status, envolvido ou busca) passa a procurar em todas as abas
   if (algumFiltroAtivo()) {
@@ -3768,11 +3824,8 @@ async function openAddModal() {
     showToast('⏳ Carregando divisões...');
     await loadData();
   }
-  const btnNova = document.getElementById('btn-obs-lista');
-  btnNova.style.display = '';
-  btnNova.textContent = '☑ Transformar em lista de itens (escreva um item por linha)';
-  document.getElementById('obs-lista-resumo').style.display = 'none';
-  document.getElementById('f-obs').style.display = '';
+  document.getElementById('f-obs').value = '';
+  desligarListaNoForm(true);
   document.getElementById('modal-add-title').textContent = '✏️ Nova tarefa';
   document.getElementById('btn-salvar').textContent = 'Salvar tarefa';
   document.getElementById('f-aba').disabled = false;
@@ -3903,15 +3956,8 @@ async function openEditModal(t) {
   document.getElementById('f-envolvido').value = t.Envolvido || '';
   document.getElementById('f-tag').value = t.Tag || '';
   document.getElementById('f-obs').value = t['Observação'] || '';
-  const btnObsLista = document.getElementById('btn-obs-lista');
-  btnObsLista.style.display = '';
-  const ehLista = ehListaObs(t['Observação']);
-  // Se já é lista, o texto cru ("- [ ] item") fica escondido: a lista se vê e se mexe na janela própria
-  document.getElementById('f-obs').style.display = ehLista ? 'none' : '';
-  const resumoForm = document.getElementById('obs-lista-resumo');
-  resumoForm.style.display = ehLista ? '' : 'none';
-  if (ehLista) resumoForm.textContent = '☑ ' + resumoListaObs(t['Observação']).replace(' — abrir lista', '');
-  btnObsLista.textContent = ehLista ? '☑ Abrir a lista (marcar itens, ⭐, enviar)' : '☑ Transformar em lista de itens (com quadradinho para marcar)';
+  // Tarefa que já é lista abre direto como lista (quadradinhos); as outras abrem com a caixa de texto de sempre
+  if (ehListaObs(t['Observação'])) ligarListaNoForm(); else desligarListaNoForm(true);
   document.getElementById('f-data').value = parseDataParaInput(t['Data Prevista']);
   document.getElementById('f-hora').value = (t.Hora || '').trim().substring(0, 5);
   document.getElementById('f-data-fim').value = parseDataParaInput(t['Data Fim']);
@@ -4273,6 +4319,7 @@ async function salvarTarefa() {
   const dataFimRaw = document.getElementById('f-data-fim').value;
   const dataFim = dataFimRaw ? formatarDataBR(dataFimRaw) : '';
   const horaFim = document.getElementById('f-hora-fim').value;
+  sincronizarListaDoForm();
   const obs = document.getElementById('f-obs').value.trim();
   const envolvido = document.getElementById('f-envolvido').value.trim();
   const tag = document.getElementById('f-tag').value.trim();
@@ -4416,27 +4463,62 @@ let listaAba = null, listaId = null, listaLinhas = [], listaTimer = null;
 
 function tarefaDaLista() { return (allData[listaAba] || []).find(t => String(t.ID) === String(listaId)); }
 
-// Botão dentro do formulário de editar: guarda o texto digitado na observação e abre a lista dessa tarefa
-async function obsParaLista() {
-  if (!editandoId) {
-    // Tarefa nova: ainda não existe na planilha, então só prepara o texto como lista; ao salvar ela já nasce lista
-    const campo = document.getElementById('f-obs');
-    const itens = textoParaItensLista(campo.value);
-    if (!itens.length) { showToast('✍️ Escreva os itens (um por linha) e toque de novo'); campo.focus(); return; }
-    campo.value = serializarListaObs(itens);
-    campo.style.display = 'none';
-    const resumo = document.getElementById('obs-lista-resumo');
-    resumo.style.display = '';
-    resumo.textContent = `☑ ${itens.length} ite${itens.length === 1 ? 'm' : 'ns'} — ao salvar, vira lista (aí você marca, põe ⭐ e envia)`;
-    document.getElementById('btn-obs-lista').style.display = 'none';
-    return;
-  }
-  const aba = editandoAba, id = editandoId;
-  const t = (allData[aba] || []).find(x => String(x.ID) === String(id));
-  if (!t) return;
-  t['Observação'] = document.getElementById('f-obs').value.trim();
-  closeAddModal();
-  abrirLista(aba, id, true);
+// ----- Lista direto no formulário (nova tarefa ou editar), sem precisar salvar antes -----
+// "Mostrar como lista" troca a caixa de texto por itens com quadradinho, ⭐ e ✕. Ao salvar, a Observação já vai no formato de lista.
+let formListaOn = false, formListaLinhas = [];
+
+function alternarListaNoForm() { if (formListaOn) desligarListaNoForm(); else ligarListaNoForm(); }
+
+function ligarListaNoForm() {
+  const campo = document.getElementById('f-obs');
+  const txt = campo.value;
+  formListaLinhas = ehListaObs(txt) ? parseListaObs(txt) : textoParaItensLista(txt);
+  formListaOn = true;
+  campo.style.display = 'none';
+  document.getElementById('obs-lista-editor').style.display = '';
+  document.getElementById('btn-obs-lista').textContent = '↩ Voltar para texto normal';
+  renderListaForm();
+  if (!formListaLinhas.length) document.getElementById('obs-lista-novo').focus();
+}
+
+// semFoco=true: só reseta o estado (usado ao abrir o formulário)
+function desligarListaNoForm(reset) {
+  const campo = document.getElementById('f-obs');
+  if (formListaOn && !reset) campo.value = formListaLinhas.filter(l => l.texto.trim()).map(l => l.texto.trim()).join('\n');
+  formListaOn = false; formListaLinhas = [];
+  campo.style.display = '';
+  document.getElementById('obs-lista-editor').style.display = 'none';
+  document.getElementById('btn-obs-lista').textContent = '☑ Mostrar como lista (com quadradinhos)';
+}
+
+// Antes de salvar: se está em modo lista, a Observação vira o texto da lista
+function sincronizarListaDoForm() {
+  if (!formListaOn) return;
+  addItemForm(); // o que foi digitado em "Novo item" e não deu Enter também entra
+  const itens = formListaLinhas.filter(l => String(l.texto).trim());
+  document.getElementById('f-obs').value = serializarListaObs(itens.map(l => ({ ...l, texto: l.texto.trim() })));
+}
+
+function renderListaForm() {
+  document.getElementById('obs-lista-itens').innerHTML = formListaLinhas.map((l, i) => l.item
+    ? `<div class="lista-item${l.feito ? ' feito' : ''}">
+        <input type="checkbox" ${l.feito ? 'checked' : ''} onchange="formListaLinhas[${i}].feito=this.checked;renderListaForm()">
+        <input type="text" class="lista-txt" value="${escLista(l.texto).replace(/"/g, '&quot;')}" style="border:none;background:transparent;font:inherit;padding:4px 0"
+          oninput="formListaLinhas[${i}].texto=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('obs-lista-novo').focus()}">
+        <button type="button" class="${l.estrela ? 'on' : ''}" onclick="formListaLinhas[${i}].estrela=!formListaLinhas[${i}].estrela;renderListaForm()" title="Prioridade (fazer/comprar primeiro)">${l.estrela ? '⭐' : '☆'}</button>
+        <button type="button" onclick="formListaLinhas.splice(${i},1);renderListaForm()" title="Tirar da lista">✕</button>
+      </div>`
+    : `<div style="padding:4px;font-size:13px;color:var(--text-muted)">${escLista(l.texto)}</div>`).join('');
+}
+
+function addItemForm() {
+  const campo = document.getElementById('obs-lista-novo');
+  const novos = textoParaItensLista(campo.value);
+  if (!novos.length) return;
+  formListaLinhas.push(...novos);
+  campo.value = '';
+  renderListaForm();
+  campo.focus();
 }
 
 function abrirLista(aba, id, converter) {
@@ -4643,6 +4725,8 @@ try {
 } catch (e) {}
 renderTabs();
 aplicarVista();
+// Mostra na hora a última cópia guardada neste aparelho (se existir); a busca nova roda por trás
+if (restaurarCacheDados() && Array.isArray(allData[abaAtual])) { popularBotoesEnvolvidos(); render(); }
 loadData();
 
 // Mede a altura real do cabeçalho e mantém uma variável CSS atualizada — usada pra sidebar
