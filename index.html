@@ -185,9 +185,11 @@
   }
   .lista-item { display:flex; align-items:center; gap:8px; padding:8px 4px; border-bottom:1px solid var(--border, #e5e7eb); }
   .lista-item input[type=checkbox] { width:20px; height:20px; flex:none; cursor:pointer; }
-  .lista-item .lista-txt { flex:1; word-break:break-word; min-width:0; }
+  .lista-item .lista-txt { flex:2 1 130px; word-break:break-word; min-width:0; }
   .lista-item { flex-wrap:wrap; }
-  .lista-item .lista-qtd { width:170px; max-width:100%; flex:1 1 140px; font-size:13px; padding:4px 6px; border:1px solid var(--border, #e5e7eb); border-radius:8px; background:transparent; }
+  .lista-item .lista-qtd { flex:1 1 110px; min-width:0; max-width:100%; font-size:13px; padding:4px 6px; border:1px solid var(--border, #e5e7eb); border-radius:8px; background:transparent; }
+  .btn-estrela-nova { background:none; border:none; font-size:24px; cursor:pointer; color:#9ca3af; opacity:.7; padding:0 4px; }
+  .btn-estrela-nova.on { opacity:1; }
   .lista-item.feito .lista-txt { text-decoration:line-through; opacity:.55; }
   .lista-item button { background:none; border:none; font-size:20px; cursor:pointer; padding:2px 6px; opacity:.6; color:#9ca3af; }
   .lista-item button.on { opacity:1; }
@@ -1732,7 +1734,10 @@
   <div class="modal">
     <div class="modal-titulo-linha">
       <h3 id="modal-add-title">✏️ Nova tarefa</h3>
-      <button class="modal-fechar-x" onclick="closeAddModal()" title="Fechar sem salvar">✕</button>
+      <span style="display:flex;gap:8px;align-items:center;margin-bottom:16px">
+        <button class="modal-fechar-x" style="background:var(--primary,#4f46e5);color:#fff" onclick="salvarTarefa()" title="Salvar">💾</button>
+        <button class="modal-fechar-x" onclick="closeAddModal()" title="Fechar sem salvar">✕</button>
+      </span>
     </div>
 
     <div class="form-group">
@@ -1808,9 +1813,11 @@
       <textarea id="f-obs" placeholder="Detalhes adicionais..."></textarea>
       <div id="obs-lista-editor" style="display:none">
         <div id="obs-lista-itens"></div>
-        <div class="lista-add">
-          <input type="text" id="obs-lista-novo" placeholder="+ Novo item (toque Enter para adicionar)" onkeydown="if(event.key==='Enter'){event.preventDefault();addItemForm()}">
-          <button type="button" class="menu-mais-item" style="width:auto;margin:0" onclick="addItemForm()">➕</button>
+        <div class="lista-add" style="flex-wrap:wrap;align-items:center">
+          <input type="text" id="obs-lista-novo" placeholder="+ Novo item" style="flex:2 1 150px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();addItemForm()}">
+          <input type="text" id="obs-lista-novo-qtd" placeholder="qtd / obs" style="flex:1 1 110px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();addItemForm()}">
+          <button type="button" class="btn-estrela-nova" id="obs-lista-novo-est" onclick="alternarEstrelaNova('form')" title="Prioridade (fazer/comprar primeiro)">☆</button>
+          <button type="button" class="menu-mais-item" style="width:auto;margin:0" onclick="addItemForm()" title="Adicionar item">➕</button>
         </div>
       </div>
       <button type="button" class="menu-mais-item" id="btn-obs-lista" style="margin-top:6px" onclick="alternarListaNoForm()">☑ Mostrar como lista (com quadradinhos)</button>
@@ -1894,11 +1901,16 @@
 
 <div class="modal-overlay" id="modal-lista" onclick="if(event.target===this) fecharLista()">
   <div class="modal">
-    <h3 id="lista-titulo">☑ Lista</h3>
+    <div class="modal-titulo-linha">
+      <h3 id="lista-titulo">☑ Lista</h3>
+      <button class="modal-fechar-x" onclick="fecharLista()" title="Fechar" style="margin-bottom:16px">✕</button>
+    </div>
     <div id="lista-resumo" style="font-size:13px;color:var(--text-muted);margin-bottom:4px"></div>
-    <div class="lista-add">
-      <textarea id="lista-novo" rows="2" style="min-height:0" placeholder="Novo item (Enter adiciona). Pode colar vários, um por linha" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();adicionarItemLista()}" onpaste="setTimeout(adicionarItemLista,0)"></textarea>
-      <button class="menu-mais-item" style="width:auto;margin:0" onclick="adicionarItemLista()">➕</button>
+    <div class="lista-add" style="flex-wrap:wrap;align-items:center">
+      <input type="text" id="lista-novo" placeholder="+ Novo item" style="flex:2 1 150px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarItemLista()}" onpaste="colarVariosItens(event)">
+      <input type="text" id="lista-novo-qtd" placeholder="qtd / obs" style="flex:1 1 110px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarItemLista()}">
+      <button type="button" class="btn-estrela-nova" id="lista-novo-est" onclick="alternarEstrelaNova('lista')" title="Prioridade (fazer/comprar primeiro)">☆</button>
+      <button class="menu-mais-item" style="width:auto;margin:0" onclick="adicionarItemLista()" title="Adicionar item">➕</button>
     </div>
     <div id="lista-corpo"></div>
     <button class="menu-mais-item" onclick="recomecarLista(true)">🔄 Nova compra: desmarcar tudo e tirar as estrelas</button>
@@ -2046,7 +2058,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v29';
+const APP_VERSION = 'v31';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
@@ -4584,10 +4596,10 @@ function renderListaForm() {
 
 function addItemForm() {
   const campo = document.getElementById('obs-lista-novo');
-  const novos = textoParaItensLista(campo.value);
+  const novos = lerNovoItem('obs-lista-novo', 'obs-lista-novo-qtd', 'form');
   if (!novos.length) return;
   formListaLinhas.push(...novos);
-  campo.value = '';
+  campo.value = ''; document.getElementById('obs-lista-novo-qtd').value = ''; resetEstrelaNova('form');
   renderListaForm();
   campo.focus();
 }
@@ -4700,12 +4712,41 @@ function removerItemLista(i) {
   if (!confirm('Tirar "' + listaLinhas[i].texto + '" da lista?')) return;
   listaLinhas.splice(i, 1); salvarListaDepois();
 }
-function adicionarItemLista() {
+// Campo de uma linha só não aceita quebra de linha; então, se o que foi colado tem várias linhas (lista do caderno),
+// trata aqui e adiciona um item por linha. Texto de uma linha cola normal.
+function colarVariosItens(ev) {
+  const t = (ev.clipboardData || window.clipboardData).getData('text') || '';
+  if (!/\n/.test(t.trim())) return;
+  ev.preventDefault();
+  adicionarItemLista(t);
+}
+
+// Estrela da linha "novo item" (nome + qtd/obs + ⭐ na mesma linha, depois Enter ou ➕)
+const estrelaNova = { form: false, lista: false };
+function alternarEstrelaNova(qual) {
+  estrelaNova[qual] = !estrelaNova[qual];
+  const btn = document.getElementById(qual === 'form' ? 'obs-lista-novo-est' : 'lista-novo-est');
+  btn.textContent = estrelaNova[qual] ? '⭐' : '☆';
+  btn.classList.toggle('on', estrelaNova[qual]);
+}
+function resetEstrelaNova(qual) { estrelaNova[qual] = true; alternarEstrelaNova(qual); }
+
+// Lê a linha "novo item": nome + quantidade/observação + estrela. Se o nome tem várias linhas (colado), vira um item por linha.
+function lerNovoItem(idNome, idQtd, qual, textoColado) {
+  const itens = textoParaItensLista(typeof textoColado === 'string' ? textoColado : document.getElementById(idNome).value);
+  if (itens.length === 1 && typeof textoColado !== 'string') {
+    itens[0].texto = juntarItemLista(itens[0].texto, document.getElementById(idQtd).value);
+    itens[0].estrela = itens[0].estrela || estrelaNova[qual];
+  }
+  return itens;
+}
+
+function adicionarItemLista(textoColado) {
   const campo = document.getElementById('lista-novo');
-  const novos = textoParaItensLista(campo.value);
+  const novos = lerNovoItem('lista-novo', 'lista-novo-qtd', 'lista', textoColado);
   if (!novos.length) return;
   listaLinhas.push(...novos);
-  campo.value = '';
+  campo.value = ''; document.getElementById('lista-novo-qtd').value = ''; resetEstrelaNova('lista');
   salvarListaDepois();
   campo.focus();
 }
