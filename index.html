@@ -185,7 +185,9 @@
   }
   .lista-item { display:flex; align-items:center; gap:8px; padding:8px 4px; border-bottom:1px solid var(--border, #e5e7eb); }
   .lista-item input[type=checkbox] { width:20px; height:20px; flex:none; cursor:pointer; }
-  .lista-item .lista-txt { flex:1; word-break:break-word; }
+  .lista-item .lista-txt { flex:1; word-break:break-word; min-width:0; }
+  .lista-item { flex-wrap:wrap; }
+  .lista-item .lista-qtd { width:170px; max-width:100%; flex:1 1 140px; font-size:13px; padding:4px 6px; border:1px solid var(--border, #e5e7eb); border-radius:8px; background:transparent; }
   .lista-item.feito .lista-txt { text-decoration:line-through; opacity:.55; }
   .lista-item button { background:none; border:none; font-size:20px; cursor:pointer; padding:2px 6px; opacity:.6; color:#9ca3af; }
   .lista-item button.on { opacity:1; }
@@ -2044,7 +2046,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v27';
+const APP_VERSION = 'v29';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
@@ -4570,8 +4572,10 @@ function renderListaForm() {
   document.getElementById('obs-lista-itens').innerHTML = formListaLinhas.map((l, i) => l.item
     ? `<div class="lista-item${l.feito ? ' feito' : ''}">
         <input type="checkbox" ${l.feito ? 'checked' : ''} onchange="formListaLinhas[${i}].feito=this.checked;renderListaForm()">
-        <input type="text" class="lista-txt" value="${escLista(l.texto).replace(/"/g, '&quot;')}" style="border:none;background:transparent;font:inherit;padding:4px 0"
-          oninput="formListaLinhas[${i}].texto=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('obs-lista-novo').focus()}">
+        <input type="text" class="lista-txt" value="${escLista(partesItemLista(l.texto).nome).replace(/"/g, '&quot;')}" style="border:none;background:transparent;font:inherit;padding:4px 0"
+          oninput="formListaLinhas[${i}].texto=juntarItemLista(this.value, partesItemLista(formListaLinhas[${i}].texto).qtd)" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('obs-lista-novo').focus()}">
+        <input type="text" class="lista-qtd" placeholder="qtd / obs" value="${escLista(partesItemLista(l.texto).qtd).replace(/"/g, '&quot;')}" title="Quantidade ou observação (ex: 2 kg · para a escola, pode ser barato)"
+          oninput="formListaLinhas[${i}].texto=juntarItemLista(partesItemLista(formListaLinhas[${i}].texto).nome, this.value)">
         <button type="button" class="${l.estrela ? 'on' : ''}" onclick="formListaLinhas[${i}].estrela=!formListaLinhas[${i}].estrela;renderListaForm()" title="Prioridade (fazer/comprar primeiro)">${l.estrela ? '⭐' : '☆'}</button>
         <button type="button" onclick="formListaLinhas.splice(${i},1);renderListaForm()" title="Tirar da lista">✕</button>
       </div>`
@@ -4618,7 +4622,8 @@ function renderLista() {
     ? `${feitos} de ${itens.length} marcados · ⭐ = fazer/comprar primeiro` : 'Lista vazia — escreva o primeiro item abaixo.';
   const linha = l => `<div class="lista-item${l.feito ? ' feito' : ''}">
       <input type="checkbox" ${l.feito ? 'checked' : ''} onchange="alternarItemLista(${l.i})">
-      <span class="lista-txt">${escLista(l.texto)}</span>
+      <span class="lista-txt">${escLista(partesItemLista(l.texto).nome)}</span>
+      <input type="text" class="lista-qtd" placeholder="qtd / obs" value="${escLista(partesItemLista(l.texto).qtd).replace(/"/g, '&quot;')}" onchange="qtdItemLista(${l.i}, this.value)" title="Quantidade ou observação (ex: 2 kg · para a escola, pode ser barato)">
       <button class="${l.estrela ? 'on' : ''}" onclick="estrelaItemLista(${l.i})" title="${l.estrela ? 'Tirar a estrela' : 'Marcar como prioridade (comprar primeiro)'}">${l.estrela ? '⭐' : '☆'}</button>
       <button onclick="removerItemLista(${l.i})" title="Tirar da lista">✕</button>
     </div>`;
@@ -4671,6 +4676,22 @@ function recomecarLista(desmarcarTudo) {
   itens.forEach(l => { l.estrela = false; if (desmarcarTudo) l.feito = false; });
   salvarListaDepois();
   showToast(desmarcarTudo ? '🔄 Lista pronta para a próxima compra' : '⭐ Estrelas removidas');
+}
+
+// Quantidade do item: fica no próprio texto, depois de " — " (ex: "Cebola — 2 kg"). Assim aparece igual na planilha,
+// no WhatsApp e na impressão, sem coluna nova.
+function partesItemLista(texto) {
+  const t = String(texto || '');
+  const i = t.lastIndexOf(' — ');
+  return i < 0 ? { nome: t, qtd: '' } : { nome: t.slice(0, i), qtd: t.slice(i + 3) };
+}
+function juntarItemLista(nome, qtd) {
+  qtd = String(qtd || '').trim();
+  return qtd ? `${nome} — ${qtd}` : nome;
+}
+function qtdItemLista(i, qtd) {
+  listaLinhas[i].texto = juntarItemLista(partesItemLista(listaLinhas[i].texto).nome, qtd);
+  salvarListaDepois();
 }
 
 function alternarItemLista(i) { listaLinhas[i].feito = !listaLinhas[i].feito; salvarListaDepois(); }
