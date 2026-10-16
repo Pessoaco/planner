@@ -1871,6 +1871,8 @@
       <button class="menu-mais-item" style="width:auto;margin:0" onclick="adicionarItemLista()">➕</button>
     </div>
     <div id="lista-corpo"></div>
+    <button class="menu-mais-item" onclick="recomecarLista(true)">🔄 Nova compra: desmarcar tudo e tirar as estrelas</button>
+    <button class="menu-mais-item" onclick="recomecarLista(false)">⭐ Só tirar as estrelas (mantém o que está marcado)</button>
     <button class="menu-mais-item" onclick="enviarLista('tudo')">📤 Enviar a lista toda (⭐ primeiro)</button>
     <button class="menu-mais-item" onclick="enviarLista('estrelas')">⭐ Enviar só o que tem estrela</button>
     <button class="modal-cancel" onclick="fecharLista()" style="margin-top:14px">Fechar</button>
@@ -2014,7 +2016,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v17';
+const APP_VERSION = 'v20';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
@@ -3292,6 +3294,7 @@ function renderTarefas(tarefas) {
           <button class="btn-nova-na-divisao" onclick="event.stopPropagation(); abrirNovaTarefaNaDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').replace(/'/g,"\\'")}')" title="Nova tarefa nesta divisão">➕</button>
           ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao" onclick="event.stopPropagation(); abrirCopiarDivisaoDe('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Copiar esta divisão inteira (abertas e concluídas) como lista modelo">📋</button>` : ''}
           ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao" onclick="event.stopPropagation(); selecionarDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Selecionar (ou desmarcar) todas as tarefas desta divisão que aparecem na tela">☑</button>` : ''}
+          ${String(items[0]['Divisão'] || '').trim() && !cruzado ? `<button class="btn-nova-na-divisao" onclick="event.stopPropagation(); juntarDivisaoEmLista('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Juntar todas as tarefas desta divisão numa lista só (um item por tarefa)">☰</button>` : ''}
           <span class="categoria-count">${items.length}</span>
         </div>
         ${itemsHtml}
@@ -3730,7 +3733,9 @@ async function openAddModal() {
     showToast('⏳ Carregando divisões...');
     await loadData();
   }
-  document.getElementById('btn-obs-lista').style.display = 'none';
+  const btnNova = document.getElementById('btn-obs-lista');
+  btnNova.style.display = '';
+  btnNova.textContent = '☑ Transformar em lista de itens (escreva um item por linha)';
   document.getElementById('obs-lista-resumo').style.display = 'none';
   document.getElementById('f-obs').style.display = '';
   document.getElementById('modal-add-title').textContent = '✏️ Nova tarefa';
@@ -4353,7 +4358,10 @@ function resumoListaObs(obs) {
 
 // Texto livre (uma linha por item) -> itens de lista. Tira marcadores como "•", "-", "*".
 function textoParaItensLista(txt) {
-  return String(txt || '').split('\n').map(l => l.replace(/^\s*[-•*·]\s+/, '').trim()).filter(Boolean)
+  txt = String(txt || '');
+  // Uma linha só com vírgulas ("Farinha de Rosca, Lasanha, fita dental") vira um item por vírgula
+  if (!txt.includes('\n') && (txt.match(/[,;]/g) || []).length >= 2) txt = txt.split(/[,;]/).join('\n');
+  return txt.split('\n').map(l => l.replace(/^\s*[-•*·]\s+/, '').trim()).filter(Boolean)
     .map(t => ({ item: true, feito: false, estrela: t.startsWith('⭐'), texto: t.replace(/^⭐\s*/, '') }));
 }
 
@@ -4365,6 +4373,19 @@ function tarefaDaLista() { return (allData[listaAba] || []).find(t => String(t.I
 
 // Botão dentro do formulário de editar: guarda o texto digitado na observação e abre a lista dessa tarefa
 async function obsParaLista() {
+  if (!editandoId) {
+    // Tarefa nova: ainda não existe na planilha, então só prepara o texto como lista; ao salvar ela já nasce lista
+    const campo = document.getElementById('f-obs');
+    const itens = textoParaItensLista(campo.value);
+    if (!itens.length) { showToast('✍️ Escreva os itens (um por linha) e toque de novo'); campo.focus(); return; }
+    campo.value = serializarListaObs(itens);
+    campo.style.display = 'none';
+    const resumo = document.getElementById('obs-lista-resumo');
+    resumo.style.display = '';
+    resumo.textContent = `☑ ${itens.length} ite${itens.length === 1 ? 'm' : 'ns'} — ao salvar, vira lista (aí você marca, põe ⭐ e envia)`;
+    document.getElementById('btn-obs-lista').style.display = 'none';
+    return;
+  }
   const aba = editandoAba, id = editandoId;
   const t = (allData[aba] || []).find(x => String(x.ID) === String(id));
   if (!t) return;
@@ -4444,6 +4465,20 @@ async function salvarListaAgora() {
   }
 }
 
+// Lista que se repete (compras do mês): os itens ficam, só zera as marcações. desmarcarTudo=false limpa só as estrelas.
+function recomecarLista(desmarcarTudo) {
+  const itens = listaLinhas.filter(l => l.item);
+  const comEstrela = itens.filter(l => l.estrela).length, marcados = itens.filter(l => l.feito).length;
+  if (!comEstrela && !(desmarcarTudo && marcados)) { showToast('ℹ️ Não tem nada para limpar'); return; }
+  const msg = desmarcarTudo
+    ? `Começar uma nova compra? Vou desmarcar ${marcados} item(ns) e tirar ${comEstrela} estrela(s). Os itens continuam na lista.`
+    : `Tirar as ${comEstrela} estrela(s)? Os itens e o que está marcado continuam como estão.`;
+  if (!confirm(msg)) return;
+  itens.forEach(l => { l.estrela = false; if (desmarcarTudo) l.feito = false; });
+  salvarListaDepois();
+  showToast(desmarcarTudo ? '🔄 Lista pronta para a próxima compra' : '⭐ Estrelas removidas');
+}
+
 function alternarItemLista(i) { listaLinhas[i].feito = !listaLinhas[i].feito; salvarListaDepois(); }
 function estrelaItemLista(i) { listaLinhas[i].estrela = !listaLinhas[i].estrela; salvarListaDepois(); }
 function removerItemLista(i) {
@@ -4458,6 +4493,53 @@ function adicionarItemLista() {
   campo.value = '';
   salvarListaDepois();
   campo.focus();
+}
+
+// Botão ☰ do título da divisão: junta TODAS as tarefas da divisão numa tarefa-lista só (uma tarefa por item vira um item).
+// Concluída -> item marcado; Urgente -> ⭐; título começando com "***" -> vira nota (cabeçalho de seção).
+// Só apaga as tarefas antigas depois que a lista nova foi criada com sucesso.
+async function juntarDivisaoEmLista(aba, divisao) {
+  const originais = (allData[aba] || []).filter(t => String(t['Divisão'] || '').trim() === divisao && String(t.Tarefa || '').trim());
+  if (originais.length < 2) { showToast('ℹ️ Essa divisão tem menos de 2 tarefas — nada para juntar'); return; }
+  const rotulo = ABA_LABEL[aba] || aba;
+  const tag = prompt(`Juntar as ${originais.length} tarefas da divisão "${divisao}" (pasta ${rotulo}) numa lista só.\n\nCada tarefa vira um item: as concluídas ficam marcadas e as Urgentes ganham ⭐.\n\nTag para a lista (opcional, ex: Comprar). Deixe vazio para não pôr tag:`, '');
+  if (tag === null) return;
+  if (!confirm(`Criar a lista "${divisao}" com ${originais.length} itens e APAGAR as ${originais.length} tarefas antigas?\n(Essa parte não tem volta.)`)) return;
+
+  const linhas = originais.map(t => {
+    let nome = String(t.Tarefa).trim();
+    if (/^\*{2,}/.test(nome)) return { item: false, texto: nome.replace(/^\*+\s*/, '').replace(/\*+$/, '').trim() };
+    nome = nome.replace(/^\[\s*\]\s*/, '').replace(/^[-•·]\s+/, '').trim();
+    const obs = String(t['Observação'] || '').trim();
+    if (obs && !ehListaObs(obs) && obs.length <= 60 && !obs.includes('\n')) nome += ` (${obs})`;
+    return { item: true, feito: t.Status === 'Concluído', estrela: t.Prioridade === 'Urgente' && t.Status !== 'Concluído', texto: nome };
+  });
+  const fields = {
+    Tarefa: divisao, 'Divisão': divisao, Prioridade: 'Média', Status: 'Aberto', Tag: tag.trim(),
+    'Observação': serializarListaObs(linhas)
+  };
+  showToast('⏳ Criando a lista...');
+  try {
+    const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'addTask', aba, fields }) });
+    const data = JSON.parse(await res.text());
+    if (!data.ok) { showToast('❌ Não consegui criar a lista: ' + (data.error || 'tente de novo') + ' — nada foi apagado'); return; }
+    if (!allData[aba]) allData[aba] = [];
+    allData[aba].push(Object.assign({ ID: data.id, _aba: aba, 'Data criação': new Date().toLocaleDateString('pt-BR') }, fields));
+
+    const itens = originais.map(t => ({ aba, id: t.ID }));
+    const resDel = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'deleteTasks', itens }) });
+    const del = JSON.parse(await resDel.text());
+    if (del.ok) {
+      const naoAchadas = new Set((del.naoEncontradas || []).map(String));
+      allData[aba] = allData[aba].filter(t => !originais.some(o => o === t) || naoAchadas.has(String(t.ID)));
+      showToast(`✅ Lista "${divisao}" criada com ${linhas.length} itens`);
+    } else {
+      showToast('⚠️ Lista criada, mas as tarefas antigas NÃO foram apagadas (' + (del.error || 'erro') + '). Use Atualizar e apague depois.');
+    }
+  } catch (e) {
+    showToast('❌ Erro de conexão — use Atualizar pra conferir');
+  }
+  renderMantendoScroll();
 }
 
 // "tudo": ⭐ primeiro e depois o resto (só o que ainda falta). "estrelas": só o que tem ⭐ e falta.
