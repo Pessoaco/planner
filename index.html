@@ -177,6 +177,12 @@
 
   /* ----- Lista marcável (observação com itens "- [ ] ...") ----- */
   .meta-lista { cursor:pointer; background:var(--primary-bg, #eef2ff); color:var(--primary, #4f46e5); border-radius:8px; padding:3px 9px; font-weight:600; }
+  .lista-print { display:none; }
+  @media print {
+    .meta-lista { display:none !important; }
+    .lista-print { display:block; column-count:2; column-gap:14px; flex:1 1 100%; min-width:260px; font-size:10px; line-height:1.35; }
+    .lista-print div { break-inside:avoid; }
+  }
   .lista-item { display:flex; align-items:center; gap:8px; padding:8px 4px; border-bottom:1px solid var(--border, #e5e7eb); }
   .lista-item input[type=checkbox] { width:20px; height:20px; flex:none; cursor:pointer; }
   .lista-item .lista-txt { flex:1; word-break:break-word; }
@@ -1504,6 +1510,9 @@
     /* No PC a sidebar fica sempre visível, fixa ao lado — sem gaveta, sem overlay */
     .btn-toggle-sidebar { display: none; }
     .sidebar-overlay { display: none !important; }
+    /* Altura mínima = a tela toda: com poucas tarefas (ou "Carregando...") a área ficava mais baixa que a lista
+       de pastas, e a lista "subia" por cima do cabeçalho pra caber dentro dela */
+    .app-body { min-height: calc(100vh - var(--header-h, 0px)); }
     .sidebar-pastas {
       position: sticky;
       /* Gruda embaixo do cabeçalho, não em cima dele — a altura real é medida via JS
@@ -1512,7 +1521,9 @@
       /* max-height (não height fixo): perto do fim da página o espaço restante encolhe,
          e uma altura fixa forçava o sticky a "subir" por cima do cabeçalho pra caber.
          Com max-height ela só ocupa o que o conteúdo (lista de pastas) realmente precisa. */
-      max-height: calc(100vh - var(--header-h, 0px));
+      /* Desconta também o rodapé de contadores (fica depois da área principal): no fim da página o espaço do sticky
+         acaba onde o rodapé começa, e uma lista mais alta que isso subia por cima do cabeçalho. Se não couber, rola por dentro. */
+      max-height: calc(100vh - var(--header-h, 0px) - var(--footer-h, 0px));
       overflow-y: auto;
       width: 170px;
       flex-shrink: 0;
@@ -2016,7 +2027,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v20';
+const APP_VERSION = 'v23';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
@@ -2884,6 +2895,29 @@ if ('serviceWorker' in navigator) {
 }
 
 // ===== DADOS =====
+// O Apps Script às vezes demora ~30 s e devolve uma página de erro (HTML, "Página não encontrada") em vez dos dados,
+// mesmo estando tudo certo — numa nova tentativa costuma responder em poucos segundos. Então: espera no máximo
+// 20 s por tentativa, e se vier erro/HTML/atraso tenta de novo (até "tentativas" vezes) antes de desistir.
+async function buscarJsonComRetentativa(url, tentativas, aoTentar) {
+  let ultimoErro;
+  for (let n = 1; n <= tentativas; n++) {
+    if (n > 1 && aoTentar) aoTentar(n);
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 20000);
+    try {
+      const res = await fetch(url, { cache: 'no-store', signal: ctrl.signal });
+      const dados = JSON.parse(await res.text());
+      clearTimeout(timer);
+      return dados;
+    } catch (e) {
+      clearTimeout(timer);
+      ultimoErro = e;
+      if (n < tentativas) await new Promise(r => setTimeout(r, 1500));
+    }
+  }
+  throw ultimoErro || new Error('Sem resposta do servidor');
+}
+
 async function loadData() {
   // Guarda onde a pessoa estava rolando pra não voltar pro topo depois de atualizar
   const scrollY = window.scrollY;
@@ -2895,8 +2929,10 @@ async function loadData() {
   try {
     // Carrega rápido só a pasta atual + a lista de pastas, numa chamada SÓ (o Apps Script não
     // roda 2 chamadas em paralelo de verdade, então juntar tudo evita pagar a demora de "aquecer" 2x)
-    const res = await fetch(`${API_URL}?action=getInicial&aba=${encodeURIComponent(abaAlvo)}`, { cache: 'no-store' });
-    const resp = JSON.parse(await res.text());
+    const resp = await buscarJsonComRetentativa(`${API_URL}?action=getInicial&aba=${encodeURIComponent(abaAlvo)}`, 4, n => {
+      const el = document.querySelector('#main .loading');
+      if (el) el.lastChild.textContent = `Carregando tarefas... (o servidor demorou, tentando de novo — tentativa ${n})`;
+    });
     // Code.gs antigo (ainda não republicado) não manda "versao" — o rodapé mostra isso
     serverVersion = resp.versao || 'desatualizado';
 
@@ -2971,8 +3007,7 @@ async function switchTab(aba) {
     showLoading();
     try {
       // Mesma chamada da abertura do app (getInicial): é a que sempre respondeu direitinho nos testes
-      const res = await fetch(`${API_URL}?action=getInicial&aba=${encodeURIComponent(aba)}`, { cache: 'no-store' });
-      const resp = JSON.parse(await res.text());
+      const resp = await buscarJsonComRetentativa(`${API_URL}?action=getInicial&aba=${encodeURIComponent(aba)}`, 3);
       allData[aba] = resp.dados || [];
     } catch (e) {
       allData[aba] = [];
@@ -3397,7 +3432,7 @@ function cardHtml(t) {
   const nomeExibido = emLista ? cortar(t.Tarefa, 55) : t.Tarefa;
   const resumoLista = ehListaObs(t.Observação) ? resumoListaObs(t.Observação) : null;
   const observacaoHtml = resumoLista
-    ? `<span class="meta-item meta-lista" onclick="event.stopPropagation(); abrirLista('${t._aba}','${t.ID}')">☑ ${resumoLista}</span>`
+    ? `<span class="meta-item meta-lista" onclick="event.stopPropagation(); abrirLista('${t._aba}','${t.ID}')">☑ ${resumoLista}</span>${listaParaImpressaoHtml(t.Observação)}`
     : t.Observação
     ?`<span class="meta-item meta-obs">💬 ${emLista ? cortar(t.Observação, 90) : t.Observação}</span>`
     : '';
@@ -4365,6 +4400,16 @@ function textoParaItensLista(txt) {
     .map(t => ({ item: true, feito: false, estrela: t.startsWith('⭐'), texto: t.replace(/^⭐\s*/, '') }));
 }
 
+// Só aparece na impressão (na tela fica escondido): os itens que ainda faltam, ⭐ primeiro, em duas colunas.
+function listaParaImpressaoHtml(obs) {
+  const itens = parseListaObs(obs).filter(l => l.item);
+  const faltam = itens.filter(l => !l.feito);
+  const ordem = [...faltam.filter(l => l.estrela), ...faltam.filter(l => !l.estrela)];
+  const feitos = itens.length - faltam.length;
+  const linhas = ordem.map(l => `<div>☐ ${l.estrela ? '⭐ ' : ''}${escLista(l.texto)}</div>`).join('');
+  return `<div class="lista-print">${linhas || '<div>✔ tudo marcado</div>'}${feitos && faltam.length ? `<div style="color:#888">(✔ ${feitos} já marcado${feitos === 1 ? '' : 's'})</div>` : ''}</div>`;
+}
+
 function escLista(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
 let listaAba = null, listaId = null, listaLinhas = [], listaTimer = null;
@@ -4606,11 +4651,15 @@ loadData();
 function atualizarAlturaHeader() {
   const header = document.querySelector('.header');
   if (header) document.documentElement.style.setProperty('--header-h', header.getBoundingClientRect().height + 'px');
+  const rodape = document.getElementById('counters');
+  if (rodape) document.documentElement.style.setProperty('--footer-h', rodape.getBoundingClientRect().height + 'px');
 }
 atualizarAlturaHeader();
 window.addEventListener('resize', atualizarAlturaHeader);
 if (window.ResizeObserver) {
   new ResizeObserver(atualizarAlturaHeader).observe(document.querySelector('.header'));
+  const rodapeObs = document.getElementById('counters');
+  if (rodapeObs) new ResizeObserver(atualizarAlturaHeader).observe(rodapeObs);
 }
 </script>
 </body>
