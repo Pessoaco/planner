@@ -1721,6 +1721,7 @@
     <button class="btn-selecao-concluir" onclick="concluirSelecionadas()">✅ Concluir</button>
     <button class="btn-selecao-concluir" onclick="compartilharSelecionadas()">📤 Compartilhar</button>
     <button class="btn-selecao-concluir" onclick="abrirModalMover()">📁 Mover</button>
+    <button class="btn-selecao-concluir" onclick="abrirPorEmLista()" title="Coloca as tarefas selecionadas como itens dentro de uma lista que já existe">☑ Pôr em lista</button>
     <button class="btn-selecao-excluir" onclick="excluirSelecionadas()">🗑️ Excluir</button>
   </div>
 </div>
@@ -1872,10 +1873,20 @@
   <div class="modal">
     <h3>⋯ Mais ações</h3>
     <button class="menu-mais-item" id="btn-acoes-lista">☑ Abrir lista</button>
+    <button class="menu-mais-item" id="btn-acoes-em-lista">☑ Pôr dentro de uma lista</button>
     <button class="menu-mais-item" id="btn-acoes-duplicar">📄 Duplicar tarefa</button>
     <button class="menu-mais-item" id="btn-acoes-compartilhar">↗️ Compartilhar no WhatsApp</button>
     <button class="menu-mais-item" id="btn-acoes-lembrete" style="display:none"></button>
     <button class="modal-cancel" onclick="fecharMenuAcoesTarefa()" style="margin-top:14px">Fechar</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-por-em-lista" onclick="if(event.target===this) fecharPorEmLista()">
+  <div class="modal">
+    <h3>☑ Pôr dentro de qual lista?</h3>
+    <div id="por-em-lista-resumo" style="font-size:13px;color:var(--text-muted);margin-bottom:8px"></div>
+    <div id="por-em-lista-opcoes"></div>
+    <button class="modal-cancel" onclick="fecharPorEmLista()" style="margin-top:14px">Cancelar</button>
   </div>
 </div>
 
@@ -2033,7 +2044,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v26';
+const APP_VERSION = 'v27';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
@@ -3741,6 +3752,9 @@ function abrirMenuAcoesTarefa(t) {
   const btnLista = document.getElementById('btn-acoes-lista');
   btnLista.textContent = ehListaObs(t['Observação']) ? '☑ Abrir lista' : (t['Observação'] ? '☑ Transformar a observação em lista' : '☑ Criar lista nesta tarefa');
   btnLista.onclick = () => { fecharMenuAcoesTarefa(); abrirLista(t._aba, t.ID, true); };
+  const btnEmLista = document.getElementById('btn-acoes-em-lista');
+  btnEmLista.style.display = ehListaObs(t['Observação']) ? 'none' : '';
+  btnEmLista.onclick = () => { fecharMenuAcoesTarefa(); abrirPorEmLista([{ aba: t._aba, id: t.ID }]); };
   document.getElementById('btn-acoes-duplicar').onclick = () => { fecharMenuAcoesTarefa(); duplicarTarefa(t); };
   document.getElementById('btn-acoes-compartilhar').onclick = () => { fecharMenuAcoesTarefa(); compartilharTarefa(t); };
 
@@ -4462,6 +4476,59 @@ function escLista(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&l
 let listaAba = null, listaId = null, listaLinhas = [], listaTimer = null;
 
 function tarefaDaLista() { return (allData[listaAba] || []).find(t => String(t.ID) === String(listaId)); }
+
+// ----- Pôr tarefas soltas DENTRO de uma lista que já existe (ex: "Sabonete rosto" -> lista Farmácia) -----
+// Cada tarefa vira um item (⭐ se era Urgente); depois a tarefa solta é apagada. A lista é atualizada ANTES de apagar.
+let porEmListaItens = [];
+function abrirPorEmLista(itens) {
+  porEmListaItens = itens || [...selecionados].map(chave => { const [aba, id] = chave.split('::'); return { aba, id }; });
+  if (!porEmListaItens.length) { showToast('⚠️ Selecione ao menos uma tarefa'); return; }
+  const soltas = porEmListaItens.map(({ aba, id }) => (allData[aba] || []).find(t => String(t.ID) === String(id))).filter(t => t && !ehListaObs(t['Observação']));
+  if (!soltas.length) { showToast('ℹ️ As tarefas escolhidas já são listas'); return; }
+  const listas = [];
+  Object.keys(allData).forEach(aba => (allData[aba] || []).forEach(t => {
+    if (t.Status !== 'Concluído' && ehListaObs(t['Observação']) && !porEmListaItens.some(i => i.aba === aba && String(i.id) === String(t.ID))) listas.push({ ...t, _aba: aba });
+  }));
+  document.getElementById('por-em-lista-resumo').textContent = `${soltas.length} tarefa${soltas.length === 1 ? '' : 's'} (${soltas.slice(0, 3).map(t => t.Tarefa).join(', ')}${soltas.length > 3 ? '…' : ''}) vira${soltas.length === 1 ? '' : 'm'} item da lista que você escolher.`;
+  document.getElementById('por-em-lista-opcoes').innerHTML = listas.length
+    ? listas.map((l, i) => `<button class="menu-mais-item" onclick="confirmarPorEmLista(${i})">☑ ${escLista(l.Tarefa)} <small style="color:var(--text-muted)">— ${escLista(ABA_LABEL[l._aba] || l._aba)}${l['Divisão'] ? ' / ' + escLista(l['Divisão']) : ''} · ${parseListaObs(l['Observação']).filter(x => x.item).length} itens</small></button>`).join('')
+    : '<p style="font-size:13px">Você ainda não tem nenhuma lista. Abra uma tarefa e use "Mostrar como lista", ou o ☰ no título de uma divisão.</p>';
+  window._porEmListaOpcoes = listas;
+  document.getElementById('modal-por-em-lista').classList.add('open');
+}
+function fecharPorEmLista() { document.getElementById('modal-por-em-lista').classList.remove('open'); }
+
+async function confirmarPorEmLista(i) {
+  const alvo = window._porEmListaOpcoes[i];
+  const soltas = porEmListaItens.map(({ aba, id }) => (allData[aba] || []).find(t => String(t.ID) === String(id))).filter(t => t && !ehListaObs(t['Observação']));
+  if (!alvo || !soltas.length) return;
+  if (!confirm(`Pôr ${soltas.length} item(ns) dentro da lista "${alvo.Tarefa}" e apagar ${soltas.length === 1 ? 'a tarefa solta' : 'as tarefas soltas'}?`)) return;
+  fecharPorEmLista();
+  const linhas = parseListaObs(alvo['Observação']);
+  soltas.forEach(t => linhas.push({ item: true, feito: t.Status === 'Concluído', estrela: t.Prioridade === 'Urgente' && t.Status !== 'Concluído', texto: String(t.Tarefa).trim() }));
+  const obs = serializarListaObs(linhas);
+  showToast('⏳ Colocando na lista...');
+  try {
+    const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'editTask', aba: alvo._aba, id: alvo.ID, fields: { 'Observação': obs } }) });
+    const d = JSON.parse(await res.text());
+    if (!d.ok) { showToast('❌ Não consegui atualizar a lista: ' + (d.error || 'tente de novo') + ' — nada foi apagado'); return; }
+    const tl = (allData[alvo._aba] || []).find(t => String(t.ID) === String(alvo.ID));
+    if (tl) tl['Observação'] = obs;
+    const itensDel = soltas.map(t => ({ aba: t._aba || porEmListaItens.find(p => String(p.id) === String(t.ID)).aba, id: t.ID }));
+    const rd = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'deleteTasks', itens: itensDel }) });
+    const dd = JSON.parse(await rd.text());
+    if (dd.ok) {
+      itensDel.forEach(({ aba, id }) => { allData[aba] = (allData[aba] || []).filter(t => String(t.ID) !== String(id)); });
+      showToast(`✅ ${soltas.length} item(ns) colocado(s) na lista "${alvo.Tarefa}"`);
+    } else {
+      showToast('⚠️ Entrou na lista, mas a tarefa solta NÃO foi apagada (' + (dd.error || 'erro') + '). Apague depois.');
+    }
+  } catch (e) {
+    showToast('❌ Erro de conexão — use Atualizar pra conferir');
+  }
+  selecionados.clear(); atualizarBarraSelecao();
+  renderMantendoScroll();
+}
 
 // ----- Lista direto no formulário (nova tarefa ou editar), sem precisar salvar antes -----
 // "Mostrar como lista" troca a caixa de texto por itens com quadradinho, ⭐ e ✕. Ao salvar, a Observação já vai no formato de lista.
