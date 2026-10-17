@@ -1955,7 +1955,7 @@
   <div class="modal">
     <h3 id="opcoes-pasta-titulo">⋯ Opções da pasta</h3>
     <button class="menu-mais-item" onclick="fecharOpcoesPasta(); abrirModalCategorias()">📁 Ver divisões desta pasta</button>
-    <button class="menu-mais-item" onclick="fecharOpcoesPasta(); abrirModalNovaPasta(abaAtual)">📋 Copiar esta pasta inteira (cria uma pasta nova)</button>
+    <button class="menu-mais-item" onclick="fecharOpcoesPasta(); abrirModalNovaPasta(abaAtual)">📋 Duplicar esta pasta inteira (cria uma pasta nova)</button>
     <button class="menu-mais-item" onclick="fecharOpcoesPasta(); renomearPasta()">✏️ Renomear esta pasta</button>
     <button class="menu-mais-item" onclick="fecharOpcoesPasta(); adicionarTagNaPasta()">🏷️ Adicionar uma tag em todas as tarefas desta pasta</button>
     <button class="menu-mais-item" onclick="fecharOpcoesPasta(); ordenarPastasAZ()">🔤 Pastas em ordem alfabética</button>
@@ -1971,14 +1971,14 @@
       <input type="text" id="np-nome" placeholder="Ex: Obra 2, Curso de Inglês...">
     </div>
     <div class="form-group">
-      <label>Copiar tarefas de:</label>
+      <label>Duplicar tarefas de:</label>
       <select id="np-origem">
         <option value="">— Pasta vazia —</option>
       </select>
-      <small style="display:block;margin-top:6px;font-size:12px;color:var(--text-muted)">Ao copiar, vão <b>todas</b> as tarefas (abertas e concluídas) como <b>Aberto</b>, com a observação. <b>Tag</b>, datas, envolvido e agenda são limpos. A pasta original não muda.</small>
+      <small style="display:block;margin-top:6px;font-size:12px;color:var(--text-muted)">Ao duplicar, vão <b>todas</b> as tarefas (abertas e concluídas) como <b>Aberto</b>, com a observação. <b>Tag</b>, datas, envolvido e agenda são limpos. A pasta original não muda.</small>
     </div>
     <div class="form-group">
-      <label>Tag para todas as tarefas copiadas (opcional)</label>
+      <label>Tag para todas as tarefas duplicadas (opcional)</label>
       <input type="text" id="np-tag" placeholder="Ex: Obra — vazio = sem tag" autocomplete="off">
     </div>
     <div style="display:flex;gap:10px;margin-top:14px">
@@ -1990,7 +1990,7 @@
 
 <div class="modal-overlay" id="modal-copiar-div" onclick="if(event.target===this) fecharCopiarDivisao()">
   <div class="modal">
-    <h3>📋 Copiar divisão</h3>
+    <h3>📋 Duplicar divisão</h3>
     <p id="copiar-resumo" style="font-size:13px;color:var(--text-muted);margin:0 0 12px"></p>
     <div class="form-group">
       <label>Pasta de destino</label>
@@ -2001,13 +2001,13 @@
       <input type="text" id="copiar-nome" placeholder="Ex: Obra do Seu João" autocomplete="off">
     </div>
     <div class="form-group">
-      <label>Tag para todas as cópias (opcional)</label>
-      <input type="text" id="copiar-tag" placeholder="Vazio = as cópias ficam sem tag" autocomplete="off">
+      <label>Tag para todas as tarefas duplicadas (opcional)</label>
+      <input type="text" id="copiar-tag" placeholder="Vazio = as tarefas duplicadas ficam sem tag" autocomplete="off">
     </div>
-    <small style="display:block;margin:2px 0 6px;font-size:12px;color:var(--text-muted)">As cópias nascem como <b>Aberto</b>, com a observação. <b>Tag</b>, datas, concluída, envolvido e agenda são limpos. O original não muda.</small>
+    <small style="display:block;margin:2px 0 6px;font-size:12px;color:var(--text-muted)">As tarefas duplicadas nascem como <b>Aberto</b>, com a observação. <b>Tag</b>, datas, concluída, envolvido e agenda são limpos. O original não muda.</small>
     <div style="display:flex;gap:10px;margin-top:14px">
       <button class="modal-cancel" onclick="fecharCopiarDivisao()">Cancelar</button>
-      <button class="btn-salvar" id="btn-confirmar-copiar" onclick="confirmarCopiarDivisao()">Copiar</button>
+      <button class="btn-salvar" id="btn-confirmar-copiar" onclick="confirmarCopiarDivisao()">Duplicar</button>
     </div>
   </div>
 </div>
@@ -2072,7 +2072,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v36';
+const APP_VERSION = 'v37';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
@@ -3445,7 +3445,7 @@ function renderTarefas(tarefas) {
           <span class="categoria-title" style="${corAba}">${iconeCategoria(cat)} ${cat}</span>
           <span class="categoria-toggle">${colapsado ? '▶' : '▼'}</span>
           <button class="btn-nova-na-divisao" onclick="event.stopPropagation(); abrirNovaTarefaNaDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').replace(/'/g,"\\'")}')" title="Nova tarefa nesta divisão">➕</button>
-          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao" onclick="event.stopPropagation(); abrirCopiarDivisaoDe('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Copiar esta divisão inteira (abertas e concluídas) como lista modelo">📋</button>` : ''}
+          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao" onclick="event.stopPropagation(); abrirCopiarDivisaoDe('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Duplicar esta divisão inteira (abertas e concluídas) como lista modelo">📋</button>` : ''}
           ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao" onclick="event.stopPropagation(); selecionarDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Selecionar (ou desmarcar) todas as tarefas desta divisão que aparecem na tela">☑</button>` : ''}
           ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao" onclick="event.stopPropagation(); juntarDivisaoEmLista('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Juntar todas as tarefas desta divisão numa lista só (um item por tarefa)">☰</button>` : ''}
           <span class="categoria-count">${items.length}</span>
@@ -4102,7 +4102,7 @@ function linhaDivisaoHtml(aba, nome) {
   return `<li class="linha-divisao" data-aba="${aba}" data-div="${encodeURIComponent(nome)}">
     <span>${iconeCategoria(nome)} ${nome}</span>
     <span class="acoes-divisao">
-      <button class="btn-renomear-div" onclick="abrirCopiarDivisao(this)" title="Copiar esta divisão (lista modelo)">📋</button>
+      <button class="btn-renomear-div" onclick="abrirCopiarDivisao(this)" title="Duplicar esta divisão (lista modelo)">📋</button>
       <button class="btn-renomear-div" onclick="renomearDivisao(this)" title="Renomear esta divisão">✏️</button>
       <button class="btn-renomear-div" onclick="excluirDivisao(this)" title="Excluir esta divisão">🗑️</button>
     </span>
@@ -4123,7 +4123,7 @@ function abrirCopiarDivisaoDe(aba, nome) {
   const fechadas = doGrupo.filter(t => ['concluído', 'cancelado'].includes(String(t.Status || '').trim().toLowerCase())).length;
   copiarDivisaoCtx = { aba, nome };
   document.getElementById('copiar-resumo').textContent =
-    `"${nome}" (pasta ${ABA_LABEL[aba] || aba}): ${doGrupo.length} tarefa${doGrupo.length === 1 ? '' : 's'} — ${doGrupo.length - fechadas} em aberto e ${fechadas} concluída${fechadas === 1 ? '' : 's'}. Todas serão copiadas.`;
+    `"${nome}" (pasta ${ABA_LABEL[aba] || aba}): ${doGrupo.length} tarefa${doGrupo.length === 1 ? '' : 's'} — ${doGrupo.length - fechadas} em aberto e ${fechadas} concluída${fechadas === 1 ? '' : 's'}. Todas serão duplicadas.`;
   const sel = document.getElementById('copiar-destino');
   sel.innerHTML = ABAS.map(a => `<option value="${a}">${ABA_LABEL[a] || a}</option>`).join('');
   sel.value = aba;
@@ -4149,7 +4149,7 @@ async function confirmarCopiarDivisao() {
   const btn = document.getElementById('btn-confirmar-copiar');
   const textoOriginal = btn.textContent;
   btn.disabled = true;
-  btn.textContent = 'Copiando...';
+  btn.textContent = 'Duplicando...';
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
@@ -4158,7 +4158,7 @@ async function confirmarCopiarDivisao() {
     });
     const data = JSON.parse(await res.text());
     if (!data.ok) {
-      showToast('❌ ' + (data.error || 'Não foi possível copiar'));
+      showToast('❌ ' + (data.error || 'Não foi possível duplicar'));
       return;
     }
     // Atualiza a tela na hora: clona as tarefas daqui, na mesma ordem em que o servidor copiou
@@ -4179,9 +4179,9 @@ async function confirmarCopiarDivisao() {
     // Só atualiza a lista de divisões se ela já estava aberta (quando copia pelo título, não abre sozinha)
     if (document.getElementById('modal-categorias').classList.contains('open')) abrirModalCategorias(!!window.__categoriasGlobal);
     renderMantendoScroll();
-    showToast(`✅ ${data.copiadas} tarefa${data.copiadas === 1 ? '' : 's'} copiada${data.copiadas === 1 ? '' : 's'} para "${novaDivisao}" (${ABA_LABEL[destino] || destino})`);
+    showToast(`✅ ${data.copiadas} tarefa${data.copiadas === 1 ? '' : 's'} duplicada${data.copiadas === 1 ? '' : 's'} para "${novaDivisao}" (${ABA_LABEL[destino] || destino})`);
   } catch (e) {
-    showToast('❌ Erro ao copiar — use Atualizar pra conferir');
+    showToast('❌ Erro ao duplicar — use Atualizar pra conferir');
   } finally {
     btn.disabled = false;
     btn.textContent = textoOriginal;
