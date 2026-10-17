@@ -1391,7 +1391,12 @@
     .btn-nova-na-divisao,
     .check-selecao, .selecao-barra, .btn-nova-inline,
     .busca-avancada-toggle, .busca-avancada-painel,
-    .mudar-status-links { display: none !important; }
+    .mudar-status-links,
+    .link-trocar, [id^="links-prioridade-"], [id^="links-status-"] { display: none !important; } /* lápis de "trocar" não saem no papel */
+
+    /* Prioridade/Status continuam saindo, mas pequenos */
+    .badge { font-size: 8px !important; padding: 1px 5px !important; }
+    .campo-inline { gap: 2px; }
 
     body { background: white; }
 
@@ -2058,7 +2063,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v31';
+const APP_VERSION = 'v32';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
@@ -3193,6 +3198,20 @@ function render() {
   renderTarefas(tarefas);
 }
 
+// Título do papel: "Todas as pastas — tag: Comprar" quando há filtro/busca; senão o nome da pasta aberta.
+function tituloParaImpressao() {
+  if (!algumFiltroAtivo()) return ABA_LABEL[abaAtual] || abaAtual;
+  const partes = ['Todas as pastas'];
+  const tags = [...filtroTagG];
+  if (tags.length) partes.push('tag: ' + tags.join(', '));
+  if (filtroPrioridadeG.size) partes.push('prioridade: ' + [...filtroPrioridadeG].join(', '));
+  if (filtroStatusG.size) partes.push('status: ' + [...filtroStatusG].join(', '));
+  if (filtroEnvolvidoG.size) partes.push('envolvido: ' + [...filtroEnvolvidoG].join(', '));
+  const busca = (searchTerm || '').trim();
+  if (busca) partes.push('busca: ' + busca);
+  return partes.join(' — ');
+}
+
 // Mostra em qual pasta a pessoa está vendo — importante no celular, onde a barra de pastas fica escondida
 function atualizarPastaAtualMobile() {
   const el = document.getElementById('pasta-atual-mobile');
@@ -3420,7 +3439,8 @@ function renderTarefas(tarefas) {
 
   const mainEl = document.getElementById('main');
   mainEl.innerHTML = html;
-  mainEl.dataset.aba = abaAtual;
+  // Título que sai no papel: se está vendo várias pastas (tag, busca, filtro), não pode ser o nome da pasta aberta
+  mainEl.dataset.aba = tituloParaImpressao();
   // Força o navegador a recalcular o layout na hora — sem isso, às vezes os cards
   // ficam com altura/alinhamento errado até a pessoa clicar em algo de novo
   void mainEl.offsetHeight;
