@@ -180,7 +180,12 @@
   .lista-print { display:none; }
   @media print {
     .meta-lista { display:none !important; }
-    .lista-print { display:block; column-count:2; column-gap:14px; flex:1 1 100%; min-width:260px; font-size:10px; line-height:1.35; }
+    .lista-print { display:block; column-count:2; column-gap:14px; flex:1 1 100%; width:100%; min-width:260px; font-size:10px; line-height:1.35; }
+    /* Na vista em lista a coluna da observação tem só 26% e esconde o que passa dela (cortava a 2ª coluna dos itens).
+       No papel, a tarefa-lista usa a largura que sobra e nada fica escondido. */
+    #main.vista-lista .tarefa-card:has(.lista-print) { grid-template-columns: 16% 1fr auto; }
+    #main.vista-lista .tarefa-card:has(.lista-print) .tarefa-meta { overflow: visible; }
+    .lista-print div { overflow-wrap: anywhere; }
     .lista-print div { break-inside:avoid; }
   }
   .lista-item { display:flex; align-items:center; gap:8px; padding:8px 4px; border-bottom:1px solid var(--border, #e5e7eb); }
@@ -1380,7 +1385,11 @@
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
   /* PRINT STYLES */
-  @page { margin: 5mm; }
+  /* Rodapé "Página 1 / 4" (Chrome/Edge). Margem de baixo um pouco maior pra caber o número */
+  @page {
+    margin: 5mm 5mm 11mm 5mm;
+    @bottom-right { content: "Página " counter(page) " / " counter(pages); font: 9px Arial, sans-serif; color: #555; }
+  }
 
   @media print {
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -2063,7 +2072,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v32';
+const APP_VERSION = 'v34';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
