@@ -2072,7 +2072,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v34';
+const APP_VERSION = 'v36';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
@@ -3338,6 +3338,14 @@ function tarefasDaTelaAtual() {
   return filtrarTarefas(origem);
 }
 
+// Lista no Excel: quadradinhos de verdade (☐ falta, ☑ comprado), ★ nos prioritários e a ordem da impressão
+// (prioritários primeiro, depois os outros, depois os já marcados). O Excel não mostra o emoji colorido: a ★ sai preta.
+function listaParaExcel(obs) {
+  const itens = parseListaObs(obs).filter(l => l.item);
+  const ordem = [...itens.filter(l => !l.feito && l.estrela), ...itens.filter(l => !l.feito && !l.estrela), ...itens.filter(l => l.feito)];
+  return ordem.map(l => `${l.feito ? '☑' : '☐'} ${l.estrela ? '★ ' : ''}${l.texto}`).join('\n');
+}
+
 function exportarCSV(tudo) {
   const filtradas = tudo
     ? ABAS.flatMap(aba => (allData[aba] || []).map(t => ({ ...t, _aba: aba })))
@@ -3352,7 +3360,8 @@ function exportarCSV(tudo) {
   const linhas = [colunas.join(';')];
   filtradas.forEach(t => {
     linhas.push(colunas.map(c => {
-      const valor = c === 'Pasta' ? (ABA_LABEL[t._aba] || t._aba) : (t[c] || '');
+      let valor = c === 'Pasta' ? (ABA_LABEL[t._aba] || t._aba) : (t[c] || '');
+      if (c === 'Observação' && ehListaObs(valor)) valor = listaParaExcel(valor);
       return `"${String(valor).replace(/"/g, '""')}"`;
     }).join(';'));
   });
@@ -3924,6 +3933,8 @@ async function abrirNovaTarefaNaDivisao(aba, divisao) {
 
 // Monta o texto de uma tarefa pra compartilhar (WhatsApp, etc.)
 function textoTarefaParaCompartilhar(t) {
+  // Tarefa-lista: manda como lista (nome + pasta/divisão + itens), não o texto cru "- [ ] item"
+  if (ehListaObs(t['Observação'])) return montarTextoLista(t, parseListaObs(t['Observação']), 'tudo');
   let msg = `*📋 Secretária Virtual*\n\n*Tarefa:* ${t.Tarefa}`;
   if (t['Observação']) msg += `\n→ ${t['Observação']}`;
 
@@ -3945,7 +3956,12 @@ function textoTarefaParaCompartilhar(t) {
 
 // Abre o WhatsApp com o texto já pronto — a pessoa escolhe pra quem mandar
 function abrirWhatsappCompartilhar(texto) {
-  window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
+  const celular = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  if (celular) { window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank'); return; }
+  // No computador, o link wa.me passa pelo aplicativo do WhatsApp e às vezes quebra emoji (vira "�").
+  // Então: copia o texto (cola com Ctrl+V se algo vier estranho) e abre o WhatsApp Web direto, que lê o texto certo.
+  try { navigator.clipboard.writeText(texto); showToast('📋 Texto copiado — se algum símbolo vier estranho, é só colar (Ctrl+V)'); } catch (e) {}
+  window.open(`https://web.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
 }
 
 function compartilharTarefa(t) {
@@ -4828,19 +4844,30 @@ async function juntarDivisaoEmLista(aba, divisao) {
 }
 
 // "tudo": ⭐ primeiro e depois o resto (só o que ainda falta). "estrelas": só o que tem ⭐ e falta.
+// Texto da lista pra mandar no WhatsApp: nome da lista + pasta/divisão, depois os itens que ainda faltam.
+// Sem emoji de propósito: o link do WhatsApp às vezes quebra emoji (vira "�") e a ⭐ sumia. A prioridade vai por seção ("PRIMEIRO").
+// modo "tudo": PRIMEIRO (os com ⭐) e depois o resto. modo "estrelas": só os com ⭐.
+function montarTextoLista(t, linhas, modo) {
+  const faltam = linhas.filter(l => l.item && !l.feito);
+  const est = faltam.filter(l => l.estrela), resto = faltam.filter(l => !l.estrela);
+  const pasta = ABA_LABEL[t._aba] || t._aba || '';
+  const caminho = [pasta, t['Divisão']].filter(Boolean).join(' / ');
+  const item = l => `- ${l.texto}`;
+  let msg = `*${t.Tarefa}*` + (caminho ? `\n${caminho}` : '') + '\n';
+  if (modo === 'estrelas') {
+    msg += '\n*PRIORIDADE (comprar primeiro):*\n' + est.map(item).join('\n');
+  } else {
+    if (est.length) msg += '\n*PRIMEIRO (prioridade):*\n' + est.map(item).join('\n') + '\n';
+    if (resto.length) msg += `\n*${est.length ? 'Depois' : 'Itens'}:*\n` + resto.map(item).join('\n');
+  }
+  return msg.trim();
+}
+
 function enviarLista(modo) {
   const t = tarefaDaLista();
-  const faltam = listaLinhas.filter(l => l.item && !l.feito);
-  const est = faltam.filter(l => l.estrela), resto = faltam.filter(l => !l.estrela);
+  const est = listaLinhas.filter(l => l.item && !l.feito && l.estrela);
   if (modo === 'estrelas' && !est.length) { showToast('⭐ Nenhum item com estrela — toque na ⭐ dos itens que vêm primeiro'); return; }
-  let msg = `*📋 ${t ? t.Tarefa : 'Lista'}*\n`;
-  if (modo === 'estrelas') {
-    msg += '\n⭐ *Prioridade:*\n' + est.map(l => `⬜ ${l.texto}`).join('\n');
-  } else {
-    if (est.length) msg += '\n⭐ *PRIMEIRO (prioridade):*\n' + est.map(l => `⬜ ⭐ ${l.texto}`).join('\n') + '\n';
-    if (resto.length) msg += (est.length ? '\n*Depois:*\n' : '\n') + resto.map(l => `⬜ ${l.texto}`).join('\n');
-  }
-  abrirWhatsappCompartilhar(msg);
+  abrirWhatsappCompartilhar(montarTextoLista({ ...(t || { Tarefa: 'Lista' }), _aba: (t && t._aba) || listaAba }, listaLinhas, modo));
 }
 
 // ===== PRINT =====
