@@ -175,6 +175,30 @@
   .sidebar-item.active .sidebar-tab { width: 9px; }
   .sidebar-item.dragging { opacity: 0.85; box-shadow: 0 4px 10px rgba(0,0,0,0.2); background: var(--gray-light); }
 
+  /* ----- Notas (post-its) ----- */
+  .sidebar-notas-item { order:-1; display:flex; align-items:center; gap:8px; margin:6px 8px 12px; padding:10px 12px; border-radius:10px;
+    background:#fef08a; color:#713f12; font-weight:800; font-size:13px; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,.18); }
+  .sidebar-notas-item.active { outline:2px solid #ca8a04; }
+  .notas-topo { display:flex; gap:8px; align-items:center; margin:4px 0 12px; flex-wrap:wrap; }
+  .notas-topo input { flex:1 1 220px; min-width:0; padding:12px 14px; border:1.5px solid var(--border, #e5e7eb); border-radius:12px; font-size:15px; }
+  .btn-nova-nota { background:#fef08a; color:#713f12; border:none; border-radius:12px; padding:12px 16px; font-weight:800; font-size:14px; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,.18); }
+  .notas-tags { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+  .nota-chip { border:1.5px solid var(--border, #e5e7eb); background:transparent; border-radius:999px; padding:4px 12px; font-size:12px; cursor:pointer; }
+  .nota-chip.on { background:var(--primary, #4f46e5); color:#fff; border-color:var(--primary, #4f46e5); }
+  .notas-grid { column-width:230px; column-gap:12px; }
+  .nota { break-inside:avoid; margin-bottom:12px; border-radius:12px; padding:12px 14px; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,.2); color:#1f2937; position:relative; }
+  .nota-titulo { font-weight:800; font-size:15px; margin-bottom:6px; word-break:break-word; padding-right:18px; }
+  .nota-texto { font-size:14px; white-space:pre-wrap; word-break:break-word; display:-webkit-box; -webkit-line-clamp:9; -webkit-box-orient:vertical; overflow:hidden; }
+  .nota-rodape { display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:11px; }
+  .nota-tag { background:rgba(0,0,0,.09); border-radius:999px; padding:1px 8px; }
+  .nota-del { background:none; border:none; font-size:16px; cursor:pointer; opacity:.55; padding:0 2px; margin-left:auto; }
+  .nota-pin { position:absolute; top:8px; right:10px; font-size:14px; }
+  .nota-cores { display:flex; gap:10px; margin:6px 0 4px; }
+  .nota-cor { width:30px; height:30px; border-radius:50%; border:3px solid transparent; cursor:pointer; box-shadow:0 0 0 1px rgba(0,0,0,.2); }
+  .nota-cor.sel { border-color:#111; }
+  .notas-vazio { text-align:center; padding:40px 16px; color:var(--text-muted, #6b7280); }
+  @media print { .notas-topo, .notas-tags, .nota-del { display:none !important; } .nota { box-shadow:none; border:1px solid #bbb; } }
+
   /* ----- Lista marcável (observação com itens "- [ ] ...") ----- */
   .meta-lista { cursor:pointer; background:var(--primary-bg, #eef2ff); color:var(--primary, #4f46e5); border-radius:8px; padding:3px 9px; font-weight:600; }
   .lista-print { display:none; }
@@ -1904,6 +1928,41 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-nota" onclick="if(event.target===this) fecharNota()">
+  <div class="modal">
+    <div class="modal-titulo-linha">
+      <h3 id="nota-modal-titulo">📝 Nova nota</h3>
+      <span style="display:flex;gap:8px;align-items:center;margin-bottom:16px">
+        <button class="modal-fechar-x" style="background:var(--primary,#4f46e5);color:#fff" onclick="salvarNota()" title="Salvar">💾</button>
+        <button class="modal-fechar-x" onclick="fecharNota()" title="Fechar sem salvar">✕</button>
+      </span>
+    </div>
+    <div class="form-group">
+      <label>Título (opcional)</label>
+      <input type="text" id="nota-titulo" placeholder="Ex: Código do portão" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label>Nota</label>
+      <textarea id="nota-texto" rows="8" style="min-height:160px" placeholder="Escreva aqui o que quiser guardar..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>Cor</label>
+      <div class="nota-cores" id="nota-cores"></div>
+    </div>
+    <div class="form-group">
+      <label>Tag (opcional — ajuda a achar depois)</label>
+      <input type="text" id="nota-tag" list="notas-tags-list" placeholder="Ex: Casa" autocomplete="off">
+      <datalist id="notas-tags-list"></datalist>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;margin:4px 0 14px;font-size:14px;cursor:pointer">
+      <input type="checkbox" id="nota-fixada"> 📌 Fixar no topo
+    </label>
+    <button class="btn-salvar" onclick="salvarNota()">Salvar nota</button>
+    <button class="btn-excluir-modal" id="btn-excluir-nota" onclick="excluirNotaDoModal()" style="display:none">🗑️ Excluir nota</button>
+    <button class="modal-cancel" onclick="fecharNota()" style="margin-top:8px">Cancelar</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-por-em-lista" onclick="if(event.target===this) fecharPorEmLista()">
   <div class="modal">
     <h3>☑ Pôr dentro de qual lista?</h3>
@@ -2072,10 +2131,25 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v37';
+const APP_VERSION = 'v38';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
+
+// Notas (post-its): o app abre nelas. Não são tarefas: ficam numa aba própria da planilha e não entram em nenhuma contagem.
+let modoNotas = true;
+let notasData = [];
+let notasCarregadas = false;
+let notaTagFiltro = '';
+let notaEditId = null;
+let notaCorSel = 'amarelo';
+let notasFila = []; // alterações de notas ainda não confirmadas pelo servidor (guardadas no aparelho até dar certo)
+try {
+  const c = JSON.parse(localStorage.getItem('notasCache') || 'null');
+  if (Array.isArray(c)) { notasData = c; notasCarregadas = true; }
+  const f = JSON.parse(localStorage.getItem('notasFila') || 'null');
+  if (Array.isArray(f)) notasFila = f;
+} catch (e) {}
 
 // Filtros LOCAIS — valem só dentro da aba aberta (linha de filtros embaixo das abas)
 let filtroPrioridade = new Set();
@@ -2168,6 +2242,7 @@ function fecharModalMais() {
 }
 
 function abrirOpcoesPasta() {
+  if (modoNotas) { showToast('📁 Escolha uma pasta na lateral para ver as opções dela'); return; }
   if (typeof fecharSidebar === 'function') fecharSidebar();
   const nome = (ABA_LABEL && ABA_LABEL[abaAtual]) || abaAtual;
   document.getElementById('opcoes-pasta-titulo').textContent = '⋯ Opções da pasta — ' + nome;
@@ -2837,7 +2912,7 @@ function renderTabs() {
   const cruzado = algumFiltroAtivo();
   const html = abaOrdem.map((aba, i) => {
     const [cor] = corDaPasta(aba);
-    const ativa = !cruzado && aba === abaAtual;
+    const ativa = !cruzado && !modoNotas && aba === abaAtual;
     return `
     <div class="sidebar-item ${ativa ? 'active' : ''}" data-aba="${aba}" style="order:${i}" title="${ABA_LABEL[aba]}">
       <span style="color:${cor}">${iconeCategoria(aba)}</span><span class="sidebar-item-label" style="color:${cor}">${nomeCurtoPasta(aba)}</span>
@@ -2846,7 +2921,8 @@ function renderTabs() {
   `;
   }).join('');
   const sidebar = document.getElementById('sidebar-pastas');
-  sidebar.innerHTML = `<div class="sidebar-titulo">PASTAS</div>${html}<div class="sidebar-nova-pasta" style="order:9999" onclick="abrirModalNovaPasta()">➕ Nova pasta</div><div class="sidebar-nova-pasta" style="order:10000" onclick="abrirOpcoesPasta()">⋯ Opções da pasta</div>`;
+  const itemNotas = `<div class="sidebar-notas-item ${modoNotas && !cruzado ? 'active' : ''}" onclick="abrirNotas()" title="Notas (post-its)">📝 Notas</div>`;
+  sidebar.innerHTML = `${itemNotas}<div class="sidebar-titulo">PASTAS</div>${html}<div class="sidebar-nova-pasta" style="order:9999" onclick="abrirModalNovaPasta()">➕ Nova pasta</div><div class="sidebar-nova-pasta" style="order:10000" onclick="abrirOpcoesPasta()">⋯ Opções da pasta</div>`;
   document.querySelectorAll('.sidebar-item').forEach(w => {
     w.addEventListener('pointerdown', onTabPointerDown);
   });
@@ -2996,7 +3072,8 @@ async function loadData() {
   // no momento em que a resposta chega (senão os dados vêm trocados)
   const abaAlvo = abaAtual;
   const temCopia = Array.isArray(allData[abaAlvo]);
-  if (!temCopia) showLoading();
+  // Na tela de Notas não apaga a tela com "Carregando tarefas": as notas já estão aparecendo
+  if (!temCopia && !modoNotas) showLoading();
   else document.getElementById('last-update').textContent = 'Atualizando...';
   try {
     // Carrega rápido só a pasta atual + a lista de pastas, numa chamada SÓ (o Apps Script não
@@ -3011,6 +3088,10 @@ async function loadData() {
     if (resp.ok && Array.isArray(resp.pastas)) sincronizarPastas(resp.pastas);
     allData[abaAlvo] = resp.dados || [];
     ultimaBusca[abaAlvo] = Date.now();
+    // Code.gs v12+ manda as notas junto; o que ainda está na fila de envio é reaplicado por cima
+    if (Array.isArray(resp.notas)) { notasData = aplicarFilaEmNotas(resp.notas); notasCarregadas = true; salvarNotasCache(); }
+    else if (resp.versao) notasCarregadas = true;
+    processarFilaNotas();
 
     const now = new Date().toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     document.getElementById('last-update').textContent = `Atualizado às ${now}`;
@@ -3020,8 +3101,8 @@ async function loadData() {
 
     carregarRestanteDasPastas();
   } catch (e) {
-    if (temCopia) {
-      // Já tem a última cópia na tela: não apaga, só avisa
+    if (temCopia || modoNotas) {
+      // Já tem a última cópia na tela (ou está nas Notas): não apaga, só avisa
       document.getElementById('last-update').textContent = 'Mostrando a última cópia (servidor lento)';
       showToast('⏳ O servidor está lento — mostrando a última cópia. Use Atualizar daqui a pouco.');
     } else {
@@ -3064,6 +3145,7 @@ function toggleVista() {
 
 async function switchTab(aba) {
   abaAtual = aba;
+  modoNotas = false;
   modoUrgentesAtivo = false;
   modoAgendaPeriodo = null;
   // Trocar de pasta limpa qualquer filtro ativo (local ou geral, tipo Urgentes) — evita confusão de achar que ainda tá filtrado
@@ -3194,12 +3276,18 @@ function renderMantendoScroll() {
 // ===== RENDER =====
 function render() {
   agendarSalvarCache();
+  // Buscar, filtrar ou pedir Urgentes/Hoje/Semana tira das Notas e mostra tarefas
+  if (modoNotas && (algumFiltroAtivo() || modoUrgentesAtivo || modoAgendaPeriodo)) { modoNotas = false; renderTabs(); }
   atualizarPastaAtualMobile();
+  if (modoNotas) { renderNotas(); return; }
   // Qualquer filtro ativo (prioridade, status, envolvido ou busca) passa a procurar em todas as abas
   if (algumFiltroAtivo()) {
     const cruzadas = ABAS.flatMap(aba => (allData[aba] || []).map(t => ({ ...t, _aba: aba })));
     document.getElementById('counters').innerHTML = '';
     renderTarefas(cruzadas);
+    // Notas que combinam com a busca aparecem em cima das tarefas encontradas
+    const blocoNotas = htmlNotasNaBusca();
+    if (blocoNotas) document.getElementById('main').insertAdjacentHTML('afterbegin', blocoNotas);
     return;
   }
   const tarefas = (allData[abaAtual] || []).map(t => ({ ...t, _aba: abaAtual }));
@@ -3225,7 +3313,9 @@ function tituloParaImpressao() {
 function atualizarPastaAtualMobile() {
   const el = document.getElementById('pasta-atual-mobile');
   if (!el) return;
-  if (algumFiltroAtivo()) {
+  if (modoNotas) {
+    el.innerHTML = `📝 Você está em: <span style="color:#a16207">Notas</span>`;
+  } else if (algumFiltroAtivo()) {
     el.innerHTML = `🌐 Vendo todas as pastas`;
   } else {
     const [cor] = corDaPasta(abaAtual);
@@ -4484,6 +4574,220 @@ async function salvarTarefa() {
   }
 }
 
+// ===== NOTAS (post-its) =====
+const NOTA_CORES = { amarelo: '#fef08a', verde: '#bbf7d0', azul: '#bfdbfe', rosa: '#fbcfe8', laranja: '#fed7aa', cinza: '#e5e7eb' };
+
+function salvarNotasCache() { try { localStorage.setItem('notasCache', JSON.stringify(notasData)); } catch (e) {} }
+function salvarNotasFila() { try { localStorage.setItem('notasFila', JSON.stringify(notasFila)); } catch (e) {} }
+
+// Abre a tela de Notas (a inicial). Sai de qualquer busca/filtro para não ficar "preso" numa pasta.
+function abrirNotas() {
+  modoNotas = true;
+  modoUrgentesAtivo = false; modoAgendaPeriodo = null;
+  searchTerm = ''; searchTermLocal = '';
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-local-input').value = '';
+  filtroPrioridadeG = new Set(); filtroStatusG = new Set(); filtroEnvolvidoG = new Set(); filtroTagG = new Set();
+  atualizarBotoesFiltro();
+  renderTabs();
+  render();
+  fecharSidebar();
+  window.scrollTo(0, 0);
+}
+
+const notaParaCard = t => String(t || '').split('\n').map(l => l.replace(/^\s*-\s*\[( |x|X)\]\s?/, (m, c) => (c === ' ' ? '☐ ' : '☑ '))).join('\n');
+const notaCorBg = n => NOTA_CORES[n['Cor']] || NOTA_CORES.amarelo;
+
+function notasOrdenadas(lista) {
+  return [...lista].sort((a, b) => ((b['Fixada'] === 'Sim') - (a['Fixada'] === 'Sim')) || String(b.ID).localeCompare(String(a.ID), undefined, { numeric: true }));
+}
+
+function notaHtml(n) {
+  const tag = String(n['Tag'] || '').trim();
+  return `<div class="nota" style="background:${notaCorBg(n)}" onclick="abrirNota('${n.ID}')">
+    ${n['Fixada'] === 'Sim' ? '<span class="nota-pin">📌</span>' : ''}
+    ${n['Título'] ? `<div class="nota-titulo">${escLista(n['Título'])}</div>` : ''}
+    ${n['Texto'] ? `<div class="nota-texto">${escLista(notaParaCard(n['Texto']))}</div>` : ''}
+    <div class="nota-rodape">${tag ? `<span class="nota-tag">${escLista(tag)}</span>` : '<span></span>'}
+      <button class="nota-del" onclick="event.stopPropagation(); excluirNota('${n.ID}')" title="Excluir nota">🗑️</button></div>
+  </div>`;
+}
+
+function renderNotas() {
+  const main = document.getElementById('main');
+  main.dataset.aba = 'Notas';
+  const busca = (searchTermLocal || '').trim();
+  const lista = notasOrdenadas(notasData).filter(n => {
+    if (notaTagFiltro && !String(n['Tag'] || '').split(/[,;]/).map(s => s.trim().toLowerCase()).includes(notaTagFiltro.toLowerCase())) return false;
+    if (busca && !normalizarBusca([n['Título'], n['Texto'], n['Tag']].join(' ')).includes(busca)) return false;
+    return true;
+  });
+  const tags = [...new Set(notasData.flatMap(n => String(n['Tag'] || '').split(/[,;]/).map(s => s.trim()).filter(Boolean)))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  const chips = tags.length ? `<div class="notas-tags">
+      <button class="nota-chip ${notaTagFiltro ? '' : 'on'}" onclick="filtrarNotasPorTag('')">Todas</button>
+      ${tags.map(t => `<button class="nota-chip ${t === notaTagFiltro ? 'on' : ''}" onclick="filtrarNotasPorTag('${t.replace(/'/g, "\\'")}')">${escLista(t)}</button>`).join('')}
+    </div>` : '';
+  const pendente = notasFila.length ? `<div style="font-size:12px;color:var(--text-muted);margin:-4px 0 8px">⏳ ${notasFila.length} alteração(ões) esperando o servidor — ficam guardadas aqui e são enviadas sozinhas.</div>` : '';
+  let corpo;
+  if (!notasCarregadas) corpo = '<div class="notas-vazio"><div class="spinner" style="margin:0 auto 8px"></div>Carregando notas...</div>';
+  else if (!lista.length) corpo = notasData.length
+    ? '<div class="notas-vazio">Nenhuma nota encontrada com esse filtro.</div>'
+    : '<div class="notas-vazio">📝<br>Nenhuma nota ainda.<br>Escreva ali em cima e dê Enter, ou toque em <b>Nova nota</b>.</div>';
+  else corpo = `<div class="notas-grid">${lista.map(notaHtml).join('')}</div>`;
+
+  main.innerHTML = `<div class="notas-topo">
+      <input type="text" id="nota-rapida" placeholder="📝 Escreva uma nota rápida e dê Enter..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();notaRapida()}">
+      <button class="btn-nova-nota" onclick="abrirNota()">➕ Nova nota</button>
+    </div>${pendente}${chips}${corpo}`;
+
+  document.getElementById('counters').innerHTML = `
+    <div class="contador-linha"><span class="contador-item total">Notas: <b>${notasData.length}</b></span></div>
+    <div class="contador-linha versao-linha"><span>App ${APP_VERSION}</span><span>Servidor ${serverVersion === null ? '…' : serverVersion}</span></div>`;
+}
+
+function filtrarNotasPorTag(t) { notaTagFiltro = t; renderNotas(); }
+
+// Notas que combinam com o que foi digitado na busca de "todas as pastas" — aparecem em cima das tarefas encontradas
+function htmlNotasNaBusca() {
+  if (!searchTerm) return '';
+  const achadas = notasOrdenadas(notasData).filter(n => normalizarBusca([n['Título'], n['Texto'], n['Tag']].join(' ')).includes(searchTerm));
+  if (!achadas.length) return '';
+  return `<div class="categoria-group"><div class="categoria-header"><span class="categoria-title">📝 Notas (${achadas.length})</span></div>
+    <div class="notas-grid" style="margin-top:8px">${achadas.map(notaHtml).join('')}</div></div>`;
+}
+
+function renderCoresNota() {
+  document.getElementById('nota-cores').innerHTML = Object.entries(NOTA_CORES).map(([nome, hex]) =>
+    `<div class="nota-cor ${nome === notaCorSel ? 'sel' : ''}" style="background:${hex}" title="${nome}" onclick="notaCorSel='${nome}';renderCoresNota()"></div>`).join('');
+}
+
+function abrirNota(id) {
+  notaEditId = id || null;
+  const n = id ? notasData.find(x => String(x.ID) === String(id)) : null;
+  document.getElementById('nota-modal-titulo').textContent = n ? '📝 Editar nota' : '📝 Nova nota';
+  document.getElementById('nota-titulo').value = n ? n['Título'] : '';
+  document.getElementById('nota-texto').value = n ? n['Texto'] : '';
+  document.getElementById('nota-tag').value = n ? (n['Tag'] || '') : '';
+  document.getElementById('nota-fixada').checked = !!n && n['Fixada'] === 'Sim';
+  notaCorSel = n && NOTA_CORES[n['Cor']] ? n['Cor'] : 'amarelo';
+  renderCoresNota();
+  const tags = [...new Set(notasData.map(x => String(x['Tag'] || '').trim()).filter(Boolean))];
+  document.getElementById('notas-tags-list').innerHTML = tags.map(t => `<option value="${escLista(t).replace(/"/g, '&quot;')}">`).join('');
+  document.getElementById('btn-excluir-nota').style.display = n ? 'block' : 'none';
+  document.getElementById('modal-nota').classList.add('open');
+  document.getElementById(n ? 'nota-texto' : 'nota-titulo').focus();
+}
+
+function fecharNota() { document.getElementById('modal-nota').classList.remove('open'); }
+
+// Mostra a tela certa depois de mexer numa nota (a de Notas, ou a busca que a mostrava)
+function atualizarTelaNotas() { salvarNotasCache(); render(); }
+
+function salvarNota() {
+  const titulo = document.getElementById('nota-titulo').value.trim();
+  const texto = document.getElementById('nota-texto').value.replace(/\s+$/, '');
+  if (!titulo && !texto.trim()) { showToast('✍️ Escreva algo na nota'); return; }
+  const campos = {
+    'Título': titulo, 'Texto': texto, 'Cor': notaCorSel,
+    'Tag': document.getElementById('nota-tag').value.trim(),
+    'Fixada': document.getElementById('nota-fixada').checked ? 'Sim' : ''
+  };
+  const id = notaEditId;
+  fecharNota();
+  if (id) {
+    const n = notasData.find(x => String(x.ID) === String(id));
+    if (n) Object.assign(n, campos);
+    enfileirarNota({ tipo: 'edit', id: String(id), fields: campos });
+  } else {
+    const novo = String(Date.now());
+    notasData.push({ ID: novo, 'Data criação': new Date().toLocaleDateString('pt-BR'), ...campos });
+    enfileirarNota({ tipo: 'add', fields: { ID: novo, ...campos } });
+  }
+  atualizarTelaNotas();
+}
+
+// Nota rápida: o que foi digitado vira o título de uma nota amarela (toque nela depois pra escrever mais)
+function notaRapida() {
+  const campo = document.getElementById('nota-rapida');
+  const txt = campo.value.trim();
+  if (!txt) return;
+  const novo = String(Date.now());
+  const campos = { 'Título': txt, 'Texto': '', 'Cor': 'amarelo', 'Tag': '', 'Fixada': '' };
+  notasData.push({ ID: novo, 'Data criação': new Date().toLocaleDateString('pt-BR'), ...campos });
+  enfileirarNota({ tipo: 'add', fields: { ID: novo, ...campos } });
+  atualizarTelaNotas();
+  const novoCampo = document.getElementById('nota-rapida');
+  if (novoCampo) novoCampo.focus();
+}
+
+function excluirNota(id) {
+  const n = notasData.find(x => String(x.ID) === String(id));
+  if (!n) return;
+  const nome = n['Título'] || String(n['Texto'] || '').split('\n')[0] || 'esta nota';
+  if (!confirm(`Excluir "${nome.slice(0, 60)}"? Essa ação não tem volta.`)) return;
+  notasData = notasData.filter(x => String(x.ID) !== String(id));
+  enfileirarNota({ tipo: 'del', id: String(id) });
+  atualizarTelaNotas();
+}
+function excluirNotaDoModal() { const id = notaEditId; fecharNota(); if (id) excluirNota(id); }
+
+// ----- Envio das notas ao servidor: cada alteração entra numa fila guardada no aparelho e só sai dela quando o servidor confirma.
+// Assim, se o Google falhar (ou a internet cair), a nota NÃO se perde: continua na tela e é reenviada sozinha. O servidor aceita
+// repetição sem duplicar (a nota nova leva um ID gerado aqui).
+let notasProcessando = false, avisouCodeGs = false;
+function enfileirarNota(op) { notasFila.push(op); salvarNotasFila(); processarFilaNotas(); }
+
+async function enviarOpNota(op) {
+  const corpo = op.tipo === 'add' ? { action: 'addNota', fields: op.fields }
+    : op.tipo === 'edit' ? { action: 'editNota', id: op.id, fields: op.fields }
+    : { action: 'deleteNota', id: op.id };
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 40000);
+  try {
+    const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(corpo), signal: ctrl.signal });
+    const d = JSON.parse(await res.text());
+    clearTimeout(timer);
+    if (d && d.ok) return true;
+    if (d && /inv[aá]lida/i.test(String(d.error || '')) && !avisouCodeGs) {
+      avisouCodeGs = true;
+      showToast('⚠️ O servidor ainda não tem as Notas: publique o Code.gs v12 (Nova versão). As notas ficam guardadas aqui até lá.');
+    }
+    return false;
+  } catch (e) {
+    clearTimeout(timer);
+    return false;
+  }
+}
+
+async function processarFilaNotas() {
+  if (notasProcessando || !notasFila.length) return;
+  notasProcessando = true;
+  try {
+    while (notasFila.length) {
+      const ok = await enviarOpNota(notasFila[0]);
+      if (!ok) break;
+      notasFila.shift();
+      salvarNotasFila();
+    }
+  } finally {
+    notasProcessando = false;
+  }
+  if (modoNotas) renderNotas(); // atualiza o aviso "esperando o servidor"
+  if (notasFila.length) setTimeout(processarFilaNotas, 20000);
+}
+window.addEventListener('online', () => processarFilaNotas());
+
+// Lista que veio do servidor + o que ainda está na fila (nada que a pessoa fez some quando a tela atualiza)
+function aplicarFilaEmNotas(base) {
+  let lista = base.map(n => ({ ...n }));
+  notasFila.forEach(op => {
+    if (op.tipo === 'add') { if (!lista.some(n => String(n.ID) === String(op.fields.ID))) lista.push({ 'Data criação': '', ...op.fields }); }
+    else if (op.tipo === 'edit') { const n = lista.find(x => String(x.ID) === String(op.id)); if (n) Object.assign(n, op.fields); }
+    else lista = lista.filter(n => String(n.ID) !== String(op.id));
+  });
+  return lista;
+}
+
 // ===== LISTA MARCÁVEL =====
 // A lista fica na própria Observação, em texto simples (uma linha por item):  "- [ ] item", "- [x] item comprado",
 // "- [ ] ⭐ item prioridade". Assim continua legível na planilha e no WhatsApp, e tarefas antigas não mudam.
@@ -4911,8 +5215,11 @@ try {
 renderTabs();
 aplicarVista();
 // Mostra na hora a última cópia guardada neste aparelho (se existir); a busca nova roda por trás
-if (restaurarCacheDados() && Array.isArray(allData[abaAtual])) { popularBotoesEnvolvidos(); render(); }
+if (restaurarCacheDados() && Array.isArray(allData[abaAtual])) { popularBotoesEnvolvidos(); }
+if (modoNotas) render(); // o app abre nas Notas (as que estão guardadas neste aparelho aparecem na hora)
+else if (allData[abaAtual]) render();
 loadData();
+processarFilaNotas(); // se sobrou alguma nota que não chegou ao servidor na última vez, reenvia
 
 // Mede a altura real do cabeçalho e mantém uma variável CSS atualizada — usada pra sidebar
 // (no PC) grudar embaixo do cabeçalho em vez de por cima dele. O cabeçalho muda de altura
