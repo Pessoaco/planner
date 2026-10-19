@@ -217,6 +217,12 @@
   .lista-item .lista-txt { flex:2 1 130px; word-break:break-word; min-width:0; }
   .lista-item { flex-wrap:wrap; }
   .lista-item .lista-qtd { flex:1 1 110px; min-width:0; max-width:100%; font-size:13px; padding:4px 6px; border:1px solid var(--border, #e5e7eb); border-radius:8px; background:transparent; }
+  .lista-item .lista-quem { flex:0 1 96px; min-width:0; max-width:100%; font-size:13px; padding:4px 6px; border:1px solid var(--border, #e5e7eb); border-radius:8px; background:transparent; }
+  .lista-grip { cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; font-size:20px; line-height:1; color:#9ca3af; padding:4px 6px 4px 0; flex:none; }
+  .lista-item.arrastando { opacity:.55; background:var(--gray-light, #f3f4f6); }
+  .lista-item.alvo-antes { box-shadow:0 -3px 0 var(--primary, #4f46e5); }
+  .lista-item.alvo-depois { box-shadow:0 3px 0 var(--primary, #4f46e5); }
+  .lista-item textarea.lista-txt-edit { border:none; background:transparent; font:inherit; padding:4px 0; resize:none; overflow:hidden; min-height:0; line-height:1.3; }
   .btn-estrela-nova { background:none; border:none; font-size:24px; cursor:pointer; color:#9ca3af; opacity:.7; padding:0 4px; }
   .btn-estrela-nova.on { opacity:1; }
   .lista-item.feito .lista-txt { text-decoration:line-through; opacity:.55; }
@@ -1854,6 +1860,7 @@
         <div class="lista-add" style="flex-wrap:wrap;align-items:center">
           <input type="text" id="obs-lista-novo" placeholder="+ Novo item" style="flex:2 1 150px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();addItemForm()}">
           <input type="text" id="obs-lista-novo-qtd" placeholder="qtd / obs" style="flex:1 1 110px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();addItemForm()}">
+          <input type="text" id="obs-lista-novo-quem" list="lista-quem-opcoes" placeholder="👤 quem" style="flex:1 1 90px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();addItemForm()}">
           <button type="button" class="btn-estrela-nova" id="obs-lista-novo-est" onclick="alternarEstrelaNova('form')" title="Prioridade (fazer/comprar primeiro)">☆</button>
           <button type="button" class="menu-mais-item" style="width:auto;margin:0" onclick="addItemForm()" title="Adicionar item">➕</button>
         </div>
@@ -1928,6 +1935,8 @@
   </div>
 </div>
 
+<datalist id="lista-quem-opcoes"></datalist>
+
 <div class="modal-overlay" id="modal-nota" onclick="if(event.target===this) fecharNota()">
   <div class="modal">
     <div class="modal-titulo-linha">
@@ -1982,6 +1991,7 @@
     <div class="lista-add" style="flex-wrap:wrap;align-items:center">
       <input type="text" id="lista-novo" placeholder="+ Novo item" style="flex:2 1 150px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarItemLista()}" onpaste="colarVariosItens(event)">
       <input type="text" id="lista-novo-qtd" placeholder="qtd / obs" style="flex:1 1 110px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarItemLista()}">
+      <input type="text" id="lista-novo-quem" list="lista-quem-opcoes" placeholder="👤 quem" style="flex:1 1 90px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarItemLista()}">
       <button type="button" class="btn-estrela-nova" id="lista-novo-est" onclick="alternarEstrelaNova('lista')" title="Prioridade (fazer/comprar primeiro)">☆</button>
       <button class="menu-mais-item" style="width:auto;margin:0" onclick="adicionarItemLista()" title="Adicionar item">➕</button>
     </div>
@@ -2131,7 +2141,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v39';
+const APP_VERSION = 'v40';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
@@ -3433,7 +3443,7 @@ function tarefasDaTelaAtual() {
 function listaParaExcel(obs) {
   const itens = parseListaObs(obs).filter(l => l.item);
   const ordem = [...itens.filter(l => !l.feito && l.estrela), ...itens.filter(l => !l.feito && !l.estrela), ...itens.filter(l => l.feito)];
-  return ordem.map(l => `${l.feito ? '☑' : '☐'} ${l.estrela ? '★ ' : ''}${l.texto}`).join('\n');
+  return ordem.map(l => `${l.feito ? '☑' : '☐'} ${l.estrela ? '★ ' : ''}${textoItemLegivel(l.texto)}`).join('\n');
 }
 
 function exportarCSV(tudo) {
@@ -4138,6 +4148,7 @@ async function openEditModal(t) {
   const prio = t.Prioridade || 'Média';
   document.querySelectorAll('.prio-btn').forEach(b => b.classList.toggle('sel', b.dataset.p === prio));
   document.getElementById('modal-add').classList.add('open');
+  ajustarAlturasDaLista(); // agora que o formulário está visível, o texto dos itens ocupa a altura que precisa
 }
 
 async function enviarLembreteModal() {
@@ -4833,7 +4844,7 @@ function listaParaImpressaoHtml(obs) {
   const faltam = itens.filter(l => !l.feito);
   const ordem = [...faltam.filter(l => l.estrela), ...faltam.filter(l => !l.estrela)];
   const feitos = itens.length - faltam.length;
-  const linhas = ordem.map(l => `<div>☐ ${l.estrela ? '⭐ ' : ''}${escLista(l.texto)}</div>`).join('');
+  const linhas = ordem.map(l => `<div>☐ ${l.estrela ? '⭐ ' : ''}${escLista(textoItemLegivel(l.texto))}</div>`).join('');
   return `<div class="lista-print">${linhas || '<div>✔ tudo marcado</div>'}${feitos && faltam.length ? `<div style="color:#888">(✔ ${feitos} já marcado${feitos === 1 ? '' : 's'})</div>` : ''}</div>`;
 }
 
@@ -4933,17 +4944,25 @@ function sincronizarListaDoForm() {
 }
 
 function renderListaForm() {
-  document.getElementById('obs-lista-itens').innerHTML = formListaLinhas.map((l, i) => l.item
-    ? `<div class="lista-item${l.feito ? ' feito' : ''}">
+  atualizarQuemOpcoes();
+  const aspas = s => escLista(s).replace(/"/g, '&quot;');
+  document.getElementById('obs-lista-itens').innerHTML = formListaLinhas.map((l, i) => {
+    if (!l.item) return `<div style="padding:4px;font-size:13px;color:var(--text-muted)">${escLista(l.texto)}</div>`;
+    const p = partesItemLista(l.texto);
+    return `<div class="lista-item${l.feito ? ' feito' : ''}" data-i="${i}" data-sec="todos">
+        <span class="lista-grip" onpointerdown="arrastarItem(event,'form',${i})" title="Segure e arraste para mudar de lugar">⠿</span>
         <input type="checkbox" ${l.feito ? 'checked' : ''} onchange="formListaLinhas[${i}].feito=this.checked;renderListaForm()">
-        <input type="text" class="lista-txt" value="${escLista(partesItemLista(l.texto).nome).replace(/"/g, '&quot;')}" style="border:none;background:transparent;font:inherit;padding:4px 0"
-          oninput="formListaLinhas[${i}].texto=juntarItemLista(this.value, partesItemLista(formListaLinhas[${i}].texto).qtd)" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('obs-lista-novo').focus()}">
-        <input type="text" class="lista-qtd" placeholder="qtd / obs" value="${escLista(partesItemLista(l.texto).qtd).replace(/"/g, '&quot;')}" title="Quantidade ou observação (ex: 2 kg · para a escola, pode ser barato)"
-          oninput="formListaLinhas[${i}].texto=juntarItemLista(partesItemLista(formListaLinhas[${i}].texto).nome, this.value)">
+        <textarea class="lista-txt lista-txt-edit" rows="1" oninput="autoAltura(this);formListaLinhas[${i}].texto=setCampoItem(formListaLinhas[${i}].texto,'nome',this.value)"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('obs-lista-novo').focus()}">${escLista(p.nome)}</textarea>
+        <input type="text" class="lista-qtd" placeholder="qtd / obs" value="${aspas(p.qtd)}" title="Quantidade ou observação (ex: 2 kg · para a escola, pode ser barato)"
+          oninput="formListaLinhas[${i}].texto=setCampoItem(formListaLinhas[${i}].texto,'qtd',this.value)">
+        <input type="text" class="lista-quem" list="lista-quem-opcoes" placeholder="👤 quem" value="${aspas(p.quem)}" title="A quem cobrar este item (o aviso ao Envolvido leva só os itens com o nome dele)"
+          oninput="formListaLinhas[${i}].texto=setCampoItem(formListaLinhas[${i}].texto,'quem',this.value)">
         <button type="button" class="${l.estrela ? 'on' : ''}" onclick="formListaLinhas[${i}].estrela=!formListaLinhas[${i}].estrela;renderListaForm()" title="Prioridade (fazer/comprar primeiro)">${l.estrela ? '⭐' : '☆'}</button>
         <button type="button" onclick="formListaLinhas.splice(${i},1);renderListaForm()" title="Tirar da lista">✕</button>
-      </div>`
-    : `<div style="padding:4px;font-size:13px;color:var(--text-muted)">${escLista(l.texto)}</div>`).join('');
+      </div>`;
+  }).join('');
+  document.querySelectorAll('#obs-lista-itens textarea.lista-txt-edit').forEach(autoAltura);
 }
 
 function addItemForm() {
@@ -4951,7 +4970,7 @@ function addItemForm() {
   const novos = lerNovoItem('obs-lista-novo', 'obs-lista-novo-qtd', 'form');
   if (!novos.length) return;
   formListaLinhas.push(...novos);
-  campo.value = ''; document.getElementById('obs-lista-novo-qtd').value = ''; resetEstrelaNova('form');
+  campo.value = ''; document.getElementById('obs-lista-novo-qtd').value = ''; document.getElementById('obs-lista-novo-quem').value = ''; resetEstrelaNova('form');
   renderListaForm();
   campo.focus();
 }
@@ -4984,20 +5003,24 @@ function renderLista() {
   const feitos = itens.filter(l => l.feito).length;
   document.getElementById('lista-resumo').textContent = itens.length
     ? `${feitos} de ${itens.length} marcados · ⭐ = fazer/comprar primeiro` : 'Lista vazia — escreva o primeiro item abaixo.';
-  const linha = l => `<div class="lista-item${l.feito ? ' feito' : ''}">
+  atualizarQuemOpcoes();
+  const aspas = s => escLista(s).replace(/"/g, '&quot;');
+  const linha = sec => l => { const p = partesItemLista(l.texto); return `<div class="lista-item${l.feito ? ' feito' : ''}" data-i="${l.i}" data-sec="${sec}">
+      <span class="lista-grip" onpointerdown="arrastarItem(event,'lista',${l.i})" title="Segure e arraste para mudar de lugar">⠿</span>
       <input type="checkbox" ${l.feito ? 'checked' : ''} onchange="alternarItemLista(${l.i})">
-      <span class="lista-txt">${escLista(partesItemLista(l.texto).nome)}</span>
-      <input type="text" class="lista-qtd" placeholder="qtd / obs" value="${escLista(partesItemLista(l.texto).qtd).replace(/"/g, '&quot;')}" onchange="qtdItemLista(${l.i}, this.value)" title="Quantidade ou observação (ex: 2 kg · para a escola, pode ser barato)">
+      <span class="lista-txt">${escLista(p.nome)}</span>
+      <input type="text" class="lista-qtd" placeholder="qtd / obs" value="${aspas(p.qtd)}" onchange="qtdItemLista(${l.i}, this.value)" title="Quantidade ou observação (ex: 2 kg · para a escola, pode ser barato)">
+      <input type="text" class="lista-quem" list="lista-quem-opcoes" placeholder="👤 quem" value="${aspas(p.quem)}" onchange="campoItemLista(${l.i}, 'quem', this.value)" title="A quem cobrar este item (o aviso ao Envolvido leva só os itens com o nome dele)">
       <button class="${l.estrela ? 'on' : ''}" onclick="estrelaItemLista(${l.i})" title="${l.estrela ? 'Tirar a estrela' : 'Marcar como prioridade (comprar primeiro)'}">${l.estrela ? '⭐' : '☆'}</button>
       <button onclick="removerItemLista(${l.i})" title="Tirar da lista">✕</button>
-    </div>`;
+    </div>`; };
   const estrelas = itens.filter(l => !l.feito && l.estrela);
   const outros = itens.filter(l => !l.feito && !l.estrela);
   const comprados = itens.filter(l => l.feito);
   let html = '';
-  if (estrelas.length) html += `<div class="lista-sep">⭐ PRIMEIRO</div>` + estrelas.map(linha).join('');
-  if (outros.length) html += (estrelas.length ? `<div class="lista-sep">DEPOIS</div>` : '') + outros.map(linha).join('');
-  if (comprados.length) html += `<div class="lista-sep">✔ JÁ MARCADOS</div>` + comprados.map(linha).join('');
+  if (estrelas.length) html += `<div class="lista-sep">⭐ PRIMEIRO</div>` + estrelas.map(linha('estrelas')).join('');
+  if (outros.length) html += (estrelas.length ? `<div class="lista-sep">DEPOIS</div>` : '') + outros.map(linha('outros')).join('');
+  if (comprados.length) html += `<div class="lista-sep">✔ JÁ MARCADOS</div>` + comprados.map(linha('marcados')).join('');
   const notas = listaLinhas.filter(l => !l.item);
   if (notas.length) html += `<div class="lista-sep">NOTAS</div>` + notas.map(n => `<div style="padding:4px;font-size:13px">${escLista(n.texto)}</div>`).join('');
   document.getElementById('lista-corpo').innerHTML = html;
@@ -5044,19 +5067,113 @@ function recomecarLista(desmarcarTudo) {
 
 // Quantidade do item: fica no próprio texto, depois de " — " (ex: "Cebola — 2 kg"). Assim aparece igual na planilha,
 // no WhatsApp e na impressão, sem coluna nova.
+// "Quem" (a quem cobrar): vai no fim do texto, depois de " @" (ex: "Pagar fatura — urgente @Daniel"). Quando a tarefa tem
+// Envolvido, o aviso por WhatsApp leva só os itens com o nome dele (o servidor lê esse " @Nome").
 function partesItemLista(texto) {
-  const t = String(texto || '');
+  let t = String(texto || ''), quem = '';
+  const m = t.match(/\s@([^@]+)$/);
+  if (m) { quem = m[1].trim(); t = t.slice(0, m.index); }
   const i = t.lastIndexOf(' — ');
-  return i < 0 ? { nome: t, qtd: '' } : { nome: t.slice(0, i), qtd: t.slice(i + 3) };
+  return i < 0 ? { nome: t, qtd: '', quem } : { nome: t.slice(0, i), qtd: t.slice(i + 3), quem };
 }
-function juntarItemLista(nome, qtd) {
-  qtd = String(qtd || '').trim();
-  return qtd ? `${nome} — ${qtd}` : nome;
+function juntarItemLista(nome, qtd, quem) {
+  qtd = String(qtd || '').trim(); quem = String(quem || '').trim();
+  let s = qtd ? `${nome} — ${qtd}` : nome;
+  if (quem) s += ` @${quem}`;
+  return s;
 }
-function qtdItemLista(i, qtd) {
-  listaLinhas[i].texto = juntarItemLista(partesItemLista(listaLinhas[i].texto).nome, qtd);
+// Troca um campo do item (nome, qtd ou quem) sem perder os outros
+function setCampoItem(texto, campo, valor) {
+  const p = partesItemLista(texto);
+  p[campo] = valor;
+  return juntarItemLista(p.nome, p.qtd, p.quem);
+}
+// Texto pra quem lê (WhatsApp, impressão, Excel): "Cebola — 2 kg (Daniel)" em vez de "... @Daniel"
+function textoItemLegivel(texto) {
+  const p = partesItemLista(texto);
+  return `${p.nome}${p.qtd ? ' — ' + p.qtd : ''}${p.quem ? ' (' + p.quem + ')' : ''}`;
+}
+function campoItemLista(i, campo, valor) {
+  listaLinhas[i].texto = setCampoItem(listaLinhas[i].texto, campo, valor);
   salvarListaDepois();
 }
+function qtdItemLista(i, qtd) { campoItemLista(i, 'qtd', qtd); }
+
+// Nomes já usados em "Envolvido" das tarefas: aparecem como sugestão no campo "quem"
+function atualizarQuemOpcoes() {
+  const nomes = new Set();
+  Object.values(allData).forEach(lista => (lista || []).forEach(t => String(t.Envolvido || '').split(/[,;]/).map(s => s.trim()).filter(Boolean).forEach(n => nomes.add(n))));
+  const dl = document.getElementById('lista-quem-opcoes');
+  if (dl) dl.innerHTML = [...nomes].sort((a, b) => a.localeCompare(b, 'pt-BR')).map(n => `<option value="${escLista(n).replace(/"/g, '&quot;')}">`).join('');
+}
+
+// ----- Arrastar item pra mudar a ordem (segura o ⠿ e arrasta; no celular também) -----
+let arrasto = null;
+function arrastarItem(ev, qual, i) {
+  ev.preventDefault();
+  const grip = ev.currentTarget;
+  const linha = grip.closest('.lista-item');
+  arrasto = { qual, de: i, linha, sec: linha.dataset.sec, alvo: null, depois: false, y: ev.clientY, modal: linha.closest('.modal'), raf: null };
+  linha.classList.add('arrastando');
+  try { grip.setPointerCapture(ev.pointerId); } catch (e) {}
+  document.addEventListener('pointermove', moverArrasto);
+  document.addEventListener('pointerup', soltarArrasto, { once: true });
+  document.addEventListener('pointercancel', cancelarArrasto, { once: true });
+  arrasto.raf = requestAnimationFrame(rolarEnquantoArrasta);
+}
+function moverArrasto(ev) {
+  if (!arrasto) return;
+  arrasto.y = ev.clientY;
+  document.querySelectorAll('.lista-item.alvo-antes, .lista-item.alvo-depois').forEach(e => e.classList.remove('alvo-antes', 'alvo-depois'));
+  const el = document.elementFromPoint(ev.clientX, ev.clientY);
+  const alvo = el && el.closest && el.closest('.lista-item[data-i]');
+  arrasto.alvo = null;
+  if (!alvo || alvo === arrasto.linha || alvo.dataset.sec !== arrasto.sec) return; // só dentro do mesmo grupo
+  const r = alvo.getBoundingClientRect();
+  arrasto.depois = ev.clientY > r.top + r.height / 2;
+  arrasto.alvo = alvo;
+  alvo.classList.add(arrasto.depois ? 'alvo-depois' : 'alvo-antes');
+}
+// Se o dedo chega perto da borda da janela, rola sozinha (lista grande)
+function rolarEnquantoArrasta() {
+  if (!arrasto) return;
+  const m = arrasto.modal;
+  if (m) {
+    const r = m.getBoundingClientRect();
+    if (arrasto.y < r.top + 60) m.scrollTop -= 12;
+    else if (arrasto.y > r.bottom - 60) m.scrollTop += 12;
+  }
+  arrasto.raf = requestAnimationFrame(rolarEnquantoArrasta);
+}
+function limparArrasto() {
+  if (!arrasto) return;
+  cancelAnimationFrame(arrasto.raf);
+  arrasto.linha.classList.remove('arrastando');
+  document.querySelectorAll('.lista-item.alvo-antes, .lista-item.alvo-depois').forEach(e => e.classList.remove('alvo-antes', 'alvo-depois'));
+  document.removeEventListener('pointermove', moverArrasto);
+}
+function cancelarArrasto() { limparArrasto(); arrasto = null; }
+function soltarArrasto() {
+  if (!arrasto) return;
+  const { qual, de, alvo, depois } = arrasto;
+  limparArrasto();
+  arrasto = null;
+  if (!alvo) return;
+  const arr = qual === 'form' ? formListaLinhas : listaLinhas;
+  let para = Number(alvo.dataset.i) + (depois ? 1 : 0);
+  if (de < para) para--;
+  if (para === de) return;
+  arr.splice(para, 0, arr.splice(de, 1)[0]);
+  if (qual === 'form') renderListaForm(); else salvarListaDepois();
+}
+
+// Texto do item do formulário cresce com o conteúdo (no celular não corta mais o que foi escrito)
+function autoAltura(el) {
+  el.style.height = 'auto';
+  // Formulário ainda escondido: scrollHeight é 0 e o campo sumiria. Deixa a altura automática e recalcula quando abrir.
+  if (el.scrollHeight > 0) el.style.height = el.scrollHeight + 'px';
+}
+function ajustarAlturasDaLista() { document.querySelectorAll('#obs-lista-itens textarea.lista-txt-edit').forEach(autoAltura); }
 
 function alternarItemLista(i) { listaLinhas[i].feito = !listaLinhas[i].feito; salvarListaDepois(); }
 function estrelaItemLista(i) { listaLinhas[i].estrela = !listaLinhas[i].estrela; salvarListaDepois(); }
@@ -5087,7 +5204,8 @@ function resetEstrelaNova(qual) { estrelaNova[qual] = true; alternarEstrelaNova(
 function lerNovoItem(idNome, idQtd, qual, textoColado) {
   const itens = textoParaItensLista(typeof textoColado === 'string' ? textoColado : document.getElementById(idNome).value);
   if (itens.length === 1 && typeof textoColado !== 'string') {
-    itens[0].texto = juntarItemLista(itens[0].texto, document.getElementById(idQtd).value);
+    const quemEl = document.getElementById(idQtd.replace('-qtd', '-quem'));
+    itens[0].texto = juntarItemLista(itens[0].texto, document.getElementById(idQtd).value, quemEl ? quemEl.value : '');
     itens[0].estrela = itens[0].estrela || estrelaNova[qual];
   }
   return itens;
@@ -5098,7 +5216,7 @@ function adicionarItemLista(textoColado) {
   const novos = lerNovoItem('lista-novo', 'lista-novo-qtd', 'lista', textoColado);
   if (!novos.length) return;
   listaLinhas.push(...novos);
-  campo.value = ''; document.getElementById('lista-novo-qtd').value = ''; resetEstrelaNova('lista');
+  campo.value = ''; document.getElementById('lista-novo-qtd').value = ''; document.getElementById('lista-novo-quem').value = ''; resetEstrelaNova('lista');
   salvarListaDepois();
   campo.focus();
 }
@@ -5159,7 +5277,7 @@ function montarTextoLista(t, linhas, modo) {
   const est = faltam.filter(l => l.estrela), resto = faltam.filter(l => !l.estrela);
   const pasta = ABA_LABEL[t._aba] || t._aba || '';
   const caminho = [pasta, t['Divisão']].filter(Boolean).join(' / ');
-  const item = l => `- ${l.texto}`;
+  const item = l => `- ${textoItemLegivel(l.texto)}`;
   let msg = `*${t.Tarefa}*` + (caminho ? `\n${caminho}` : '') + '\n';
   if (modo === 'estrelas') {
     msg += '\n*PRIORIDADE (comprar primeiro):*\n' + est.map(item).join('\n');
