@@ -2131,7 +2131,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v38';
+const APP_VERSION = 'v39';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
@@ -3952,6 +3952,8 @@ async function excluir(id, nome, btn, aba) {
     });
     const data = await res.json();
     if (data.ok) {
+      // O botão é o MESMO pra todas as tarefas: se ficar desligado, a próxima tarefa aberta já vem sem poder excluir
+      btn.disabled = false;
       allData[aba] = (allData[aba] || []).filter(t => String(t.ID) !== String(id));
       renderMantendoScroll();
       showToast('🗑️ Tarefa excluída!');
@@ -4131,6 +4133,7 @@ async function openEditModal(t) {
   atualizarCampoDataConclusao();
   atualizarBotaoLembreteModal();
   document.getElementById('btn-excluir-modal').style.display = 'block';
+  document.getElementById('btn-excluir-modal').disabled = false; // garante que nunca abre já desligado
   document.getElementById('btn-excluir-modal').dataset.nome = t.Tarefa || '';
   const prio = t.Prioridade || 'Média';
   document.querySelectorAll('.prio-btn').forEach(b => b.classList.toggle('sel', b.dataset.p === prio));
