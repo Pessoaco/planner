@@ -2045,6 +2045,7 @@
     <button class="menu-mais-item" onclick="fecharOpcoesPasta(); abrirModalNovaPasta(abaAtual)">📋 Duplicar esta pasta inteira (cria uma pasta nova)</button>
     <button class="menu-mais-item" onclick="fecharOpcoesPasta(); renomearPasta()">✏️ Renomear esta pasta</button>
     <button class="menu-mais-item" onclick="fecharOpcoesPasta(); adicionarTagNaPasta()">🏷️ Adicionar uma tag em todas as tarefas desta pasta</button>
+    <button class="menu-mais-item" onclick="fecharOpcoesPasta(); juntarTodasDivisoes()">☰ Transformar cada divisão em uma lista (junta as tarefas soltas)</button>
     <button class="menu-mais-item" onclick="fecharOpcoesPasta(); ordenarPastasAZ()">🔤 Pastas em ordem alfabética</button>
     <button class="modal-cancel" onclick="fecharOpcoesPasta()" style="margin-top:14px">Fechar</button>
   </div>
@@ -2159,7 +2160,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v42';
+const APP_VERSION = 'v43';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
@@ -5277,6 +5278,17 @@ async function juntarDivisaoEmLista(aba, divisao) {
   if (tag === null) return;
   if (!confirm(`Criar a lista "${divisao}" com ${originais.length} itens e APAGAR as ${originais.length} tarefas antigas?\n(Essa parte não tem volta.)`)) return;
 
+  showToast('⏳ Criando a lista...');
+  const r = await criarListaDaDivisao(aba, divisao, originais, tag);
+  if (!r.ok) showToast('❌ Não consegui criar a lista: ' + r.erro + ' — nada foi apagado');
+  else if (r.apagou) showToast(`✅ Lista "${divisao}" criada com ${r.itens} itens`);
+  else showToast('⚠️ Lista criada, mas as tarefas antigas NÃO foram apagadas (' + r.erro + '). Use Atualizar e apague depois.');
+  renderMantendoScroll();
+}
+
+// Núcleo (usado pelo ☰ de uma divisão e pelo "transformar todas"): cria a tarefa-lista da divisão e SÓ DEPOIS apaga as soltas.
+// Devolve { ok, itens, apagou, erro }. Se a criação falhar, nada é apagado.
+async function criarListaDaDivisao(aba, divisao, originais, tag) {
   const linhas = originais.map(t => {
     let nome = String(t.Tarefa).trim();
     if (/^\*{2,}/.test(nome)) return { item: false, texto: nome.replace(/^\*+\s*/, '').replace(/\*+$/, '').trim() };
@@ -5286,14 +5298,13 @@ async function juntarDivisaoEmLista(aba, divisao) {
     return { item: true, feito: t.Status === 'Concluído', estrela: t.Prioridade === 'Urgente' && t.Status !== 'Concluído', texto: nome };
   });
   const fields = {
-    Tarefa: divisao, 'Divisão': divisao, Prioridade: 'Média', Status: 'Aberto', Tag: tag.trim(),
+    Tarefa: divisao, 'Divisão': divisao, Prioridade: 'Média', Status: 'Aberto', Tag: String(tag || '').trim(),
     'Observação': serializarListaObs(linhas)
   };
-  showToast('⏳ Criando a lista...');
   try {
     const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'addTask', aba, fields }) });
     const data = JSON.parse(await res.text());
-    if (!data.ok) { showToast('❌ Não consegui criar a lista: ' + (data.error || 'tente de novo') + ' — nada foi apagado'); return; }
+    if (!data.ok) return { ok: false, erro: data.error || 'tente de novo' };
     if (!allData[aba]) allData[aba] = [];
     allData[aba].push(Object.assign({ ID: data.id, _aba: aba, 'Data criação': new Date().toLocaleDateString('pt-BR') }, fields));
 
@@ -5303,14 +5314,51 @@ async function juntarDivisaoEmLista(aba, divisao) {
     if (del.ok) {
       const naoAchadas = new Set((del.naoEncontradas || []).map(String));
       allData[aba] = allData[aba].filter(t => !originais.some(o => o === t) || naoAchadas.has(String(t.ID)));
-      showToast(`✅ Lista "${divisao}" criada com ${linhas.length} itens`);
-    } else {
-      showToast('⚠️ Lista criada, mas as tarefas antigas NÃO foram apagadas (' + (del.error || 'erro') + '). Use Atualizar e apague depois.');
+      return { ok: true, itens: linhas.length, apagou: true };
     }
+    return { ok: true, itens: linhas.length, apagou: false, erro: del.error || 'erro' };
   } catch (e) {
-    showToast('❌ Erro de conexão — use Atualizar pra conferir');
+    return { ok: false, erro: 'sem conexão com o servidor' };
+  }
+}
+
+// "Transformar cada divisão em uma lista" (⋯ Opções da pasta): faz o ☰ de TODAS as divisões da pasta aberta, uma de cada vez.
+// Pula divisão que já tem lista (pra não ficar duas) e divisão com menos de 2 tarefas soltas. Para no primeiro erro.
+async function juntarTodasDivisoes() {
+  if (modoNotas) { showToast('📁 Escolha uma pasta na lateral primeiro'); return; }
+  const aba = abaAtual, rotulo = ABA_LABEL[aba] || aba;
+  const porDiv = {};
+  (allData[aba] || []).forEach(t => {
+    const d = String(t['Divisão'] || '').trim();
+    if (d && String(t.Tarefa || '').trim()) (porDiv[d] = porDiv[d] || []).push(t);
+  });
+  const alvos = [], jaTem = [];
+  Object.keys(porDiv).sort((a, b) => a.localeCompare(b, 'pt-BR')).forEach(d => {
+    if (porDiv[d].some(t => ehListaObs(t['Observação']))) { jaTem.push(d); return; }
+    if (porDiv[d].length >= 2) alvos.push({ d, soltas: porDiv[d] });
+  });
+  if (!alvos.length) { showToast('ℹ️ Nada para juntar: cada divisão já é uma lista ou tem menos de 2 tarefas'); return; }
+  const total = alvos.reduce((s, a) => s + a.soltas.length, 0);
+  const tag = prompt(`Na pasta "${rotulo}": transformar ${alvos.length} divisões em ${alvos.length} listas (${total} tarefas soltas viram itens).\n\n` +
+    alvos.map(a => `• ${a.d} (${a.soltas.length})`).join('\n') +
+    (jaTem.length ? `\n\nJá têm lista e não mudam: ${jaTem.join(', ')}` : '') +
+    `\n\nCada tarefa vira um item (concluída = marcado, Urgente = ⭐).\n\nTag para todas as listas (opcional, ex: Comprar):`, 'Comprar');
+  if (tag === null) return;
+  if (!confirm(`Criar ${alvos.length} listas e APAGAR as ${total} tarefas soltas?\n(Essa parte não tem volta. Pode levar um ou dois minutos.)`)) return;
+
+  let feitas = 0, falhou = null;
+  for (let k = 0; k < alvos.length; k++) {
+    showToast(`⏳ Juntando ${k + 1}/${alvos.length}: ${alvos[k].d}...`);
+    const r = await criarListaDaDivisao(aba, alvos[k].d, alvos[k].soltas, tag);
+    if (!r.ok) { falhou = `${alvos[k].d}: ${r.erro}`; break; }
+    feitas++;
+    if (!r.apagou) { falhou = `${alvos[k].d}: lista criada, mas as soltas não foram apagadas (${r.erro})`; break; }
+    renderMantendoScroll();
   }
   renderMantendoScroll();
+  showToast(falhou
+    ? `⚠️ Pronto: ${feitas} de ${alvos.length}. Parou em ${falhou}. O que já foi feito está salvo; use Atualizar e rode de novo.`
+    : `✅ ${feitas} listas criadas na pasta ${rotulo}!`);
 }
 
 // "tudo": ⭐ primeiro e depois o resto (só o que ainda falta). "estrelas": só o que tem ⭐ e falta.
