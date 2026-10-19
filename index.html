@@ -217,12 +217,24 @@
   .lista-item .lista-txt { flex:2 1 130px; word-break:break-word; min-width:0; }
   .lista-item { flex-wrap:wrap; }
   .lista-item .lista-qtd { flex:1 1 110px; min-width:0; max-width:100%; font-size:13px; padding:4px 6px; border:1px solid var(--border, #e5e7eb); border-radius:8px; background:transparent; }
+  /* Item numa linha só (alça · quadradinho · texto · 👤 · ⭐ · ✕); quantidade/quem ficam numa segunda linha que abre no 👤 */
+  .lista-item { flex-direction:column; align-items:stretch; flex-wrap:nowrap; gap:0; }
+  .lista-linha { display:flex; align-items:center; gap:6px; min-width:0; }
+  .lista-linha .lista-txt { flex:2 1 70px; min-width:0; }
+  .lista-linha .lista-qtd { flex:1 1 64px; min-width:0; max-width:140px; }
+  .lista-txt-curto { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; }
+  .lista-txt-curto.expandido { white-space:normal; overflow:visible; word-break:break-word; }
+  .lista-detalhe { display:none; gap:8px; padding:4px 0 6px 52px; }
+  .lista-detalhe input { flex:1 1 0; min-width:0; max-width:260px; }
+  .lista-quem-btn { background:none; border:none; font-size:18px; cursor:pointer; padding:2px 4px; opacity:.4; flex:none; }
+  .lista-quem-btn.on { opacity:1; background:var(--primary-light, #eef2ff); border-radius:8px; }
   .lista-item .lista-quem { flex:0 1 96px; min-width:0; max-width:100%; font-size:13px; padding:4px 6px; border:1px solid var(--border, #e5e7eb); border-radius:8px; background:transparent; }
   .lista-grip { cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; font-size:20px; line-height:1; color:#9ca3af; padding:4px 6px 4px 0; flex:none; }
   .lista-item.arrastando { opacity:.55; background:var(--gray-light, #f3f4f6); }
   .lista-item.alvo-antes { box-shadow:0 -3px 0 var(--primary, #4f46e5); }
   .lista-item.alvo-depois { box-shadow:0 3px 0 var(--primary, #4f46e5); }
-  .lista-item textarea.lista-txt-edit { border:none; background:transparent; font:inherit; padding:4px 0; resize:none; overflow:hidden; min-height:0; line-height:1.3; }
+  .lista-item textarea.lista-txt-edit { border:none; background:transparent; font:inherit; padding:4px 0; resize:none; overflow:hidden; height:28px; min-height:0; max-height:none; line-height:1.3; white-space:pre; }
+  .lista-item textarea.lista-txt-edit[wrap="soft"] { white-space:pre-wrap; }
   .btn-estrela-nova { background:none; border:none; font-size:24px; cursor:pointer; color:#9ca3af; opacity:.7; padding:0 4px; }
   .btn-estrela-nova.on { opacity:1; }
   .lista-item.feito .lista-txt { text-decoration:line-through; opacity:.55; }
@@ -1857,12 +1869,15 @@
       <textarea id="f-obs" placeholder="Detalhes adicionais..."></textarea>
       <div id="obs-lista-editor" style="display:none">
         <div id="obs-lista-itens"></div>
-        <div class="lista-add" style="flex-wrap:wrap;align-items:center">
-          <input type="text" id="obs-lista-novo" placeholder="+ Novo item" style="flex:2 1 150px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();addItemForm()}">
-          <input type="text" id="obs-lista-novo-qtd" placeholder="qtd / obs" style="flex:1 1 110px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();addItemForm()}">
-          <input type="text" id="obs-lista-novo-quem" list="lista-quem-opcoes" placeholder="👤 quem" style="flex:1 1 90px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();addItemForm()}">
+        <div class="lista-add" style="align-items:center;margin-bottom:2px">
+          <input type="text" id="obs-lista-novo" placeholder="+ Novo item" style="flex:2 1 90px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();addItemForm()}">
+          <input type="text" id="obs-lista-novo-qtd" placeholder="qtd / obs" style="flex:1 1 70px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();addItemForm()}">
           <button type="button" class="btn-estrela-nova" id="obs-lista-novo-est" onclick="alternarEstrelaNova('form')" title="Prioridade (fazer/comprar primeiro)">☆</button>
+          <button type="button" class="lista-quem-btn" id="obs-lista-novo-btn" onclick="alternarDetalheNovo('form')" title="A quem cobrar este item">👤</button>
           <button type="button" class="menu-mais-item" style="width:auto;margin:0" onclick="addItemForm()" title="Adicionar item">➕</button>
+        </div>
+        <div class="lista-add" id="obs-lista-novo-det" style="display:none;margin-top:0">
+          <input type="text" id="obs-lista-novo-quem" list="lista-quem-opcoes" placeholder="👤 quem (nome de quem cobrar)" style="flex:1 1 auto;min-width:0;max-width:260px" onkeydown="if(event.key==='Enter'){event.preventDefault();addItemForm()}">
         </div>
       </div>
       <button type="button" class="menu-mais-item" id="btn-obs-lista" style="margin-top:6px" onclick="alternarListaNoForm()">☑ Mostrar como lista (com quadradinhos)</button>
@@ -1988,12 +2003,15 @@
       <button class="modal-fechar-x" onclick="fecharLista()" title="Fechar" style="margin-bottom:16px">✕</button>
     </div>
     <div id="lista-resumo" style="font-size:13px;color:var(--text-muted);margin-bottom:4px"></div>
-    <div class="lista-add" style="flex-wrap:wrap;align-items:center">
-      <input type="text" id="lista-novo" placeholder="+ Novo item" style="flex:2 1 150px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarItemLista()}" onpaste="colarVariosItens(event)">
-      <input type="text" id="lista-novo-qtd" placeholder="qtd / obs" style="flex:1 1 110px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarItemLista()}">
-      <input type="text" id="lista-novo-quem" list="lista-quem-opcoes" placeholder="👤 quem" style="flex:1 1 90px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarItemLista()}">
+    <div class="lista-add" style="align-items:center;margin-bottom:2px">
+      <input type="text" id="lista-novo" placeholder="+ Novo item" style="flex:2 1 90px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarItemLista()}" onpaste="colarVariosItens(event)">
+      <input type="text" id="lista-novo-qtd" placeholder="qtd / obs" style="flex:1 1 70px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarItemLista()}">
       <button type="button" class="btn-estrela-nova" id="lista-novo-est" onclick="alternarEstrelaNova('lista')" title="Prioridade (fazer/comprar primeiro)">☆</button>
+      <button type="button" class="lista-quem-btn" id="lista-novo-btn" onclick="alternarDetalheNovo('lista')" title="A quem cobrar este item">👤</button>
       <button class="menu-mais-item" style="width:auto;margin:0" onclick="adicionarItemLista()" title="Adicionar item">➕</button>
+    </div>
+    <div class="lista-add" id="lista-novo-det" style="display:none;margin-top:0">
+      <input type="text" id="lista-novo-quem" list="lista-quem-opcoes" placeholder="👤 quem (nome de quem cobrar)" style="flex:1 1 auto;min-width:0;max-width:260px" onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarItemLista()}">
     </div>
     <div id="lista-corpo"></div>
     <button class="menu-mais-item" onclick="recomecarLista(true)">🔄 Nova compra: desmarcar tudo e tirar as estrelas</button>
@@ -2141,7 +2159,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v40';
+const APP_VERSION = 'v42';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
@@ -4148,7 +4166,6 @@ async function openEditModal(t) {
   const prio = t.Prioridade || 'Média';
   document.querySelectorAll('.prio-btn').forEach(b => b.classList.toggle('sel', b.dataset.p === prio));
   document.getElementById('modal-add').classList.add('open');
-  ajustarAlturasDaLista(); // agora que o formulário está visível, o texto dos itens ocupa a altura que precisa
 }
 
 async function enviarLembreteModal() {
@@ -4949,20 +4966,41 @@ function renderListaForm() {
   document.getElementById('obs-lista-itens').innerHTML = formListaLinhas.map((l, i) => {
     if (!l.item) return `<div style="padding:4px;font-size:13px;color:var(--text-muted)">${escLista(l.texto)}</div>`;
     const p = partesItemLista(l.texto);
+    // Uma linha só: alça · quadradinho · texto (corta; ao tocar/clicar abre inteiro) · 👤 · ⭐ · ✕.
+    // Quantidade/observação e "quem" ficam atrás do 👤 (abre uma segunda linha).
     return `<div class="lista-item${l.feito ? ' feito' : ''}" data-i="${i}" data-sec="todos">
-        <span class="lista-grip" onpointerdown="arrastarItem(event,'form',${i})" title="Segure e arraste para mudar de lugar">⠿</span>
-        <input type="checkbox" ${l.feito ? 'checked' : ''} onchange="formListaLinhas[${i}].feito=this.checked;renderListaForm()">
-        <textarea class="lista-txt lista-txt-edit" rows="1" oninput="autoAltura(this);formListaLinhas[${i}].texto=setCampoItem(formListaLinhas[${i}].texto,'nome',this.value)"
-          onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('obs-lista-novo').focus()}">${escLista(p.nome)}</textarea>
-        <input type="text" class="lista-qtd" placeholder="qtd / obs" value="${aspas(p.qtd)}" title="Quantidade ou observação (ex: 2 kg · para a escola, pode ser barato)"
-          oninput="formListaLinhas[${i}].texto=setCampoItem(formListaLinhas[${i}].texto,'qtd',this.value)">
-        <input type="text" class="lista-quem" list="lista-quem-opcoes" placeholder="👤 quem" value="${aspas(p.quem)}" title="A quem cobrar este item (o aviso ao Envolvido leva só os itens com o nome dele)"
-          oninput="formListaLinhas[${i}].texto=setCampoItem(formListaLinhas[${i}].texto,'quem',this.value)">
-        <button type="button" class="${l.estrela ? 'on' : ''}" onclick="formListaLinhas[${i}].estrela=!formListaLinhas[${i}].estrela;renderListaForm()" title="Prioridade (fazer/comprar primeiro)">${l.estrela ? '⭐' : '☆'}</button>
-        <button type="button" onclick="formListaLinhas.splice(${i},1);renderListaForm()" title="Tirar da lista">✕</button>
+        <div class="lista-linha">
+          <span class="lista-grip" onpointerdown="arrastarItem(event,'form',${i})" title="Segure e arraste para mudar de lugar">⠿</span>
+          <input type="checkbox" ${l.feito ? 'checked' : ''} onchange="formListaLinhas[${i}].feito=this.checked;renderListaForm()">
+          <textarea class="lista-txt lista-txt-edit" rows="1" wrap="off" onfocus="expandirCampo(this)" ondblclick="expandirCampo(this)" onblur="recolherCampo(this)"
+            oninput="autoAltura(this);formListaLinhas[${i}].texto=setCampoItem(formListaLinhas[${i}].texto,'nome',this.value)"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('obs-lista-novo').focus()}">${escLista(p.nome)}</textarea>
+          <input type="text" class="lista-qtd" placeholder="qtd / obs" value="${aspas(p.qtd)}" title="Quantidade ou observação (ex: 2 kg · para a escola, pode ser barato)"
+            oninput="formListaLinhas[${i}].texto=setCampoItem(formListaLinhas[${i}].texto,'qtd',this.value)">
+          <button type="button" class="${l.estrela ? 'on' : ''}" onclick="formListaLinhas[${i}].estrela=!formListaLinhas[${i}].estrela;renderListaForm()" title="Prioridade (fazer/comprar primeiro)">${l.estrela ? '⭐' : '☆'}</button>
+          <button type="button" class="lista-quem-btn${p.quem ? ' on' : ''}" onclick="alternarDetalheItem('form',${i})" title="${aspas(p.quem ? 'Quem: ' + p.quem : 'A quem cobrar este item')}">👤</button>
+          <button type="button" onclick="formListaLinhas.splice(${i},1);renderListaForm()" title="Tirar da lista">✕</button>
+        </div>
+        <div class="lista-detalhe" style="display:${l._det ? 'flex' : 'none'}">
+          <input type="text" class="lista-quem" list="lista-quem-opcoes" placeholder="👤 quem (nome de quem cobrar)" value="${aspas(p.quem)}" title="A quem cobrar este item (o aviso ao Envolvido leva só os itens com o nome dele)"
+            oninput="formListaLinhas[${i}].texto=setCampoItem(formListaLinhas[${i}].texto,'quem',this.value)">
+        </div>
       </div>`;
   }).join('');
-  document.querySelectorAll('#obs-lista-itens textarea.lista-txt-edit').forEach(autoAltura);
+}
+
+// Texto do item numa linha só: tocar/clicar abre inteiro (quebrando linha); ao sair, volta a uma linha
+function expandirCampo(el) { el.setAttribute('wrap', 'soft'); autoAltura(el); }
+function recolherCampo(el) { el.setAttribute('wrap', 'off'); el.style.height = ''; el.scrollLeft = 0; }
+function alternarDetalheItem(qual, i) {
+  const arr = qual === 'form' ? formListaLinhas : listaLinhas;
+  arr[i]._det = !arr[i]._det;
+  if (qual === 'form') renderListaForm(); else renderLista();
+}
+function alternarDetalheNovo(qual) {
+  const det = document.getElementById(qual === 'form' ? 'obs-lista-novo-det' : 'lista-novo-det');
+  det.style.display = det.style.display === 'none' ? 'flex' : 'none';
+  if (det.style.display === 'flex') det.querySelector('input').focus();
 }
 
 function addItemForm() {
@@ -5005,14 +5043,21 @@ function renderLista() {
     ? `${feitos} de ${itens.length} marcados · ⭐ = fazer/comprar primeiro` : 'Lista vazia — escreva o primeiro item abaixo.';
   atualizarQuemOpcoes();
   const aspas = s => escLista(s).replace(/"/g, '&quot;');
-  const linha = sec => l => { const p = partesItemLista(l.texto); return `<div class="lista-item${l.feito ? ' feito' : ''}" data-i="${l.i}" data-sec="${sec}">
-      <span class="lista-grip" onpointerdown="arrastarItem(event,'lista',${l.i})" title="Segure e arraste para mudar de lugar">⠿</span>
-      <input type="checkbox" ${l.feito ? 'checked' : ''} onchange="alternarItemLista(${l.i})">
-      <span class="lista-txt">${escLista(p.nome)}</span>
-      <input type="text" class="lista-qtd" placeholder="qtd / obs" value="${aspas(p.qtd)}" onchange="qtdItemLista(${l.i}, this.value)" title="Quantidade ou observação (ex: 2 kg · para a escola, pode ser barato)">
-      <input type="text" class="lista-quem" list="lista-quem-opcoes" placeholder="👤 quem" value="${aspas(p.quem)}" onchange="campoItemLista(${l.i}, 'quem', this.value)" title="A quem cobrar este item (o aviso ao Envolvido leva só os itens com o nome dele)">
-      <button class="${l.estrela ? 'on' : ''}" onclick="estrelaItemLista(${l.i})" title="${l.estrela ? 'Tirar a estrela' : 'Marcar como prioridade (comprar primeiro)'}">${l.estrela ? '⭐' : '☆'}</button>
-      <button onclick="removerItemLista(${l.i})" title="Tirar da lista">✕</button>
+  const linha = sec => l => {
+    const p = partesItemLista(l.texto);
+    return `<div class="lista-item${l.feito ? ' feito' : ''}" data-i="${l.i}" data-sec="${sec}">
+      <div class="lista-linha">
+        <span class="lista-grip" onpointerdown="arrastarItem(event,'lista',${l.i})" title="Segure e arraste para mudar de lugar">⠿</span>
+        <input type="checkbox" ${l.feito ? 'checked' : ''} onchange="alternarItemLista(${l.i})">
+        <span class="lista-txt lista-txt-curto" onclick="this.classList.toggle('expandido')" title="Toque para ler inteiro">${escLista(p.nome)}</span>
+        <input type="text" class="lista-qtd" placeholder="qtd / obs" value="${aspas(p.qtd)}" onchange="qtdItemLista(${l.i}, this.value)" title="Quantidade ou observação (ex: 2 kg · para a escola, pode ser barato)">
+        <button class="${l.estrela ? 'on' : ''}" onclick="estrelaItemLista(${l.i})" title="${l.estrela ? 'Tirar a estrela' : 'Marcar como prioridade (comprar primeiro)'}">${l.estrela ? '⭐' : '☆'}</button>
+        <button class="lista-quem-btn${p.quem ? ' on' : ''}" onclick="alternarDetalheItem('lista',${l.i})" title="${aspas(p.quem ? 'Quem: ' + p.quem : 'A quem cobrar este item')}">👤</button>
+        <button onclick="removerItemLista(${l.i})" title="Tirar da lista">✕</button>
+      </div>
+      <div class="lista-detalhe" style="display:${l._det ? 'flex' : 'none'}">
+        <input type="text" class="lista-quem" list="lista-quem-opcoes" placeholder="👤 quem (nome de quem cobrar)" value="${aspas(p.quem)}" onchange="campoItemLista(${l.i}, 'quem', this.value)" title="A quem cobrar este item (o aviso ao Envolvido leva só os itens com o nome dele)">
+      </div>
     </div>`; };
   const estrelas = itens.filter(l => !l.feito && l.estrela);
   const outros = itens.filter(l => !l.feito && !l.estrela);
