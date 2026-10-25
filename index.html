@@ -183,11 +183,24 @@
   .sidebar-pastas-item.active { outline-color:#2563eb; }
   .pastas-dica { font-size:13px; color:var(--text-muted); margin:2px 0 12px; }
   .pastas-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px; }
-  .pasta-card { background:var(--bg-pasta, #eef2ff); border-left:8px solid var(--cor-pasta, #4f46e5); border-radius:14px; padding:16px 14px; cursor:pointer; box-shadow:var(--shadow); user-select:none; -webkit-user-select:none; }
-  .pasta-card:hover { box-shadow:0 3px 10px rgba(0,0,0,.18); }
+  /* Cartão de pasta: fundo bem clarinho da cor da pasta e uma borda fina (antes era pesado) */
+  .pasta-card { background:var(--bg-pasta, #f8f9ff); background:color-mix(in srgb, var(--cor-pasta, #4f46e5) 7%, #ffffff); border:1px solid color-mix(in srgb, var(--cor-pasta, #4f46e5) 22%, #ffffff); border-left:3px solid var(--cor-pasta, #4f46e5); border-radius:12px; padding:13px 12px; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,.06); user-select:none; -webkit-user-select:none; }
+  .pasta-card:hover { box-shadow:0 2px 8px rgba(0,0,0,.12); }
+  .pastas-lista { display:flex; flex-direction:column; gap:6px; }
+  .pastas-lista .pasta-card { display:flex; align-items:center; gap:10px; padding:9px 12px; }
+  .pastas-lista .pasta-card-icone { font-size:18px; margin:0; }
+  .pastas-lista .pasta-card-nome { font-size:14px; flex:0 1 auto; }
+  .pastas-lista .pasta-card-info { margin:0 0 0 auto; }
+  .pastas-lista .pasta-acoes { position:static; order:3; margin-left:8px; }
+  .pasta-acoes { position:absolute; top:4px; right:6px; display:flex; align-items:center; gap:2px; }
+  .pasta-cor-btn { background:none; border:none; font-size:14px; cursor:pointer; padding:3px; opacity:.55; line-height:1; }
+  .pasta-cor-btn:hover { opacity:1; }
+  .cor-opcoes { display:flex; flex-wrap:wrap; gap:12px; margin:8px 0 14px; }
+  .cor-bolinha { width:38px; height:38px; border-radius:50%; border:3px solid transparent; cursor:pointer; box-shadow:0 0 0 1px rgba(0,0,0,.2); }
+  .cor-bolinha.sel { border-color:#111; }
   .pasta-card { position:relative; }
   .pasta-card.sel { outline:3px solid var(--cor-pasta, #4f46e5); }
-  .pasta-grip { position:absolute; top:6px; right:8px; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; font-size:18px; line-height:1; color:var(--cor-pasta, #4f46e5); opacity:.55; padding:4px; }
+  .pasta-grip { cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; font-size:18px; line-height:1; color:var(--cor-pasta, #4f46e5); opacity:.55; padding:4px; }
   .pasta-card.arrastando { opacity:.55; }
   .pasta-card.alvo-antes { box-shadow:-5px 0 0 var(--cor-pasta, #4f46e5); }
   .pasta-card.alvo-depois { box-shadow:5px 0 0 var(--cor-pasta, #4f46e5); }
@@ -790,7 +803,7 @@
 
   /* CATEGORIA */
   .categoria-group {
-    margin-bottom: 24px;
+    margin-bottom: 16px;
   }
 
   /* Cada divisão é uma "faixa" com a cor da pasta e fica presa embaixo do cabeçalho enquanto se rola:
@@ -799,10 +812,11 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 9px 10px;
-    margin: 4px 0 8px;
+    padding: 5px 10px;
+    margin: 2px 0 6px;
     background: var(--cor-div-bg, var(--gray-light));
-    border-left: 5px solid var(--cor-div, var(--primary));
+    background: color-mix(in srgb, var(--cor-div, #4f46e5) 6%, #ffffff);
+    border-left: 3px solid var(--cor-div, var(--primary));
     border-radius: 8px;
     position: sticky;
     top: var(--header-h, 0px);
@@ -2023,6 +2037,16 @@
 
 <datalist id="lista-quem-opcoes"></datalist>
 
+<div class="modal-overlay" id="modal-cor-pasta" onclick="if(event.target===this) fecharCorPasta()">
+  <div class="modal">
+    <h3>🎨 Cor da pasta</h3>
+    <p id="cor-pasta-nome" style="font-size:13px;color:var(--text-muted);margin:-6px 0 4px"></p>
+    <div class="cor-opcoes" id="cor-pasta-opcoes"></div>
+    <button class="menu-mais-item" onclick="escolherCorPasta('')">↩ Voltar à cor padrão</button>
+    <button class="modal-cancel" onclick="fecharCorPasta()" style="margin-top:10px">Cancelar</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-troca" onclick="if(event.target===this) fecharTroca()">
   <div class="modal">
     <h3 id="troca-titulo">Trocar</h3>
@@ -2142,6 +2166,7 @@
     <button class="menu-mais-item" onclick="fecharOpcoesPasta(); abrirModalNovaPasta(abaAtual)">📋 Duplicar esta pasta inteira (cria uma pasta nova)</button>
     <button class="menu-mais-item" onclick="fecharOpcoesPasta(); renomearPasta()">✏️ Renomear esta pasta</button>
     <button class="menu-mais-item" onclick="fecharOpcoesPasta(); adicionarTagNaPasta()">🏷️ Adicionar uma tag em todas as tarefas desta pasta</button>
+    <button class="menu-mais-item" onclick="fecharOpcoesPasta(); abrirCorPasta(abaAtual)">🎨 Trocar a cor desta pasta</button>
     <button class="menu-mais-item" onclick="fecharOpcoesPasta(); abrirNota('', abaAtual)">📝 Nova nota ligada a esta pasta</button>
     <button class="menu-mais-item" onclick="fecharOpcoesPasta(); juntarTodasDivisoes()">☰ Transformar cada divisão em uma lista (junta as tarefas soltas)</button>
     <button class="menu-mais-item" onclick="fecharOpcoesPasta(); ordenarPastasAZ()">🔤 Pastas em ordem alfabética</button>
@@ -2249,7 +2274,18 @@ const PALETA_PASTAS_NOVAS = [
   ['#e11d48', '#ffe4e6'], ['#0ea5e9', '#e0f2fe'], ['#65a30d', '#ecfccb'],
   ['#7c3aed', '#ede9fe'], ['#ea580c', '#ffedd5'], ['#0f766e', '#ccfbf1']
 ];
+// Cor escolhida pela pessoa para uma pasta (guardada neste aparelho). Tem prioridade sobre a cor padrão.
+let coresPastasUsuario = {};
+try { coresPastasUsuario = JSON.parse(localStorage.getItem('coresPastas') || '{}') || {}; } catch (e) {}
+const PALETA_ESCOLHA = ['#4f46e5', '#e11d48', '#ea580c', '#ca8a04', '#65a30d', '#16a34a', '#0f766e', '#0891b2', '#0ea5e9', '#7c3aed', '#c026d3', '#64748b'];
+// Mistura a cor com branco (f = quanto de branco, 0 a 1) pra gerar o fundo clarinho
+function misturarComBranco(hex, f) {
+  const n = parseInt(String(hex).replace('#', ''), 16);
+  const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v => Math.round(v + (255 - v) * f));
+  return '#' + c.map(v => v.toString(16).padStart(2, '0')).join('');
+}
 function corDaPasta(aba) {
+  if (coresPastasUsuario[aba]) return [coresPastasUsuario[aba], misturarComBranco(coresPastasUsuario[aba], 0.88)];
   if (CORES_PASTAS_FIXAS[aba]) return CORES_PASTAS_FIXAS[aba];
   const novas = ABAS.filter(a => !CORES_PASTAS_FIXAS[a]);
   const idx = Math.max(0, novas.indexOf(aba));
@@ -2258,7 +2294,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v50';
+const APP_VERSION = 'v51';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
@@ -3292,22 +3328,32 @@ async function carregarRestanteDasPastas() {
   }
 }
 
-let vistaModo = localStorage.getItem('vistaModo') || 'cards';
+// Cada tela tem a SUA visão (Cards ou Lista), independente das outras: tarefas (o conteúdo das pastas), Notas e Pastas.
+let vistaModo = localStorage.getItem('vistaModo') || 'cards';     // tarefas
+let vistaNotas = localStorage.getItem('vistaNotas') || 'cards';   // notas (post-its)
+let vistaPastas = localStorage.getItem('vistaPastas') || 'cards'; // tela de Pastas
+const vistaDaTela = () => (modoNotas ? vistaNotas : modoPastas ? vistaPastas : vistaModo);
 
 function aplicarVista() {
   const main = document.getElementById('main');
   const btn = document.getElementById('btn-vista');
-  main.classList.toggle('vista-lista', vistaModo === 'lista');
-  // O botão mostra a visão ATUAL (antes mostrava a outra e dava a impressão de estar na errada)
+  const atual = vistaDaTela();
+  // A aparência "lista" das tarefas (grade de colunas) só vale na tela de tarefas
+  main.classList.toggle('vista-lista', !modoNotas && !modoPastas && vistaModo === 'lista');
+  // O botão mostra a visão ATUAL desta tela (antes mostrava a outra e dava a impressão de estar na errada)
   if (btn) {
-    btn.textContent = vistaModo === 'lista' ? '☰ Lista' : '▦ Cards';
-    btn.title = `Visão atual: ${vistaModo === 'lista' ? 'Lista' : 'Cards'} — toque para trocar para ${vistaModo === 'lista' ? 'Cards' : 'Lista'}`;
+    btn.textContent = atual === 'lista' ? '☰ Lista' : '▦ Cards';
+    btn.title = `Visão desta tela: ${atual === 'lista' ? 'Lista' : 'Cards'} — toque para trocar para ${atual === 'lista' ? 'Cards' : 'Lista'} (só aqui; as outras telas guardam a escolha delas)`;
   }
 }
 
 function toggleVista() {
-  vistaModo = vistaModo === 'lista' ? 'cards' : 'lista';
-  localStorage.setItem('vistaModo', vistaModo);
+  const prox = vistaDaTela() === 'lista' ? 'cards' : 'lista';
+  try {
+    if (modoNotas) { vistaNotas = prox; localStorage.setItem('vistaNotas', prox); }
+    else if (modoPastas) { vistaPastas = prox; localStorage.setItem('vistaPastas', prox); }
+    else { vistaModo = prox; localStorage.setItem('vistaModo', prox); }
+  } catch (e) { if (modoNotas) vistaNotas = prox; else if (modoPastas) vistaPastas = prox; else vistaModo = prox; }
   aplicarVista();
   render();
 }
@@ -3450,6 +3496,7 @@ function render() {
   atualizarBotaoOrdem();
   // Buscar, filtrar ou pedir Urgentes/Hoje/Semana tira das Notas e mostra tarefas
   if ((modoNotas || modoPastas) && (algumFiltroAtivo() || modoUrgentesAtivo || modoAgendaPeriodo)) { modoNotas = false; modoPastas = false; renderTabs(); }
+  aplicarVista(); // o botão Cards/Lista e o visual seguem a visão da tela em que se está
   atualizarPastaAtualMobile();
   if (modoPastas) { renderPastasHome(); return; }
   if (modoNotas) { renderNotas(); return; }
@@ -4904,6 +4951,27 @@ function cliquePastaCard(ev, aba) {
 
 // Arrastar uma pasta (pelo ⠿) para mudar a ordem: vale também para a lista da lateral e é guardado neste aparelho
 let arrastoPasta = null;
+// 🎨 Trocar a cor de uma pasta (aparece na lateral, nas faixas das divisões e na tela de Pastas)
+let corPastaAlvo = null;
+function abrirCorPasta(aba) {
+  corPastaAlvo = aba;
+  document.getElementById('cor-pasta-nome').textContent = ABA_LABEL[aba] || aba;
+  const atual = corDaPasta(aba)[0];
+  document.getElementById('cor-pasta-opcoes').innerHTML = PALETA_ESCOLHA.map(c =>
+    `<div class="cor-bolinha${c.toLowerCase() === String(atual).toLowerCase() ? ' sel' : ''}" style="background:${c}" onclick="escolherCorPasta('${c}')"></div>`).join('');
+  document.getElementById('modal-cor-pasta').classList.add('open');
+}
+function fecharCorPasta() { document.getElementById('modal-cor-pasta').classList.remove('open'); }
+function escolherCorPasta(cor) {
+  if (!corPastaAlvo) return;
+  if (cor) coresPastasUsuario[corPastaAlvo] = cor; else delete coresPastasUsuario[corPastaAlvo];
+  try { localStorage.setItem('coresPastas', JSON.stringify(coresPastasUsuario)); } catch (e) {}
+  fecharCorPasta();
+  renderTabs();
+  render();
+  showToast(cor ? '🎨 Cor da pasta trocada' : '🎨 Cor padrão da pasta');
+}
+
 function iniciarArrastoPasta(ev, aba) {
   ev.preventDefault(); ev.stopPropagation();
   const grip = ev.currentTarget;
@@ -4968,13 +5036,16 @@ function renderPastasHome() {
     return `<div class="pasta-card" data-aba="${escLista(aba).replace(/"/g, '&quot;')}" style="--cor-pasta:${cor};--bg-pasta:${bg}" role="button" tabindex="0"
         onclick="cliquePastaCard(event,'${aba.replace(/'/g, "\\'")}')" ondblclick="switchTab('${aba.replace(/'/g, "\\'")}')"
         onkeydown="if(event.key==='Enter')switchTab('${aba.replace(/'/g, "\\'")}')">
-      <span class="pasta-grip" onpointerdown="iniciarArrastoPasta(event,'${aba.replace(/'/g, "\\'")}')" onclick="event.stopPropagation()" ondblclick="event.stopPropagation()" title="Segure e arraste para mudar a ordem das pastas">⠿</span>
+      <span class="pasta-acoes">
+        <button class="pasta-cor-btn" onclick="event.stopPropagation(); abrirCorPasta('${aba.replace(/'/g, "\\'")}')" ondblclick="event.stopPropagation()" title="Trocar a cor desta pasta">🎨</button>
+        <span class="pasta-grip" onpointerdown="iniciarArrastoPasta(event,'${aba.replace(/'/g, "\\'")}')" onclick="event.stopPropagation()" ondblclick="event.stopPropagation()" title="Segure e arraste para mudar a ordem das pastas">⠿</span>
+      </span>
       <div class="pasta-card-icone">${iconeCategoria(aba)}</div>
       <div class="pasta-card-nome">${escLista(ABA_LABEL[aba] || aba)}</div>
       <div class="pasta-card-info">${carregada ? ab.length + (ab.length === 1 ? ' aberta' : ' abertas') : '…'}${urg ? ` · 🔴 ${urg}` : ''}${nNotas ? ` · 📝 ${nNotas}` : ''}</div>
     </div>`;
   }).join('');
-  main.innerHTML = `<div class="pastas-dica">${ehToque() ? 'Toque numa pasta para abrir' : 'Dê dois cliques numa pasta para abrir'}</div><div class="pastas-grid">${cards}</div>`;
+  main.innerHTML = `<div class="pastas-dica">${ehToque() ? 'Toque numa pasta para abrir' : 'Dê dois cliques numa pasta para abrir'} · 🎨 troca a cor · ⠿ muda a ordem</div><div class="${vistaPastas === 'lista' ? 'pastas-lista' : 'pastas-grid'}">${cards}</div>`;
   document.getElementById('counters').innerHTML = `
     <div class="contador-linha"><span class="contador-item total">Pastas: <b>${abaOrdem.length}</b></span></div>
     <div class="contador-linha versao-linha"><span>App ${APP_VERSION}</span><span>Servidor ${serverVersion === null ? '…' : serverVersion}</span></div>`;
@@ -5059,7 +5130,7 @@ function renderNotas() {
     ? '<div class="notas-vazio">Nenhuma nota encontrada com esse filtro.</div>'
     : '<div class="notas-vazio">📝<br>Nenhuma nota ainda.<br>Escreva ali em cima e dê Enter, ou toque em <b>Nova nota</b>.</div>';
   // Visão Lista: só o título (uma linha por nota). Visão Cards: título + o que foi escrito (post-its).
-  else corpo = vistaModo === 'lista'
+  else corpo = vistaNotas === 'lista'
     ? `<div class="notas-lista">${lista.map(notaLinhaHtml).join('')}</div>`
     : `<div class="notas-grid">${lista.map(notaHtml).join('')}</div>`;
 
