@@ -179,6 +179,22 @@
   .sidebar-notas-item { order:-1; display:flex; align-items:center; gap:8px; margin:6px 8px 12px; padding:10px 12px; border-radius:10px;
     background:#fef08a; color:#713f12; font-weight:800; font-size:13px; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,.18); }
   .sidebar-notas-item.active { outline:2px solid #ca8a04; }
+  .sidebar-pastas-item { background:#dbeafe; color:#1e3a8a; margin-top:-6px; }
+  .sidebar-pastas-item.active { outline-color:#2563eb; }
+  .pastas-dica { font-size:13px; color:var(--text-muted); margin:2px 0 12px; }
+  .pastas-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px; }
+  .pasta-card { background:var(--bg-pasta, #eef2ff); border-left:8px solid var(--cor-pasta, #4f46e5); border-radius:14px; padding:16px 14px; cursor:pointer; box-shadow:var(--shadow); user-select:none; -webkit-user-select:none; }
+  .pasta-card:hover { box-shadow:0 3px 10px rgba(0,0,0,.18); }
+  .pasta-card { position:relative; }
+  .pasta-card.sel { outline:3px solid var(--cor-pasta, #4f46e5); }
+  .pasta-grip { position:absolute; top:6px; right:8px; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; font-size:18px; line-height:1; color:var(--cor-pasta, #4f46e5); opacity:.55; padding:4px; }
+  .pasta-card.arrastando { opacity:.55; }
+  .pasta-card.alvo-antes { box-shadow:-5px 0 0 var(--cor-pasta, #4f46e5); }
+  .pasta-card.alvo-depois { box-shadow:5px 0 0 var(--cor-pasta, #4f46e5); }
+  .pasta-card-icone { font-size:26px; line-height:1; margin-bottom:8px; }
+  .pasta-card-nome { font-size:16px; font-weight:800; color:var(--cor-pasta, #4f46e5); text-transform:uppercase; word-break:break-word; }
+  .pasta-card-info { font-size:12px; color:var(--text-muted); margin-top:6px; }
+  @media print { .pastas-dica { display:none; } }
   .notas-topo { display:flex; gap:8px; align-items:center; margin:4px 0 12px; flex-wrap:wrap; }
   .notas-topo input { flex:1 1 220px; min-width:0; padding:12px 14px; border:1.5px solid var(--border, #e5e7eb); border-radius:12px; font-size:15px; }
   .btn-nova-nota { background:#fef08a; color:#713f12; border:none; border-radius:12px; padding:12px 16px; font-weight:800; font-size:14px; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,.18); }
@@ -196,11 +212,47 @@
   .nota-cores { display:flex; gap:10px; margin:6px 0 4px; }
   .nota-cor { width:30px; height:30px; border-radius:50%; border:3px solid transparent; cursor:pointer; box-shadow:0 0 0 1px rgba(0,0,0,.2); }
   .nota-cor.sel { border-color:#111; }
+  .btn-mic { background:none; border:none; font-size:20px; cursor:pointer; padding:2px 4px; line-height:1; }
+  .btn-mic.ouvindo { background:#fee2e2; border-radius:50%; animation:pulsoMic 1s infinite; }
+  @keyframes pulsoMic { 0%,100% { box-shadow:0 0 0 0 rgba(220,38,38,.5); } 50% { box-shadow:0 0 0 6px rgba(220,38,38,0); } }
+  @media print { .btn-mic { display:none !important; } }
+  .notas-pasta { margin:0 0 14px; padding:10px 12px; background:#fffbeb; border:1.5px solid #fde68a; border-radius:12px; }
+  .notas-pasta-titulo { font-size:12px; font-weight:800; color:#92400e; margin-bottom:6px; }
+  .notas-mini { display:flex; flex-wrap:wrap; gap:8px; }
+  .nota-mini { flex:1 1 220px; max-width:100%; padding:8px 11px; border-radius:10px; font-size:13px; color:#1f2937; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,.15); }
+  .nota-mini-txt { opacity:.8; }
+  .notas-div { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 10px; }
+  @media print { .notas-pasta, .notas-div { display:none; } }
+  .notas-lista { display:flex; flex-direction:column; gap:6px; }
+  .nota-linha { display:flex; align-items:center; gap:8px; background:var(--card); border-left:8px solid #fef08a; border-radius:10px; padding:11px 12px; box-shadow:var(--shadow); cursor:pointer; }
+  .nota-linha-titulo { flex:1 1 auto; min-width:0; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .nota-local { font-size:11px; color:var(--text-muted); white-space:nowrap; }
   .notas-vazio { text-align:center; padding:40px 16px; color:var(--text-muted, #6b7280); }
   @media print { .notas-topo, .notas-tags, .nota-del { display:none !important; } .nota { box-shadow:none; border:1px solid #bbb; } }
 
   /* ----- Lista marcável (observação com itens "- [ ] ...") ----- */
   .meta-lista { cursor:pointer; background:var(--primary-bg, #eef2ff); color:var(--primary, #4f46e5); border-radius:8px; padding:3px 9px; font-weight:600; }
+  /* Celular: o cabeçalho (botões + busca) ocupava ~40% da tela o tempo todo. Agora rola junto com a lista; quem fica preso no
+     topo é a faixa da divisão, com a pasta na frente ("📍 Pessoal › Casa"), pra sempre saber onde se está lendo. */
+  .pin-svg { vertical-align:-2px; flex:none; }
+  .cat-pasta-mobile { display:none; font-size:11px; font-weight:700; color:var(--text-muted); text-transform:none; letter-spacing:0; white-space:nowrap; }
+  .btn-mais-mobile { display:none; }
+  @media (max-width: 639px) {
+    .header { position: static; }
+    :root { --header-h: 0px !important; }
+    .cat-pasta-mobile { display:inline; }
+    /* Faixa da divisão numa linha só: título corta com "…" e os botões menos usados ficam atrás do "⋯" */
+    .categoria-header { padding: 6px 8px; gap: 5px; flex-wrap: wrap; }
+    .categoria-header .categoria-title { flex: 0 1 auto; min-width: 0; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .categoria-header .btn-nova-na-divisao { width: 22px; height: 22px; font-size: 11px; }
+    .categoria-header .btn-extra { display: none; }
+    .categoria-header.mais-aberto .btn-extra { display: inline-flex; align-items: center; justify-content: center; }
+    .btn-mais-mobile { display: inline-flex; align-items: center; justify-content: center; }
+  }
+  .barra-divisoes { display:flex; align-items:center; gap:10px; margin:2px 0 8px; }
+  .btn-recolher { background:var(--primary-light); color:var(--primary); border:none; border-radius:8px; padding:7px 12px; font-size:13px; font-weight:700; cursor:pointer; }
+  .barra-div-info { font-size:12px; color:var(--text-muted); }
+  @media print { .barra-divisoes { display:none; } }
   .btn-nova-na-divisao.fixada { background:#fef08a; border-radius:8px; }
   .categoria-group.fixada .categoria-header { box-shadow: inset 4px 0 0 #ca8a04; }
   .lista-print { display:none; }
@@ -221,17 +273,18 @@
   .lista-item .lista-qtd { flex:1 1 110px; min-width:0; max-width:100%; font-size:13px; padding:4px 6px; border:1px solid var(--border, #e5e7eb); border-radius:8px; background:transparent; }
   /* Item numa linha só (alça · quadradinho · texto · 👤 · ⭐ · ✕); quantidade/quem ficam numa segunda linha que abre no 👤 */
   .lista-item { flex-direction:column; align-items:stretch; flex-wrap:nowrap; gap:0; }
-  .lista-linha { display:flex; align-items:center; gap:6px; min-width:0; }
-  .lista-linha .lista-txt { flex:2 1 70px; min-width:0; }
-  .lista-linha .lista-qtd { flex:1 1 64px; min-width:0; max-width:140px; }
+  .lista-linha { display:flex; align-items:center; gap:3px; min-width:0; }
+  .lista-linha .lista-txt { flex:3 1 0; min-width:60px; }
+  .lista-linha .lista-qtd { flex:1 1 0; min-width:44px; max-width:96px; padding:4px 5px; }
+  .lista-linha input[type=checkbox] { width:18px; height:18px; margin:0 2px 0 0; }
   .lista-txt-curto { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; }
   .lista-txt-curto.expandido { white-space:normal; overflow:visible; word-break:break-word; }
   .lista-detalhe { display:none; gap:8px; padding:4px 0 6px 52px; }
   .lista-detalhe input { flex:1 1 0; min-width:0; max-width:260px; }
-  .lista-quem-btn { background:none; border:none; font-size:18px; cursor:pointer; padding:2px 4px; opacity:.4; flex:none; }
+  .lista-quem-btn { background:none; border:none; font-size:17px; cursor:pointer; padding:3px 2px; opacity:.4; flex:none; }
   .lista-quem-btn.on { opacity:1; background:var(--primary-light, #eef2ff); border-radius:8px; }
   .lista-item .lista-quem { flex:0 1 96px; min-width:0; max-width:100%; font-size:13px; padding:4px 6px; border:1px solid var(--border, #e5e7eb); border-radius:8px; background:transparent; }
-  .lista-grip { cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; font-size:20px; line-height:1; color:#9ca3af; padding:4px 6px 4px 0; flex:none; }
+  .lista-grip { cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; font-size:18px; line-height:1; color:#9ca3af; padding:4px 2px 4px 0; flex:none; }
   .lista-item.arrastando { opacity:.55; background:var(--gray-light, #f3f4f6); }
   .lista-item.alvo-antes { box-shadow:0 -3px 0 var(--primary, #4f46e5); }
   .lista-item.alvo-depois { box-shadow:0 3px 0 var(--primary, #4f46e5); }
@@ -240,7 +293,7 @@
   .btn-estrela-nova { background:none; border:none; font-size:24px; cursor:pointer; color:#9ca3af; opacity:.7; padding:0 4px; }
   .btn-estrela-nova.on { opacity:1; }
   .lista-item.feito .lista-txt { text-decoration:line-through; opacity:.55; }
-  .lista-item button { background:none; border:none; font-size:20px; cursor:pointer; padding:2px 6px; opacity:.6; color:#9ca3af; }
+  .lista-item button { background:none; border:none; font-size:18px; line-height:1; cursor:pointer; padding:3px 2px; opacity:.6; color:#9ca3af; }
   .lista-item button.on { opacity:1; }
   .lista-sep { font-size:12px; font-weight:700; color:var(--text-muted, #6b7280); margin:12px 0 2px; }
   .lista-add { display:flex; gap:6px; margin:10px 0; }
@@ -737,14 +790,23 @@
 
   /* CATEGORIA */
   .categoria-group {
-    margin-bottom: 16px;
+    margin-bottom: 24px;
   }
 
+  /* Cada divisão é uma "faixa" com a cor da pasta e fica presa embaixo do cabeçalho enquanto se rola:
+     dá pra saber em qual divisão você está lendo e onde uma termina e a outra começa */
   .categoria-header {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 0 6px;
+    padding: 9px 10px;
+    margin: 4px 0 8px;
+    background: var(--cor-div-bg, var(--gray-light));
+    border-left: 5px solid var(--cor-div, var(--primary));
+    border-radius: 8px;
+    position: sticky;
+    top: var(--header-h, 0px);
+    z-index: 6;
     cursor: pointer;
     user-select: none;
   }
@@ -768,7 +830,7 @@
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: var(--primary);
+    color: var(--cor-div, var(--primary));
   }
 
   .categoria-count {
@@ -973,26 +1035,30 @@
   }
 
   /* Lápis no topo, ao lado do nome da tarefa */
+  /* Único lápis do cartão: pequeno, ao lado do nome (edita a tarefa toda). Prioridade e status se trocam tocando na palavra. */
   .btn-editar-topo {
-    background: var(--gray-light);
+    background: transparent;
     border: none;
-    border-radius: 8px;
-    font-size: 15px;
+    border-radius: 6px;
+    font-size: 13px;
     cursor: pointer;
     flex-shrink: 0;
-    padding: 6px 9px;
+    padding: 3px 6px;
     margin-left: auto;
+    opacity: .75;
   }
   .btn-editar-topo:active { opacity: 0.6; }
-  #main.vista-lista .btn-editar-topo { padding: 5px 7px; }
+  #main.vista-lista .btn-editar-topo { padding: 3px 5px; }
+  #main:not(.vista-lista) .tarefa-top { margin-bottom: 4px; }
+  #main:not(.vista-lista) .btn-editar-topo { font-size: 14px; padding: 4px 8px; }
 
-  /* No card (não na lista), o lápis de editar é maior — dedo grande precisa de alvo grande,
-     e mais espaço embaixo do nome pra não ficar perto de outros botões sem querer */
-  #main:not(.vista-lista) .tarefa-top { margin-bottom: 6px; }
-  #main:not(.vista-lista) .btn-editar-topo {
-    font-size: 20px;
-    padding: 10px 14px;
-  }
+  /* Prioridade e status são botões: tocar na palavra abre a janela de troca */
+  @media print { .badge-btn::after { content: none; } .categoria-header { position: static; } }
+  .badge-btn { border: none; cursor: pointer; font-family: inherit; }
+  .badge-btn:active { opacity: .65; }
+  .badge-btn::after { content: ' ▾'; font-size: 0.8em; opacity: .55; }
+  .troca-opcao { display:flex; align-items:center; gap:10px; width:100%; padding:13px 14px; margin-bottom:8px; background:var(--gray-light); border:2px solid transparent; border-radius:12px; font-size:15px; font-weight:600; cursor:pointer; text-align:left; }
+  .troca-opcao.atual { border-color: var(--primary); background: var(--primary-light); }
 
   /* "Mais ações" (duplicar/compartilhar/lembrete) — perto do Concluir, é o menos usado */
   .btn-mais-acoes {
@@ -1022,7 +1088,11 @@
     gap: 8px;
     margin-top: 8px;
   }
-  .tarefa-rodape-acoes .btn-concluir-grande { flex: 1; margin-top: 0; }
+  .tarefa-rodape-acoes .btn-concluir-grande { flex: 0 0 auto; width: auto; margin-top: 0; padding: 6px 12px; font-size: 13px; }
+  /* Card: etiquetas (prioridade/status) à esquerda e "⋯ + Concluir" à direita, na MESMA linha (antes o botão ocupava uma terceira linha) */
+  #main:not(.vista-lista) .tarefa-rodape { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 8px; }
+  #main:not(.vista-lista) .campos-pares-card { margin-top: 0; justify-content: flex-start; }
+  #main:not(.vista-lista) .tarefa-rodape-acoes { margin-top: 0; margin-left: auto; }
 
   /* Compartilhar no WhatsApp — fundo verde clarinho pra destacar dos outros dois ícones */
   .btn-compartilhar-topo {
@@ -1056,13 +1126,13 @@
     justify-content: center;
     gap: 6px;
     width: 100%;
-    margin-top: 14px;
-    padding: 10px;
-    background: var(--success-light);
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: transparent;
     color: var(--success);
-    border: 2px solid var(--success);
-    border-radius: var(--radius);
-    font-size: 14px;
+    border: 1.5px solid #86d9a3;
+    border-radius: 10px;
+    font-size: 13px;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.2s;
@@ -1574,21 +1644,18 @@
     .sidebar-overlay { display: none !important; }
     /* Altura mínima = a tela toda: com poucas tarefas (ou "Carregando...") a área ficava mais baixa que a lista
        de pastas, e a lista "subia" por cima do cabeçalho pra caber dentro dela */
-    .app-body { min-height: calc(100vh - var(--header-h, 0px)); }
+    /* A lista de pastas fica FIXA na lateral, do cabeçalho até o pé da tela (usa toda a altura; rola por dentro só se faltar
+       espaço). Antes era "sticky" e a altura tinha que descontar o rodapé de contadores, o que encurtava a lista à toa. */
+    .app-body { padding-left: 170px; }
+    .counters-footer { margin-left: 170px; }
     .sidebar-pastas {
-      position: sticky;
-      /* Gruda embaixo do cabeçalho, não em cima dele — a altura real é medida via JS
-         porque o cabeçalho muda de tamanho conforme os botões quebram linha */
-      top: var(--header-h, 0px);
-      /* max-height (não height fixo): perto do fim da página o espaço restante encolhe,
-         e uma altura fixa forçava o sticky a "subir" por cima do cabeçalho pra caber.
-         Com max-height ela só ocupa o que o conteúdo (lista de pastas) realmente precisa. */
-      /* Desconta também o rodapé de contadores (fica depois da área principal): no fim da página o espaço do sticky
-         acaba onde o rodapé começa, e uma lista mais alta que isso subia por cima do cabeçalho. Se não couber, rola por dentro. */
-      max-height: calc(100vh - var(--header-h, 0px) - var(--footer-h, 0px));
-      overflow-y: auto;
+      position: fixed;
+      top: var(--header-h, 0px); /* a altura real do cabeçalho é medida via JS (ele muda conforme os botões quebram linha) */
+      left: 0;
+      bottom: 0;
+      height: auto;
       width: 170px;
-      flex-shrink: 0;
+      z-index: 90;
       transform: none;
       box-shadow: none;
       border-right: 1px solid var(--border);
@@ -1656,7 +1723,7 @@
       <button class="btn-refresh quick-urgentes" id="btn-urgentes" onclick="atalhoUrgentes()">🔥 Urgentes</button>
       <button class="btn-refresh quick-agenda" onclick="atalhoAgenda('hoje')">📅 Hoje</button>
       <button class="btn-refresh quick-agenda" onclick="atalhoAgenda('semana')">🗓️ Semana</button>
-      <button class="btn-refresh btn-vista" id="btn-vista" onclick="toggleVista()" title="Trocar entre cards e lista">▦ Cards</button>
+      <button class="btn-refresh btn-vista" id="btn-vista" onclick="toggleVista()" title="Trocar entre cards e lista" style="background:var(--primary-light);color:var(--primary);font-weight:700">▦ Cards</button>
       <button class="btn-refresh" id="btn-ordem" onclick="alternarOrdem()" title="Ordem: A–Z → mais recentes → mais antigas">🔤 A–Z</button>
       <button class="btn-refresh" onclick="loadData()">↻ Atualizar</button>
     </div>
@@ -1875,6 +1942,7 @@
         <div class="lista-add" style="align-items:center;margin-bottom:2px">
           <input type="text" id="obs-lista-novo" placeholder="+ Novo item" style="flex:2 1 90px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();addItemForm()}">
           <input type="text" id="obs-lista-novo-qtd" placeholder="qtd / obs" style="flex:1 1 70px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();addItemForm()}">
+          <button type="button" class="btn-mic" data-alvo="form" onclick="alternarDitado('form')" title="Falar os itens (faça uma pausa ou diga 'próximo' para separar)">🎤</button>
           <button type="button" class="btn-estrela-nova" id="obs-lista-novo-est" onclick="alternarEstrelaNova('form')" title="Prioridade (fazer/comprar primeiro)">☆</button>
           <button type="button" class="lista-quem-btn" id="obs-lista-novo-btn" onclick="alternarDetalheNovo('form')" title="A quem cobrar este item">👤</button>
           <button type="button" class="menu-mais-item" style="width:auto;margin:0" onclick="addItemForm()" title="Adicionar item">➕</button>
@@ -1884,6 +1952,16 @@
         </div>
       </div>
       <button type="button" class="menu-mais-item" id="btn-obs-lista" style="margin-top:6px" onclick="alternarListaNoForm()">☑ Mostrar como lista (com quadradinhos)</button>
+    </div>
+
+    <div class="form-group">
+      <label>Tag (opcional — projeto/assunto, não é pessoa)</label>
+      <input type="text" id="f-tag" placeholder="Ex: ODOO">
+    </div>
+
+    <div class="form-group">
+      <label>Envolvido (opcional)</label>
+      <input type="text" id="f-envolvido" placeholder="Ex: Daniel" oninput="atualizarBotaoLembreteModal()">
     </div>
 
     <div class="form-group" id="f-status-group" style="display:none">
@@ -1902,16 +1980,6 @@
     <div class="form-group" id="f-data-conclusao-group" style="display:none">
       <label>Data de conclusão</label>
       <input type="date" id="f-data-conclusao">
-    </div>
-
-    <div class="form-group">
-      <label>Envolvido (opcional)</label>
-      <input type="text" id="f-envolvido" placeholder="Ex: Daniel" oninput="atualizarBotaoLembreteModal()">
-    </div>
-
-    <div class="form-group">
-      <label>Tag (opcional — projeto/assunto, não é pessoa)</label>
-      <input type="text" id="f-tag" placeholder="Ex: ODOO">
     </div>
 
 
@@ -1955,6 +2023,15 @@
 
 <datalist id="lista-quem-opcoes"></datalist>
 
+<div class="modal-overlay" id="modal-troca" onclick="if(event.target===this) fecharTroca()">
+  <div class="modal">
+    <h3 id="troca-titulo">Trocar</h3>
+    <p id="troca-tarefa" style="font-size:13px;color:var(--text-muted);margin:-6px 0 12px"></p>
+    <div id="troca-opcoes"></div>
+    <button class="modal-cancel" onclick="fecharTroca()" style="margin-top:6px">Cancelar</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-nota" onclick="if(event.target===this) fecharNota()">
   <div class="modal">
     <div class="modal-titulo-linha">
@@ -1969,7 +2046,7 @@
       <input type="text" id="nota-titulo" placeholder="Ex: Código do portão" autocomplete="off">
     </div>
     <div class="form-group">
-      <label>Nota</label>
+      <label>Nota <button type="button" class="btn-mic" data-alvo="nota" onclick="alternarDitado('nota')" title="Ditar a nota">🎤</button></label>
       <textarea id="nota-texto" rows="8" style="min-height:160px" placeholder="Escreva aqui o que quiser guardar..."></textarea>
     </div>
     <div class="form-group">
@@ -1980,6 +2057,14 @@
       <label>Tag (opcional — ajuda a achar depois)</label>
       <input type="text" id="nota-tag" list="notas-tags-list" placeholder="Ex: Casa" autocomplete="off">
       <datalist id="notas-tags-list"></datalist>
+    </div>
+    <div class="form-group">
+      <label>Ligar a uma pasta (opcional) — a nota aparece no alto dela</label>
+      <select id="nota-pasta" onchange="atualizarDivisoesNota('')"><option value="">Nenhuma (só em Notas)</option></select>
+    </div>
+    <div class="form-group" id="nota-divisao-group" style="display:none">
+      <label>Divisão (opcional) — aparece dentro dessa divisão</label>
+      <select id="nota-divisao"><option value="">Toda a pasta (no alto, antes das divisões)</option></select>
     </div>
     <label style="display:flex;align-items:center;gap:8px;margin:4px 0 14px;font-size:14px;cursor:pointer">
       <input type="checkbox" id="nota-fixada"> 📌 Fixar no topo
@@ -2009,6 +2094,7 @@
     <div class="lista-add" style="align-items:center;margin-bottom:2px">
       <input type="text" id="lista-novo" placeholder="+ Novo item" style="flex:2 1 90px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarItemLista()}" onpaste="colarVariosItens(event)">
       <input type="text" id="lista-novo-qtd" placeholder="qtd / obs" style="flex:1 1 70px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarItemLista()}">
+      <button type="button" class="btn-mic" data-alvo="lista" onclick="alternarDitado('lista')" title="Falar os itens (faça uma pausa ou diga 'próximo' para separar)">🎤</button>
       <button type="button" class="btn-estrela-nova" id="lista-novo-est" onclick="alternarEstrelaNova('lista')" title="Prioridade (fazer/comprar primeiro)">☆</button>
       <button type="button" class="lista-quem-btn" id="lista-novo-btn" onclick="alternarDetalheNovo('lista')" title="A quem cobrar este item">👤</button>
       <button class="menu-mais-item" style="width:auto;margin:0" onclick="adicionarItemLista()" title="Adicionar item">➕</button>
@@ -2037,6 +2123,14 @@
       <input type="checkbox" id="chk-esconder-aguardando" onchange="alternarEsconderAguardando(this.checked)">
       🕓 "🔥 Urgentes" esconde "Iniciado" e "Aguardando" (não é sua vez de agir ainda)
     </label>
+    <label class="menu-mais-item" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+      <input type="checkbox" id="chk-ditado-pausa" onchange="alternarDitadoModo(this.checked)">
+      🎤 Ditado: cada pausa vira um item (desligado = só separa quando eu digo "próximo")
+    </label>
+    <label class="menu-mais-item" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+      <input type="checkbox" id="chk-abrir-recolhido" onchange="alternarAbrirRecolhido(this.checked)">
+      ▾ Abrir cada pasta só com os nomes das divisões (as 📌 fixadas ficam abertas)
+    </label>
     <button class="modal-cancel" onclick="fecharModalMais()" style="margin-top:14px">Fechar</button>
   </div>
 </div>
@@ -2048,6 +2142,7 @@
     <button class="menu-mais-item" onclick="fecharOpcoesPasta(); abrirModalNovaPasta(abaAtual)">📋 Duplicar esta pasta inteira (cria uma pasta nova)</button>
     <button class="menu-mais-item" onclick="fecharOpcoesPasta(); renomearPasta()">✏️ Renomear esta pasta</button>
     <button class="menu-mais-item" onclick="fecharOpcoesPasta(); adicionarTagNaPasta()">🏷️ Adicionar uma tag em todas as tarefas desta pasta</button>
+    <button class="menu-mais-item" onclick="fecharOpcoesPasta(); abrirNota('', abaAtual)">📝 Nova nota ligada a esta pasta</button>
     <button class="menu-mais-item" onclick="fecharOpcoesPasta(); juntarTodasDivisoes()">☰ Transformar cada divisão em uma lista (junta as tarefas soltas)</button>
     <button class="menu-mais-item" onclick="fecharOpcoesPasta(); ordenarPastasAZ()">🔤 Pastas em ordem alfabética</button>
     <button class="modal-cancel" onclick="fecharOpcoesPasta()" style="margin-top:14px">Fechar</button>
@@ -2163,13 +2258,14 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v44';
+const APP_VERSION = 'v50';
 let serverVersion = null;
 let allData = {};
 let abaAtual = 'PESSOAL';
 
 // Notas (post-its): o app abre nelas. Não são tarefas: ficam numa aba própria da planilha e não entram em nenhuma contagem.
 let modoNotas = true;
+let modoPastas = false; // tela inicial de Pastas (post-its coloridos), irmã da tela de Notas
 let notasData = [];
 let notasCarregadas = false;
 let notaTagFiltro = '';
@@ -2275,6 +2371,8 @@ function popularBotoesTag() {
 
 function abrirModalMais() {
   document.getElementById('chk-esconder-aguardando').checked = esconderAguardandoDosUrgentes;
+  document.getElementById('chk-abrir-recolhido').checked = abrirRecolhido;
+  document.getElementById('chk-ditado-pausa').checked = ditadoModo === 'pausa';
   document.getElementById('modal-mais').classList.add('open');
 }
 
@@ -2444,6 +2542,29 @@ let esconderAguardandoDosUrgentes = JSON.parse(localStorage.getItem('esconderAgu
 let modoUrgentesAtivo = false;
 let modoAgendaPeriodo = null; // null | 'hoje' | 'semana' — mostra o que tem Data Prevista nesse período + tudo que é Urgente
 let modoAgendaEscopo = 'global'; // 'global' (todas as pastas, atalho do cabeçalho) | 'local' (só a pasta aberta, filtro avançado)
+
+// Abrir cada pasta já recolhida (só os nomes das divisões). Padrão: ligado. As divisões fixadas (📌) ficam abertas.
+// Vale na primeira vez que a pasta é aberta em cada visita ao app; depois, o que você abrir/recolher fica como deixou.
+let abrirRecolhido = true;
+try { abrirRecolhido = localStorage.getItem('abrirRecolhido') !== 'nao'; } catch (e) {}
+const pastasJaAbertas = new Set();
+function alternarAbrirRecolhido(marcado) {
+  abrirRecolhido = marcado;
+  try { localStorage.setItem('abrirRecolhido', marcado ? 'sim' : 'nao'); } catch (e) {}
+  pastasJaAbertas.clear();
+  if (!marcado) categoriasColapsadas.clear();
+  showToast(marcado ? '▾ As pastas vão abrir só com os nomes das divisões' : '▸ As pastas vão abrir com tudo aberto');
+}
+function aplicarRecolhidoInicial(aba) {
+  const dados = allData[aba];
+  if (!abrirRecolhido || pastasJaAbertas.has(aba) || !Array.isArray(dados) || !dados.length) return;
+  pastasJaAbertas.add(aba);
+  const fixas = new Set(divisoesFixadas[aba] || []);
+  dados.forEach(t => {
+    const chave = String(t['Divisão'] || 'Sem divisão').trim().toLowerCase();
+    if (!fixas.has(chave)) categoriasColapsadas.add(chave + aba);
+  });
+}
 
 function alternarEsconderAguardando(marcado) {
   esconderAguardandoDosUrgentes = marcado;
@@ -2953,7 +3074,7 @@ function renderTabs() {
   const cruzado = algumFiltroAtivo();
   const html = abaOrdem.map((aba, i) => {
     const [cor] = corDaPasta(aba);
-    const ativa = !cruzado && !modoNotas && aba === abaAtual;
+    const ativa = !cruzado && !modoNotas && !modoPastas && aba === abaAtual;
     return `
     <div class="sidebar-item ${ativa ? 'active' : ''}" data-aba="${aba}" style="order:${i}" title="${ABA_LABEL[aba]}">
       <span style="color:${cor}">${iconeCategoria(aba)}</span><span class="sidebar-item-label" style="color:${cor}">${nomeCurtoPasta(aba)}</span>
@@ -2963,7 +3084,8 @@ function renderTabs() {
   }).join('');
   const sidebar = document.getElementById('sidebar-pastas');
   const itemNotas = `<div class="sidebar-notas-item ${modoNotas && !cruzado ? 'active' : ''}" onclick="abrirNotas()" title="Notas (post-its)">📝 Notas</div>`;
-  sidebar.innerHTML = `${itemNotas}<div class="sidebar-titulo">PASTAS</div>${html}<div class="sidebar-nova-pasta" style="order:9999" onclick="abrirModalNovaPasta()">➕ Nova pasta</div><div class="sidebar-nova-pasta" style="order:10000" onclick="abrirOpcoesPasta()">⋯ Opções da pasta</div>`;
+  const itemPastas = `<div class="sidebar-notas-item sidebar-pastas-item ${modoPastas && !cruzado ? 'active' : ''}" style="order:-1" onclick="abrirPastas()" title="Ver todas as pastas">📁 Pastas</div>`;
+  sidebar.innerHTML = `${itemNotas}${itemPastas}<div class="sidebar-titulo">PASTAS</div>${html}<div class="sidebar-nova-pasta" style="order:9999" onclick="abrirModalNovaPasta()">➕ Nova pasta</div><div class="sidebar-nova-pasta" style="order:10000" onclick="abrirOpcoesPasta()">⋯ Opções da pasta</div>`;
   document.querySelectorAll('.sidebar-item').forEach(w => {
     w.addEventListener('pointerdown', onTabPointerDown);
   });
@@ -2975,7 +3097,8 @@ function posicionarSidebar() {
   const header = document.querySelector('.header');
   const sidebar = document.getElementById('sidebar-pastas');
   if (window.innerWidth >= 640 || !header || !sidebar) return; // no PC a sidebar já é fixa do lado, não precisa
-  const altura = header.getBoundingClientRect().height;
+  // Com o cabeçalho rolando junto, só desconta o pedaço dele que ainda aparece na tela (0 se já saiu)
+  const altura = Math.max(0, header.getBoundingClientRect().bottom);
   sidebar.style.top = altura + 'px';
   sidebar.style.height = `calc(100% - ${altura}px)`;
 }
@@ -3129,6 +3252,7 @@ async function loadData() {
     if (resp.ok && Array.isArray(resp.pastas)) sincronizarPastas(resp.pastas);
     allData[abaAlvo] = resp.dados || [];
     ultimaBusca[abaAlvo] = Date.now();
+    if (!modoNotas && !modoPastas) aplicarRecolhidoInicial(abaAlvo);
     // Code.gs v12+ manda as notas junto; o que ainda está na fila de envio é reaplicado por cima
     if (Array.isArray(resp.notas)) { notasData = aplicarFilaEmNotas(resp.notas); notasCarregadas = true; salvarNotasCache(); }
     else if (resp.versao) notasCarregadas = true;
@@ -3174,7 +3298,11 @@ function aplicarVista() {
   const main = document.getElementById('main');
   const btn = document.getElementById('btn-vista');
   main.classList.toggle('vista-lista', vistaModo === 'lista');
-  if (btn) btn.textContent = vistaModo === 'lista' ? '▦ Cards' : '☰ Lista';
+  // O botão mostra a visão ATUAL (antes mostrava a outra e dava a impressão de estar na errada)
+  if (btn) {
+    btn.textContent = vistaModo === 'lista' ? '☰ Lista' : '▦ Cards';
+    btn.title = `Visão atual: ${vistaModo === 'lista' ? 'Lista' : 'Cards'} — toque para trocar para ${vistaModo === 'lista' ? 'Cards' : 'Lista'}`;
+  }
 }
 
 function toggleVista() {
@@ -3187,6 +3315,7 @@ function toggleVista() {
 async function switchTab(aba) {
   abaAtual = aba;
   modoNotas = false;
+  modoPastas = false;
   modoUrgentesAtivo = false;
   modoAgendaPeriodo = null;
   // Trocar de pasta limpa qualquer filtro ativo (local ou geral, tipo Urgentes) — evita confusão de achar que ainda tá filtrado
@@ -3231,6 +3360,7 @@ async function switchTab(aba) {
     }).catch(() => { ultimaBusca[aba] = 0; });
   }
 
+  aplicarRecolhidoInicial(aba); // pasta abre só com os nomes das divisões (se a opção estiver ligada)
   popularBotoesEnvolvidos();
   render();
 }
@@ -3319,8 +3449,9 @@ function render() {
   agendarSalvarCache();
   atualizarBotaoOrdem();
   // Buscar, filtrar ou pedir Urgentes/Hoje/Semana tira das Notas e mostra tarefas
-  if (modoNotas && (algumFiltroAtivo() || modoUrgentesAtivo || modoAgendaPeriodo)) { modoNotas = false; renderTabs(); }
+  if ((modoNotas || modoPastas) && (algumFiltroAtivo() || modoUrgentesAtivo || modoAgendaPeriodo)) { modoNotas = false; modoPastas = false; renderTabs(); }
   atualizarPastaAtualMobile();
+  if (modoPastas) { renderPastasHome(); return; }
   if (modoNotas) { renderNotas(); return; }
   // Qualquer filtro ativo (prioridade, status, envolvido ou busca) passa a procurar em todas as abas
   if (algumFiltroAtivo()) {
@@ -3338,6 +3469,8 @@ function render() {
 }
 
 // ----- Ordem da lista e divisões fixadas -----
+// Alfinete de localização (estilo do mapa): desenhado aqui, então fica igual em qualquer aparelho (o emoji 📍 muda de forma em cada um)
+const PIN_SVG = '<svg class="pin-svg" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="#ea4335" d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7z"/><circle cx="12" cy="9" r="2.6" fill="#fff"/></svg>';
 const ROTULO_ORDEM = { az: '🔤 A–Z', recentes: '🕒 Recentes', antigas: '🕰️ Antigas' };
 const AVISO_ORDEM = { az: 'Ordem alfabética', recentes: 'Mais recentes primeiro (última alteração)', antigas: 'Mais antigas primeiro' };
 const ordemAtual = () => (modoNotas ? ordemNotas : ordemVista);
@@ -3404,13 +3537,15 @@ function tituloParaImpressao() {
 function atualizarPastaAtualMobile() {
   const el = document.getElementById('pasta-atual-mobile');
   if (!el) return;
-  if (modoNotas) {
-    el.innerHTML = `📝 Você está em: <span style="color:#a16207">Notas</span>`;
+  if (modoPastas) {
+    el.innerHTML = `${PIN_SVG} Você está em: <span style="color:#1d4ed8">📁 Pastas</span>`;
+  } else if (modoNotas) {
+    el.innerHTML = `${PIN_SVG} Você está em: <span style="color:#a16207">📝 Notas</span>`;
   } else if (algumFiltroAtivo()) {
     el.innerHTML = `🌐 Vendo todas as pastas`;
   } else {
     const [cor] = corDaPasta(abaAtual);
-    el.innerHTML = `<span style="color:${cor}">${iconeCategoria(abaAtual)}</span> Você está em: <span style="color:${cor}">${ABA_LABEL[abaAtual] || abaAtual}</span>`;
+    el.innerHTML = `${PIN_SVG} Você está em: <span style="color:${cor}">${ABA_LABEL[abaAtual] || abaAtual}</span>`;
   }
 }
 
@@ -3605,6 +3740,7 @@ function renderTarefas(tarefas) {
   const chaveFixadas = cruzado ? '*' : abaAtual;
   const fixadas = new Set(divisoesFixadas[chaveFixadas] || []);
   const az = (a, b) => a.label.localeCompare(b.label, 'pt-BR');
+  const mostraNotasVinculadas = !cruzado && !ordenacaoPorAgenda;
   const gruposOrdenados = ordenacaoPorAgenda
     ? Object.entries(grupos).sort(([, a], [, b]) => {
         const minA = Math.min(...a.items.map(timestampTarefa));
@@ -3631,29 +3767,50 @@ function renderTarefas(tarefas) {
       items.sort((a, b) => (priOrd[a.Prioridade] ?? 1) - (priOrd[b.Prioridade] ?? 1) || (a.Tarefa || '').localeCompare(b.Tarefa || '', 'pt-BR'));
     }
     const ehFixada = fixadas.has(catKey);
+    // Notas ligadas a esta divisão aparecem logo abaixo do título dela (não entram na contagem de tarefas)
+    const notasDiv = mostraNotasVinculadas ? notasVinculadas(abaAtual, cat) : [];
     const colapsado = categoriasColapsadas.has(catKey + abaAtual);
     const itemsHtml = colapsado ? '' : items.map(t => cardHtml(t)).join('');
     // Na busca cruzada, colore a categoria com a cor da aba de origem (tipo etiqueta do fichário)
     const corAba = cruzado ? `color: ${corDaPasta(items[0]._aba)[0]};` : '';
+    const [corG, corGbg] = corDaPasta(cruzado ? items[0]._aba : abaAtual);
     return `
-      <div class="categoria-group${ehFixada ? ' fixada' : ''}">
+      <div class="categoria-group${ehFixada ? ' fixada' : ''}" style="--cor-div:${corG};--cor-div-bg:${corGbg}">
         <div class="categoria-header" onclick="toggleCategoria('${catKey}')">
+          ${cruzado ? '' : `<span class="cat-pasta-mobile">${PIN_SVG} ${escLista(ABA_LABEL[abaAtual] || abaAtual)} ›</span>`}
           <span class="categoria-title" style="${corAba}">${iconeCategoria(cat)} ${cat}</span>
           <span class="categoria-toggle">${colapsado ? '▶' : '▼'}</span>
           <button class="btn-nova-na-divisao${ehFixada ? ' fixada' : ''}" onclick="event.stopPropagation(); fixarDivisao('${encodeURIComponent(catKey)}')" title="${ehFixada ? 'Desafixar esta divisão' : 'Fixar esta divisão no topo da pasta'}">📌</button>
           <button class="btn-nova-na-divisao" onclick="event.stopPropagation(); abrirNovaTarefaNaDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').replace(/'/g,"\\'")}')" title="Nova tarefa nesta divisão">➕</button>
-          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao" onclick="event.stopPropagation(); abrirCopiarDivisaoDe('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Duplicar esta divisão inteira (abertas e concluídas) como lista modelo">📋</button>` : ''}
+          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); abrirCopiarDivisaoDe('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Duplicar esta divisão inteira (abertas e concluídas) como lista modelo">📋</button>` : ''}
           ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao" onclick="event.stopPropagation(); selecionarDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Selecionar (ou desmarcar) todas as tarefas desta divisão que aparecem na tela">☑</button>` : ''}
-          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao" onclick="event.stopPropagation(); juntarDivisaoEmLista('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Juntar todas as tarefas desta divisão numa lista só (um item por tarefa)">☰</button>` : ''}
+          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); juntarDivisaoEmLista('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Juntar todas as tarefas desta divisão numa lista só (um item por tarefa)">☰</button>` : ''}
+          ${mostraNotasVinculadas && String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); abrirNota('', '${abaAtual.replace(/'/g, "\\'")}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g, "\\'")}')" title="Nova nota nesta divisão (aparece aqui, sem contar como tarefa)">📝</button>` : ''}
+          <button class="btn-nova-na-divisao btn-mais-mobile" onclick="event.stopPropagation(); this.closest('.categoria-header').classList.toggle('mais-aberto')" title="Mais ações desta divisão">⋯</button>
           <span class="categoria-count">${items.length}</span>
         </div>
+        ${colapsado || !notasDiv.length ? '' : `<div class="notas-div">${notasDiv.map(notaMiniHtml).join('')}</div>`}
         ${itemsHtml}
       </div>
     `;
   }).join('');
 
+  // Barra "Recolher todas / Abrir todas": com tudo recolhido só se vê o NOME das divisões (útil quando a que importa está lá embaixo)
+  const chavesAtuais = gruposOrdenados.map(([k]) => k + abaAtual);
+  window.__catKeysAtuais = chavesAtuais;
+  const todasRecolhidas = chavesAtuais.length > 0 && chavesAtuais.every(k => categoriasColapsadas.has(k));
+  const barraDivisoes = gruposOrdenados.length >= 2
+    ? `<div class="barra-divisoes"><button class="btn-recolher" onclick="alternarRecolherTudo()">${todasRecolhidas ? '▸ Abrir todas' : '▾ Recolher todas'}</button><span class="barra-div-info">${gruposOrdenados.length} divisões · ${filtradas.length} tarefas</span></div>`
+    : '';
+
+  // Notas ligadas à pasta inteira: faixa no alto, antes da primeira divisão
+  const notasDaPasta = mostraNotasVinculadas ? notasVinculadas(abaAtual, '') : [];
+  const faixaNotasPasta = notasDaPasta.length
+    ? `<div class="notas-pasta"><div class="notas-pasta-titulo">📝 NOTAS DESTA PASTA (${notasDaPasta.length})</div><div class="notas-mini">${notasDaPasta.map(notaMiniHtml).join('')}</div></div>`
+    : '';
+
   const mainEl = document.getElementById('main');
-  mainEl.innerHTML = html;
+  mainEl.innerHTML = faixaNotasPasta + barraDivisoes + html;
   // Título que sai no papel: se está vendo várias pastas (tag, busca, filtro), não pode ser o nome da pasta aberta
   mainEl.dataset.aba = tituloParaImpressao();
   // Força o navegador a recalcular o layout na hora — sem isso, às vezes os cards
@@ -3773,17 +3930,12 @@ function cardHtml(t) {
     </div>
   `;
   // Vista em lista: junta cada badge com o link de trocar dela, lado a lado (Urgente + Prior. / Em Andamento + Status)
+  // Sem lápis: tocar na palavra (prioridade ou status) abre a janela pra trocar
   const camposParesHtml = `
-    <span class="campo-inline">
-      <span class="badge badge-prio-${prio}">${prio}</span>
-      <span id="links-prioridade-${t.ID}">${linkPrioridadeOriginal(t.ID, t._aba)}</span>
-    </span>
-    <span class="campo-inline">
-      <span class="badge badge-status-${status.replace(/\s/g,'')}">${status}</span>
-      <span id="links-status-${t.ID}">${linkStatusOriginal(t.ID, t._aba)}</span>
-    </span>
+    <button type="button" class="badge badge-prio-${prio} badge-btn" onclick="abrirTrocaCampo('prioridade','${t.ID}','${t._aba}')" title="Toque para trocar a prioridade">${prio}</button>
+    <button type="button" class="badge badge-status-${status.replace(/\s/g,'')} badge-btn" onclick="abrirTrocaCampo('status','${t.ID}','${t._aba}')" title="Toque para trocar o status">${status}</button>
   `;
-  const concluirHtml = !concluido ? `<button class="btn-concluir-grande" onclick="atualizarStatus('${t.ID}', this, '${t._aba}', 'Concluído')" id="btn-${t.ID}"><span class="link-trocar-txt-completo">✅ Marcar como concluída</span><span class="link-trocar-txt-curto">✅ Concluir</span></button>` : '';
+  const concluirHtml = !concluido ? `<button class="btn-concluir-grande" onclick="atualizarStatus('${t.ID}', this, '${t._aba}', 'Concluído')" id="btn-${t.ID}">✅ Concluir</button>` : '';
 
   if (emLista) {
     const nomeAttr = String(t.Tarefa || '').replace(/"/g, '&quot;');
@@ -3848,6 +4000,16 @@ function iconeCategoria(nome) {
   return '🔹';
 }
 
+// Recolhe (ou abre) TODAS as divisões que estão na tela de uma vez
+function alternarRecolherTudo() {
+  const chaves = window.__catKeysAtuais || [];
+  const todas = chaves.length > 0 && chaves.every(k => categoriasColapsadas.has(k));
+  chaves.forEach(k => { if (todas) categoriasColapsadas.delete(k); else categoriasColapsadas.add(k); });
+  render();
+  window.scrollTo(0, 0);
+  showToast(todas ? '▸ Divisões abertas' : '▾ Só os nomes das divisões — toque numa para abrir');
+}
+
 function toggleCategoria(cat) {
   const key = cat + abaAtual;
   if (categoriasColapsadas.has(key)) categoriasColapsadas.delete(key);
@@ -3856,6 +4018,28 @@ function toggleCategoria(cat) {
 }
 
 // ===== AÇÕES =====
+// Janela pra trocar Prioridade ou Status (aberta ao tocar na palavra do cartão). Usa as mesmas rotinas de antes.
+const OPCOES_PRIORIDADE = [['Urgente', '🔴 Urgente'], ['Média', '🟡 Média'], ['Baixa', '🟢 Baixa']];
+const OPCOES_STATUS = [['Aberto', 'Aberto'], ['Em Andamento', 'Em andamento'], ['Iniciado', '▶️ Iniciado (terceiros)'], ['A conferir', '🔍 A conferir (terceiros)'],
+  ['Feito', '✔️ Feito (terceiros)'], ['Aguardando', '🕓 Aguardando (preciso esperar algo)'], ['Concluído', '✅ Concluído']];
+
+function abrirTrocaCampo(campo, id, aba) {
+  const t = (allData[aba] || []).find(x => String(x.ID) === String(id));
+  const atual = campo === 'prioridade' ? ((t && t.Prioridade) || 'Média') : ((t && t.Status) || 'Aberto');
+  const opcoes = campo === 'prioridade' ? OPCOES_PRIORIDADE : OPCOES_STATUS;
+  document.getElementById('troca-titulo').textContent = campo === 'prioridade' ? 'Trocar a prioridade' : 'Trocar o status';
+  document.getElementById('troca-tarefa').textContent = t ? t.Tarefa : '';
+  document.getElementById('troca-opcoes').innerHTML = opcoes.map(([valor, rotulo]) =>
+    `<button class="troca-opcao${valor === atual ? ' atual' : ''}" onclick="escolherTroca('${campo}','${id}','${aba}','${valor}')">${rotulo}${valor === atual ? ' <small style="margin-left:auto;color:var(--primary)">atual</small>' : ''}</button>`).join('');
+  document.getElementById('modal-troca').classList.add('open');
+}
+function fecharTroca() { document.getElementById('modal-troca').classList.remove('open'); }
+function escolherTroca(campo, id, aba, valor) {
+  fecharTroca();
+  if (campo === 'prioridade') trocarPrioridade(id, aba, valor);
+  else atualizarStatus(id, { disabled: false, textContent: '' }, aba, valor); // o cartão é redesenhado depois, então o "botão" é só um enfeite
+}
+
 function linkPrioridadeOriginal(id, aba) {
   return `<button class="link-trocar" onclick="mostrarOpcoesPrioridade(this, '${id}', '${aba}')" title="Trocar Prioridade">✏️</button>`;
 }
@@ -4286,6 +4470,7 @@ function parseDataParaInput(dataRaw) {
 
 function closeAddModal(e) {
   if (!e || e.target === document.getElementById('modal-add')) {
+    pararDitado();
     document.getElementById('modal-add').classList.remove('open');
   }
 }
@@ -4556,8 +4741,11 @@ function preencherCategorias(aba, comPlaceholder) {
   sel.onchange = () => {
     const novo = sel.value === '__nova__';
     document.getElementById('f-nova-cat-group').style.display = novo ? 'block' : 'none';
+    // "+ Nova divisão…" sempre começa com o nome em branco (antes ficava o nome da última divisão criada)
+    if (novo) { const c = document.getElementById('f-nova-cat'); c.value = ''; c.focus(); }
   };
   document.getElementById('f-nova-cat-group').style.display = 'none';
+  document.getElementById('f-nova-cat').value = '';
 }
 
 // Muda categorias ao trocar de aba no formulário
@@ -4691,7 +4879,109 @@ function salvarNotasCache() { try { localStorage.setItem('notasCache', JSON.stri
 function salvarNotasFila() { try { localStorage.setItem('notasFila', JSON.stringify(notasFila)); } catch (e) {} }
 
 // Abre a tela de Notas (a inicial). Sai de qualquer busca/filtro para não ficar "preso" numa pasta.
+// Tela inicial de Pastas: todas as pastas lado a lado, cada uma com a sua cor (abre com duplo clique; no celular, um toque)
+function abrirPastas() {
+  modoPastas = true; modoNotas = false;
+  modoUrgentesAtivo = false; modoAgendaPeriodo = null;
+  searchTerm = ''; searchTermLocal = '';
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-local-input').value = '';
+  filtroPrioridadeG = new Set(); filtroStatusG = new Set(); filtroEnvolvidoG = new Set(); filtroTagG = new Set();
+  atualizarBotoesFiltro();
+  renderTabs();
+  render();
+  fecharSidebar();
+  window.scrollTo(0, 0);
+}
+
+const ehToque = () => window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+
+function cliquePastaCard(ev, aba) {
+  if (ehToque()) { switchTab(aba); return; }
+  document.querySelectorAll('.pasta-card.sel').forEach(e => e.classList.remove('sel'));
+  ev.currentTarget.classList.add('sel');
+}
+
+// Arrastar uma pasta (pelo ⠿) para mudar a ordem: vale também para a lista da lateral e é guardado neste aparelho
+let arrastoPasta = null;
+function iniciarArrastoPasta(ev, aba) {
+  ev.preventDefault(); ev.stopPropagation();
+  const grip = ev.currentTarget;
+  const card = grip.closest('.pasta-card');
+  arrastoPasta = { aba, card, alvo: null, depois: false };
+  card.classList.add('arrastando');
+  try { grip.setPointerCapture(ev.pointerId); } catch (e) {}
+  document.addEventListener('pointermove', moverArrastoPasta);
+  document.addEventListener('pointerup', soltarArrastoPasta, { once: true });
+  document.addEventListener('pointercancel', cancelarArrastoPasta, { once: true });
+}
+function limparMarcasPasta() { document.querySelectorAll('.pasta-card.alvo-antes, .pasta-card.alvo-depois').forEach(e => e.classList.remove('alvo-antes', 'alvo-depois')); }
+function moverArrastoPasta(ev) {
+  if (!arrastoPasta) return;
+  limparMarcasPasta();
+  const el = document.elementFromPoint(ev.clientX, ev.clientY);
+  const alvo = el && el.closest && el.closest('.pasta-card');
+  arrastoPasta.alvo = null;
+  if (!alvo || alvo === arrastoPasta.card) return;
+  const r = alvo.getBoundingClientRect();
+  const grade = alvo.parentElement;
+  const empilhadas = r.width > grade.clientWidth * 0.6; // uma pasta por linha (celular): decide pelo alto; lado a lado: pelo lado
+  arrastoPasta.depois = empilhadas ? ev.clientY > r.top + r.height / 2 : ev.clientX > r.left + r.width / 2;
+  arrastoPasta.alvo = alvo;
+  alvo.classList.add(arrastoPasta.depois ? 'alvo-depois' : 'alvo-antes');
+}
+function cancelarArrastoPasta() {
+  if (!arrastoPasta) return;
+  limparMarcasPasta(); arrastoPasta.card.classList.remove('arrastando');
+  document.removeEventListener('pointermove', moverArrastoPasta);
+  arrastoPasta = null;
+}
+function soltarArrastoPasta() {
+  if (!arrastoPasta) return;
+  const { aba, alvo, depois } = arrastoPasta;
+  cancelarArrastoPasta();
+  if (!alvo) return;
+  const alvoAba = alvo.dataset.aba;
+  const de = abaOrdem.indexOf(aba);
+  let para = abaOrdem.indexOf(alvoAba) + (depois ? 1 : 0);
+  if (de < 0 || para < 0) return;
+  if (de < para) para--;
+  if (para === de) return;
+  abaOrdem.splice(para, 0, abaOrdem.splice(de, 1)[0]);
+  try { localStorage.setItem('abaOrdem', JSON.stringify(abaOrdem)); } catch (e) {}
+  ordemPersonalizada = true;
+  renderTabs();
+  renderPastasHome();
+  showToast('✅ Ordem das pastas salva!');
+}
+
+function renderPastasHome() {
+  const main = document.getElementById('main');
+  main.dataset.aba = 'Pastas';
+  const abertas = lista => (lista || []).filter(t => String(t.Tarefa || '').trim() && t.Status !== 'Concluído' && t.Status !== 'Cancelado');
+  const cards = abaOrdem.map(aba => {
+    const [cor, bg] = corDaPasta(aba);
+    const carregada = Array.isArray(allData[aba]);
+    const ab = carregada ? abertas(allData[aba]) : [];
+    const urg = ab.filter(t => t.Prioridade === 'Urgente').length;
+    const nNotas = notasData.filter(n => String(n['Pasta'] || '') === aba).length;
+    return `<div class="pasta-card" data-aba="${escLista(aba).replace(/"/g, '&quot;')}" style="--cor-pasta:${cor};--bg-pasta:${bg}" role="button" tabindex="0"
+        onclick="cliquePastaCard(event,'${aba.replace(/'/g, "\\'")}')" ondblclick="switchTab('${aba.replace(/'/g, "\\'")}')"
+        onkeydown="if(event.key==='Enter')switchTab('${aba.replace(/'/g, "\\'")}')">
+      <span class="pasta-grip" onpointerdown="iniciarArrastoPasta(event,'${aba.replace(/'/g, "\\'")}')" onclick="event.stopPropagation()" ondblclick="event.stopPropagation()" title="Segure e arraste para mudar a ordem das pastas">⠿</span>
+      <div class="pasta-card-icone">${iconeCategoria(aba)}</div>
+      <div class="pasta-card-nome">${escLista(ABA_LABEL[aba] || aba)}</div>
+      <div class="pasta-card-info">${carregada ? ab.length + (ab.length === 1 ? ' aberta' : ' abertas') : '…'}${urg ? ` · 🔴 ${urg}` : ''}${nNotas ? ` · 📝 ${nNotas}` : ''}</div>
+    </div>`;
+  }).join('');
+  main.innerHTML = `<div class="pastas-dica">${ehToque() ? 'Toque numa pasta para abrir' : 'Dê dois cliques numa pasta para abrir'}</div><div class="pastas-grid">${cards}</div>`;
+  document.getElementById('counters').innerHTML = `
+    <div class="contador-linha"><span class="contador-item total">Pastas: <b>${abaOrdem.length}</b></span></div>
+    <div class="contador-linha versao-linha"><span>App ${APP_VERSION}</span><span>Servidor ${serverVersion === null ? '…' : serverVersion}</span></div>`;
+}
+
 function abrirNotas() {
+  modoPastas = false;
   modoNotas = true;
   modoUrgentesAtivo = false; modoAgendaPeriodo = null;
   searchTerm = ''; searchTermLocal = '';
@@ -4722,9 +5012,30 @@ function notaHtml(n) {
     ${n['Fixada'] === 'Sim' ? '<span class="nota-pin">📌</span>' : ''}
     ${n['Título'] ? `<div class="nota-titulo">${escLista(n['Título'])}</div>` : ''}
     ${n['Texto'] ? `<div class="nota-texto">${escLista(notaParaCard(n['Texto']))}</div>` : ''}
-    <div class="nota-rodape">${tag ? `<span class="nota-tag">${escLista(tag)}</span>` : '<span></span>'}
+    <div class="nota-rodape">${tag ? `<span class="nota-tag">${escLista(tag)}</span>` : '<span></span>'}${localDaNotaHtml(n)}
       <button class="nota-del" onclick="event.stopPropagation(); excluirNota('${n.ID}')" title="Excluir nota">🗑️</button></div>
   </div>`;
+}
+
+// Uma nota numa linha só (visão Lista): faixa colorida + título (ou o começo do texto, se não tem título)
+function notaLinhaHtml(n) {
+  const tag = String(n['Tag'] || '').trim();
+  const titulo = n['Título'] || String(n['Texto'] || '').split('\n')[0] || '(sem título)';
+  return `<div class="nota-linha" style="border-left-color:${notaCorBg(n)}" onclick="abrirNota('${n.ID}')">
+    ${n['Fixada'] === 'Sim' ? '<span>📌</span>' : ''}
+    <span class="nota-linha-titulo">${escLista(titulo)}</span>
+    ${localDaNotaHtml(n)}
+    ${tag ? `<span class="nota-tag">${escLista(tag)}</span>` : ''}
+    <button class="nota-del" onclick="event.stopPropagation(); excluirNota('${n.ID}')" title="Excluir nota">🗑️</button>
+  </div>`;
+}
+
+// "📁 Casa › Cozinha": onde a nota está vinculada (se estiver)
+function localDaNotaHtml(n) {
+  const p = String(n['Pasta'] || '').trim();
+  if (!p) return '';
+  const d = String(n['Divisão'] || '').trim();
+  return `<span class="nota-local">📁 ${escLista(ABA_LABEL[p] || p)}${d ? ' › ' + escLista(d) : ''}</span>`;
 }
 
 function renderNotas() {
@@ -4747,10 +5058,14 @@ function renderNotas() {
   else if (!lista.length) corpo = notasData.length
     ? '<div class="notas-vazio">Nenhuma nota encontrada com esse filtro.</div>'
     : '<div class="notas-vazio">📝<br>Nenhuma nota ainda.<br>Escreva ali em cima e dê Enter, ou toque em <b>Nova nota</b>.</div>';
-  else corpo = `<div class="notas-grid">${lista.map(notaHtml).join('')}</div>`;
+  // Visão Lista: só o título (uma linha por nota). Visão Cards: título + o que foi escrito (post-its).
+  else corpo = vistaModo === 'lista'
+    ? `<div class="notas-lista">${lista.map(notaLinhaHtml).join('')}</div>`
+    : `<div class="notas-grid">${lista.map(notaHtml).join('')}</div>`;
 
   main.innerHTML = `<div class="notas-topo">
       <input type="text" id="nota-rapida" placeholder="📝 Escreva uma nota rápida e dê Enter..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();notaRapida()}">
+      <button class="btn-mic" data-alvo="rapida" onclick="alternarDitado('rapida')" title="Ditar uma nota rápida">🎤</button>
       <button class="btn-nova-nota" onclick="abrirNota()">➕ Nova nota</button>
     </div>${pendente}${chips}${corpo}`;
 
@@ -4775,7 +5090,7 @@ function renderCoresNota() {
     `<div class="nota-cor ${nome === notaCorSel ? 'sel' : ''}" style="background:${hex}" title="${nome}" onclick="notaCorSel='${nome}';renderCoresNota()"></div>`).join('');
 }
 
-function abrirNota(id) {
+function abrirNota(id, pastaPadrao, divisaoPadrao) {
   notaEditId = id || null;
   const n = id ? notasData.find(x => String(x.ID) === String(id)) : null;
   document.getElementById('nota-modal-titulo').textContent = n ? '📝 Editar nota' : '📝 Nova nota';
@@ -4785,6 +5100,12 @@ function abrirNota(id) {
   document.getElementById('nota-fixada').checked = !!n && n['Fixada'] === 'Sim';
   notaCorSel = n && NOTA_CORES[n['Cor']] ? n['Cor'] : 'amarelo';
   renderCoresNota();
+  // Vínculo com pasta/divisão: nota nova já nasce ligada à pasta aberta (se estiver numa), editável aqui
+  const selPasta = document.getElementById('nota-pasta');
+  selPasta.innerHTML = '<option value="">Nenhuma (só em Notas)</option>' + ABAS.map(a => `<option value="${escLista(a).replace(/"/g, '&quot;')}">${escLista(ABA_LABEL[a] || a)}</option>`).join('');
+  const pastaInicial = n ? String(n['Pasta'] || '') : (pastaPadrao || '');
+  selPasta.value = ABAS.includes(pastaInicial) ? pastaInicial : '';
+  atualizarDivisoesNota(n ? String(n['Divisão'] || '') : (divisaoPadrao || ''));
   const tags = [...new Set(notasData.map(x => String(x['Tag'] || '').trim()).filter(Boolean))];
   document.getElementById('notas-tags-list').innerHTML = tags.map(t => `<option value="${escLista(t).replace(/"/g, '&quot;')}">`).join('');
   document.getElementById('btn-excluir-nota').style.display = n ? 'block' : 'none';
@@ -4792,7 +5113,32 @@ function abrirNota(id) {
   document.getElementById(n ? 'nota-texto' : 'nota-titulo').focus();
 }
 
-function fecharNota() { document.getElementById('modal-nota').classList.remove('open'); }
+function fecharNota() { pararDitado(); document.getElementById('modal-nota').classList.remove('open'); }
+
+// Divisões da pasta escolhida (as que já existem nas tarefas dela); "valorSel" é a divisão já gravada na nota
+function atualizarDivisoesNota(valorSel) {
+  const pasta = document.getElementById('nota-pasta').value;
+  const grupo = document.getElementById('nota-divisao-group');
+  const sel = document.getElementById('nota-divisao');
+  grupo.style.display = pasta ? 'block' : 'none';
+  const divs = new Set((allData[pasta] || []).map(t => String(t['Divisão'] || '').trim()).filter(Boolean));
+  if (valorSel) divs.add(valorSel);
+  sel.innerHTML = '<option value="">Toda a pasta (no alto, antes das divisões)</option>' +
+    [...divs].sort((a, b) => a.localeCompare(b, 'pt-BR')).map(d => `<option value="${escLista(d).replace(/"/g, '&quot;')}">${escLista(d)}</option>`).join('');
+  sel.value = valorSel || '';
+}
+
+// Notas ligadas a uma pasta (e, se informado, a uma divisão dela). Divisão '' = notas da pasta inteira.
+function notasVinculadas(aba, divisao) {
+  const alvo = String(divisao || '').trim().toLowerCase();
+  return notasOrdenadas(notasData.filter(n => String(n['Pasta'] || '') === aba && String(n['Divisão'] || '').trim().toLowerCase() === alvo));
+}
+function notaMiniHtml(n) {
+  const resumo = String(n['Texto'] || '').split('\n').filter(Boolean).slice(0, 2).join(' · ');
+  return `<div class="nota-mini" style="background:${notaCorBg(n)}" onclick="abrirNota('${n.ID}')">
+    ${n['Fixada'] === 'Sim' ? '📌 ' : ''}<b>${escLista(n['Título'] || resumo.slice(0, 40) || 'Nota')}</b>${n['Título'] && resumo ? `<span class="nota-mini-txt"> — ${escLista(resumo.slice(0, 120))}</span>` : ''}
+  </div>`;
+}
 
 // Mostra a tela certa depois de mexer numa nota (a de Notas, ou a busca que a mostrava)
 function atualizarTelaNotas() { salvarNotasCache(); render(); }
@@ -4801,10 +5147,13 @@ function salvarNota() {
   const titulo = document.getElementById('nota-titulo').value.trim();
   const texto = document.getElementById('nota-texto').value.replace(/\s+$/, '');
   if (!titulo && !texto.trim()) { showToast('✍️ Escreva algo na nota'); return; }
+  const pastaSel = document.getElementById('nota-pasta').value;
   const campos = {
     'Título': titulo, 'Texto': texto, 'Cor': notaCorSel,
     'Tag': document.getElementById('nota-tag').value.trim(),
-    'Fixada': document.getElementById('nota-fixada').checked ? 'Sim' : ''
+    'Fixada': document.getElementById('nota-fixada').checked ? 'Sim' : '',
+    'Pasta': pastaSel,
+    'Divisão': pastaSel ? document.getElementById('nota-divisao').value : ''
   };
   const id = notaEditId;
   fecharNota();
@@ -4822,6 +5171,7 @@ function salvarNota() {
 
 // Nota rápida: o que foi digitado vira o título de uma nota amarela (toque nela depois pra escrever mais)
 function notaRapida() {
+  limparBufferDitado();
   const campo = document.getElementById('nota-rapida');
   const txt = campo.value.trim();
   if (!txt) return;
@@ -4900,6 +5250,110 @@ function aplicarFilaEmNotas(base) {
     else lista = lista.filter(n => String(n.ID) !== String(op.id));
   });
   return lista;
+}
+
+// ===== DITADO POR VOZ (botão 🎤) =====
+// Usa o reconhecimento de voz do navegador (Chrome/Edge; pt-BR; precisa de internet e da permissão do microfone).
+// Cada pausa = uma frase reconhecida = um item. A palavra "próximo" (ou "nova linha") separa itens mesmo sem pausa.
+let ditado = null;
+const ditadoSuportado = () => !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+
+function marcarMic(alvo, ligado) {
+  document.querySelectorAll(`.btn-mic[data-alvo="${alvo}"]`).forEach(b => { b.classList.toggle('ouvindo', ligado); b.textContent = ligado ? '⏹' : '🎤'; });
+}
+
+function pararDitado() {
+  if (!ditado) return;
+  const d = ditado; ditado = null; d.ativo = false;
+  try { d.rec.onend = null; d.rec.stop(); } catch (e) {}
+  marcarMic(d.alvo, false);
+  // o que ainda estava sendo falado (sem "próximo" no fim) entra como o último item
+  if (d.alvo !== 'nota' && d.buffer) { const c = campoNovoDoDitado(d.alvo); if (c) c.value = ''; confirmarItemDitado(d.alvo, d.buffer); }
+}
+
+function alternarDitado(alvo) {
+  if (ditado && ditado.ativo) { const mesmo = ditado.alvo === alvo; pararDitado(); if (mesmo) return; }
+  if (!ditadoSuportado()) { showToast('🎤 Este navegador não tem ditado. Use o Chrome ou o Edge (no celular, use o microfone do teclado).'); return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const rec = new SR();
+  rec.lang = 'pt-BR'; rec.continuous = true; rec.interimResults = false;
+  ditado = { rec, alvo, ativo: true, buffer: '' };
+  rec.onresult = ev => {
+    for (let i = ev.resultIndex; i < ev.results.length; i++) if (ev.results[i].isFinal) tratarFalaDitada(alvo, ev.results[i][0].transcript);
+  };
+  rec.onerror = ev => {
+    if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') { showToast('🎤 Permita o uso do microfone no navegador para poder ditar'); pararDitado(); }
+    else if (ev.error !== 'no-speech' && ev.error !== 'aborted') showToast('🎤 Não consegui ouvir (' + ev.error + ')');
+  };
+  // O navegador encerra sozinho depois de um tempo de silêncio: religa enquanto o botão estiver ativo
+  rec.onend = () => { if (ditado && ditado.ativo) { try { rec.start(); } catch (e) { pararDitado(); } } };
+  try { rec.start(); } catch (e) { pararDitado(); showToast('🎤 Não consegui ligar o microfone'); return; }
+  marcarMic(alvo, true);
+  showToast(alvo === 'nota'
+    ? '🎤 Pode falar. Diga "vírgula", "ponto final" ou "nova linha" quando precisar. Toque no ⏹ para parar.'
+    : (ditadoModo === 'pausa' ? '🎤 Fale um item; cada pausa vira um item. Toque no ⏹ para parar.' : '🎤 Fale o item e diga "próximo" para passar ao seguinte. Pode pensar à vontade. Toque no ⏹ para parar.'));
+}
+
+// Pontuação falada: "bom dia vírgula code" -> "bom dia, code". ("ponto" sozinho NÃO vira sinal: pode ser a palavra "ponto".)
+const PONTUACAO_FALADA = [
+  [/\bponto e v[ií]rgula\b/gi, ';'], [/\bdois pontos\b/gi, ':'], [/\bponto de interroga[cç][aã]o\b/gi, '?'],
+  [/\bponto de exclama[cç][aã]o\b/gi, '!'], [/\bponto final\b/gi, '.'], [/\bv[ií]rgula\b/gi, ','],
+  [/\babre par[eê]nteses?\b/gi, '('], [/\bfecha par[eê]nteses?\b/gi, ')']
+];
+function pontuarFala(s) {
+  let t = ' ' + String(s || '') + ' ';
+  PONTUACAO_FALADA.forEach(([re, p]) => { t = t.replace(re, p); });
+  return t.replace(/[ \t]+([,.;:!?)])/g, '$1').replace(/\([ \t]+/g, '(').replace(/[ \t]{2,}/g, ' ').trim();
+}
+const SEPARADOR_FALADO = /\b(?:pr[oó]xim[oa]|novo item|nova linha)\b/i;
+const maiuscula1 = s => s.charAt(0).toUpperCase() + s.slice(1);
+
+// Modo de separar os itens: 'proximo' (padrão: só quando você diz "próximo"; pausa para pensar NÃO corta) ou 'pausa' (cada pausa = um item)
+let ditadoModo = 'proximo';
+try { ditadoModo = localStorage.getItem('ditadoModo') === 'pausa' ? 'pausa' : 'proximo'; } catch (e) {}
+function alternarDitadoModo(porPausa) {
+  ditadoModo = porPausa ? 'pausa' : 'proximo';
+  try { localStorage.setItem('ditadoModo', ditadoModo); } catch (e) {}
+  showToast(porPausa ? '🎤 Ditado: cada pausa vira um item' : '🎤 Ditado: só separa quando você disser "próximo"');
+}
+
+// O item que ainda está sendo falado (modo "próximo") aparece no campo "Novo item" enquanto você fala
+function campoNovoDoDitado(alvo) { return document.getElementById(alvo === 'lista' ? 'lista-novo' : alvo === 'form' ? 'obs-lista-novo' : 'nota-rapida'); }
+function mostrarPendenteDitado() { if (ditado && ditado.alvo !== 'nota') { const c = campoNovoDoDitado(ditado.alvo); if (c) c.value = ditado.buffer || ''; } }
+function limparBufferDitado() { if (ditado) ditado.buffer = ''; }
+
+function confirmarItemDitado(alvo, texto) {
+  texto = String(texto || '').replace(/^[\s,.;:!?-]+|[\s,.;:!?-]+$/g, '').trim();
+  if (!texto) return;
+  if (alvo === 'rapida') { document.getElementById('nota-rapida').value = maiuscula1(texto); notaRapida(); return; }
+  const itens = textoParaItensLista(texto).map(i => ({ ...i, texto: maiuscula1(i.texto) })); // "lápis, borracha" (com vírgulas) vira vários itens
+  if (!itens.length) return;
+  if (alvo === 'lista') { listaLinhas.push(...itens); salvarListaDepois(); }
+  else if (alvo === 'form') { formListaLinhas.push(...itens); renderListaForm(); }
+}
+
+function tratarFalaDitada(alvo, fala) {
+  if (!ditado) return;
+  if (alvo === 'nota') {
+    // Texto corrido: só "nova linha" quebra linha; a pontuação falada vira o sinal
+    const campo = document.getElementById('nota-texto');
+    const partes = String(fala || '').split(/\bnova linha\b|\bnovo item\b/i).map(pontuarFala);
+    let atual = campo.value;
+    partes.forEach((p, i) => {
+      if (i > 0) atual = atual.replace(/[ \t]+$/, '') + '\n';
+      if (p) atual += (atual && !/[\s(]$/.test(atual) && !/^[,.;:!?)]/.test(p) ? ' ' : '') + (/[\n]$|^$/.test(atual) || /[.!?]\s*$/.test(atual) ? maiuscula1(p) : p);
+    });
+    campo.value = atual;
+    return;
+  }
+  // Itens (lista, formulário, nota rápida): "próximo"/"nova linha" separam
+  const partes = String(fala || '').split(SEPARADOR_FALADO).map(pontuarFala);
+  partes.forEach((p, i) => {
+    if (ditadoModo === 'pausa') { confirmarItemDitado(alvo, p); return; }   // cada pausa/fala já é um item
+    ditado.buffer = (ditado.buffer ? ditado.buffer + ' ' : '') + p;
+    if (i < partes.length - 1) { const t = ditado.buffer; ditado.buffer = ''; confirmarItemDitado(alvo, t); }  // veio um "próximo" depois deste pedaço
+  });
+  mostrarPendenteDitado();
 }
 
 // ===== LISTA MARCÁVEL =====
@@ -5087,6 +5541,7 @@ function alternarDetalheNovo(qual) {
 }
 
 function addItemForm() {
+  limparBufferDitado();
   const campo = document.getElementById('obs-lista-novo');
   const novos = lerNovoItem('obs-lista-novo', 'obs-lista-novo-qtd', 'form');
   if (!novos.length) return;
@@ -5114,6 +5569,7 @@ function abrirLista(aba, id, converter) {
 }
 
 function fecharLista() {
+  pararDitado();
   document.getElementById('modal-lista').classList.remove('open');
   if (listaTimer) { clearTimeout(listaTimer); listaTimer = null; salvarListaAgora(); }
   renderMantendoScroll();
@@ -5132,7 +5588,8 @@ function renderLista() {
       <div class="lista-linha">
         <span class="lista-grip" onpointerdown="arrastarItem(event,'lista',${l.i})" title="Segure e arraste para mudar de lugar">⠿</span>
         <input type="checkbox" ${l.feito ? 'checked' : ''} onchange="alternarItemLista(${l.i})">
-        <span class="lista-txt lista-txt-curto" onclick="this.classList.toggle('expandido')" title="Toque para ler inteiro">${escLista(p.nome)}</span>
+        <textarea class="lista-txt lista-txt-edit" rows="1" wrap="off" onfocus="expandirCampo(this)" onblur="recolherCampo(this)" oninput="autoAltura(this)"
+          onchange="editarNomeItemLista(${l.i}, this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" title="Toque para ler inteiro ou corrigir o nome">${escLista(p.nome)}</textarea>
         <input type="text" class="lista-qtd" placeholder="qtd / obs" value="${aspas(p.qtd)}" onchange="qtdItemLista(${l.i}, this.value)" title="Quantidade ou observação (ex: 2 kg · para a escola, pode ser barato)">
         <button class="${l.estrela ? 'on' : ''}" onclick="estrelaItemLista(${l.i})" title="${l.estrela ? 'Tirar a estrela' : 'Marcar como prioridade (comprar primeiro)'}">${l.estrela ? '⭐' : '☆'}</button>
         <button class="lista-quem-btn${p.quem ? ' on' : ''}" onclick="alternarDetalheItem('lista',${l.i})" title="${aspas(p.quem ? 'Quem: ' + p.quem : 'A quem cobrar este item')}">👤</button>
@@ -5226,6 +5683,12 @@ function campoItemLista(i, campo, valor) {
   salvarListaDepois();
 }
 function qtdItemLista(i, qtd) { campoItemLista(i, 'qtd', qtd); }
+// Corrigir o nome do item direto na lista (toque no texto, escreva, saia do campo). Nome vazio não vale: volta o que estava.
+function editarNomeItemLista(i, nome) {
+  nome = String(nome || '').replace(/\s+/g, ' ').trim();
+  if (!nome) { showToast('✍️ O nome do item não pode ficar vazio'); renderLista(); return; }
+  campoItemLista(i, 'nome', nome);
+}
 
 // Nomes já usados em "Envolvido" das tarefas: aparecem como sugestão no campo "quem"
 function atualizarQuemOpcoes() {
@@ -5340,6 +5803,7 @@ function lerNovoItem(idNome, idQtd, qual, textoColado) {
 }
 
 function adicionarItemLista(textoColado) {
+  if (typeof textoColado !== 'string') limparBufferDitado(); // adicionou o que estava no campo: o ditado não repete
   const campo = document.getElementById('lista-novo');
   const novos = lerNovoItem('lista-novo', 'lista-novo-qtd', 'lista', textoColado);
   if (!novos.length) return;
