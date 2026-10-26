@@ -1909,7 +1909,7 @@
   </div>
 </div>
 
-<div class="modal-overlay" id="modal-add">
+<div class="modal-overlay" id="modal-add" onclick="if(event.target===this) tentarFecharModalAdd()">
   <div class="modal">
     <div class="modal-titulo-linha">
       <h3 id="modal-add-title">✏️ Nova tarefa</h3>
@@ -2346,7 +2346,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v63';
+const APP_VERSION = 'v64';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -2914,7 +2914,8 @@ async function excluirSelecionadas() {
     const data = JSON.parse(await res.text());
     if (data.ok) {
       // só tira da tela o que o servidor confirmou (não some tarefa que não foi apagada de verdade)
-      const naoAchadas = new Set((data.naoEncontradas || []).map(String));
+      // (servidor v23+) também não tira da tela o que o servidor tentou e NÃO conseguiu apagar de verdade
+      const naoAchadas = new Set([...(data.naoEncontradas || []), ...((data.naoApagadas || []).map(x => x.id))].map(String));
       itens.forEach(({ aba, id }) => {
         if (naoAchadas.has(String(id))) return;
         allData[aba] = (allData[aba] || []).filter(t => String(t.ID) !== String(id));
@@ -2926,6 +2927,7 @@ async function excluirSelecionadas() {
         : `🗑️ ${data.apagadas} linha${data.apagadas === 1 ? '' : 's'} excluída${data.apagadas === 1 ? '' : 's'}!`);
       const pediuNomes = new Set(itens.map(i => String(i.id)));
       if ((data.removidas || []).some(r => !pediuNomes.has(String(r.id)))) showToast('⚠️ O servidor apagou algo que não foi pedido — confira a planilha e me avise');
+if ((data.naoApagadas || []).length) showToast('⚠️ Não consegui apagar da planilha: ' + data.naoApagadas.map(x => x.tarefa).join(', '));
     } else if (/inv[aá]lida/i.test(String(data.error || ''))) {
       // Servidor (Code.gs) ainda não republicado: usa o jeito antigo, tarefa por tarefa
       await Promise.all(itens.map(({ aba, id }) =>
@@ -4806,6 +4808,24 @@ function parseDataParaInput(dataRaw) {
   if (partes.length === 3) return `${partes[2]}-${partes[1]}-${partes[0]}`;
   const d = new Date(dataRaw);
   return !isNaN(d) ? d.toISOString().split('T')[0] : '';
+}
+
+// Clicar FORA da janela de criar/editar tarefa fecha — mas, se algo foi digitado/mudado, pergunta antes de jogar fora
+let formAddSujo = false;
+(function () {
+  const m = document.getElementById('modal-add');
+  if (!m) return;
+  const sujar = () => { formAddSujo = true; };
+  m.addEventListener('input', sujar);
+  m.addEventListener('change', sujar);
+  m.addEventListener('click', e => { if (e.target.closest && e.target.closest('.prio-btn')) sujar(); });
+  // Ao abrir (classe "open"), começa "limpo": preencher os campos por código não conta como alteração
+  new MutationObserver(() => { if (m.classList.contains('open')) setTimeout(() => { formAddSujo = false; }, 0); })
+    .observe(m, { attributes: true, attributeFilter: ['class'] });
+})();
+function tentarFecharModalAdd() {
+  if (formAddSujo && !confirm('Descartar as alterações desta tarefa?')) return;
+  closeAddModal();
 }
 
 function closeAddModal(e) {
