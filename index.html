@@ -2904,6 +2904,34 @@ async function excluirSelecionadas() {
   selecionados.clear();
   atualizarBarraSelecao();
   renderMantendoScroll();
+  conferirExclusao(itens);
+}
+
+// Depois de excluir, confere na planilha de verdade se as linhas sumiram — e avisa quais NÃO sumiram (e por quê)
+async function conferirExclusao(itens) {
+  try {
+    const todos = await buscarJsonComRetentativa(`${API_URL}?action=getAll`, 2);
+    if (!todos || typeof todos !== 'object' || Array.isArray(todos)) return;
+    const restam = [];
+    itens.forEach(({ aba, id }) => {
+      const t = (todos[aba] || []).find(x => String(x.ID) === String(id));
+      if (t) restam.push(t);
+    });
+    // Mesma tarefa copiada em outra pasta (mesmo ID): excluir numa não apaga a outra
+    const copias = [];
+    itens.forEach(({ aba, id }) => Object.keys(todos).forEach(k => {
+      if (k === aba || !Array.isArray(todos[k])) return;
+      const c = todos[k].find(x => String(x.ID) === String(id));
+      if (c) copias.push(`${c.Tarefa} (também na pasta ${k})`);
+    }));
+    if (restam.length) {
+      Object.keys(todos).forEach(k => { if (Array.isArray(todos[k])) allData[k] = todos[k]; });
+      render();
+      showToast(`⚠️ ${restam.length} não foi apagada da planilha: ${restam.map(t => t.Tarefa).join(', ')}. Tente excluir de novo.`);
+    } else if (copias.length) {
+      showToast(`ℹ️ Apagada daqui, mas existe cópia em outra pasta: ${copias.join('; ')}`);
+    }
+  } catch (e) { /* conferência é só um extra */ }
 }
 
 // ===== MOVER TAREFAS ENTRE PASTAS =====
