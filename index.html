@@ -2342,7 +2342,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v55';
+const APP_VERSION = 'v56';
 let serverVersion = null;
 let allData = {};
 
@@ -4449,7 +4449,28 @@ function fecharMenuAcoesTarefa() {
   document.getElementById('modal-acoes-tarefa').classList.remove('open');
 }
 
-async function enviarLembrete(id, aba, btn) {
+// Se o app ainda não sabe o telefone do envolvido, pergunta UMA vez e guarda (aba CONTATOS da planilha).
+// Não depende de nenhuma conta Google: o telefone fica junto com o app. Devolve true se agora o telefone é conhecido.
+async function garantirTelefoneEnvolvido(nome) {
+  nome = String(nome || '').trim();
+  if (!nome || /daniel/i.test(nome)) return true; // Daniel vai pro grupo, não precisa de telefone
+  try {
+    const r = await buscarJsonComRetentativa(`${API_URL}?action=temContato&nome=${encodeURIComponent(nome)}`, 2);
+    if (r && r.ok && r.achou) return true;
+    if (!r || !r.ok || r.achou === undefined) return true; // servidor antigo (sem essa ação) ou sem resposta: não atrapalha
+  } catch (e) { return true; } // sem conexão: deixa salvar normalmente
+  const tel = prompt(`Qual o telefone de "${nome}" (com DDD)?\n\nÉ para avisar essa pessoa no WhatsApp quando uma tarefa for criada ou lembrada. Fica guardado: não pergunto de novo.\n\nDeixe vazio para não avisar.`, '');
+  if (tel === null || !tel.trim()) return false;
+  try {
+    const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'setContato', nome, telefone: tel }) });
+    const d = await res.json();
+    if (!d.ok) { showToast('⚠️ ' + (d.error || 'Não consegui guardar o telefone')); return false; }
+    showToast(`📱 Telefone de ${nome} guardado`);
+    return true;
+  } catch (e) { showToast('⚠️ Sem conexão — telefone não guardado'); return false; }
+}
+
+async function enviarLembrete(id, aba, btn, jaPerguntou) {
   btn.disabled = true;
   const original = btn.textContent;
   btn.textContent = '⏳';
@@ -4462,6 +4483,13 @@ async function enviarLembrete(id, aba, btn) {
     const data = await res.json();
     if (data.ok) {
       showToast('🔔 Lembrete enviado!');
+    } else if (!jaPerguntou && /Não encontrei o número/.test(String(data.error || ''))) {
+      // Telefone desconhecido: pergunta e tenta de novo uma vez
+      const t = (allData[aba] || []).find(x => String(x.ID) === String(id));
+      const nome = (t && t.Envolvido) || (document.getElementById('f-envolvido') || {}).value || '';
+      btn.disabled = false; btn.textContent = original;
+      if (await garantirTelefoneEnvolvido(nome)) return enviarLembrete(id, aba, btn, true);
+      showToast('ℹ️ Sem telefone, o aviso não foi enviado');
     } else {
       showToast('⚠️ ' + (data.error || 'Erro ao enviar lembrete'));
     }
@@ -5030,6 +5058,13 @@ async function salvarTarefa() {
   const envolvido = document.getElementById('f-envolvido').value.trim();
   const tag = document.getElementById('f-tag').value.trim();
   const editando = !!editandoId;
+
+  // Envolvido novo (ou trocado): garante que o app sabe o telefone dele ANTES de salvar, pra o aviso sair certo
+  const tarefaOrig = editando ? (allData[editandoAba] || []).find(t => String(t.ID) === String(editandoId)) : null;
+  if (envolvido && (!tarefaOrig || String(tarefaOrig.Envolvido || '').trim().toLowerCase() !== envolvido.toLowerCase())) {
+    showToast('⏳ Conferindo o telefone de ' + envolvido + '...');
+    await garantirTelefoneEnvolvido(envolvido);
+  }
 
   const btn = document.getElementById('btn-salvar');
   const textoOriginal = btn.textContent;
