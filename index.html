@@ -270,7 +270,8 @@
   .menu-mobile button { flex: 1; padding: 11px 8px; border: 2px solid transparent; border-radius: 10px; background: var(--gray-light); font-size: 15px; font-weight: 700; color: var(--text); cursor: pointer; }
   .menu-mobile button.ativo { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
   .btn-direita { margin-left: auto; }
-  .busca-local-linha { display: none; margin: 0 0 6px; }
+  .busca-local-linha { display: none; margin: 0; }
+  @media (max-width: 639px) { .busca-local-linha { margin: 0 0 6px; } }
   .busca-local-linha.show { display: flex; }
   .acao-divisao { display: flex; align-items: center; gap: 10px; width: 100%; padding: 14px 12px; margin-bottom: 6px; border: none; border-radius: 10px; background: var(--gray-light); font-size: 15px; font-weight: 600; color: var(--text); text-align: left; cursor: pointer; }
   .barra-divisoes { display:flex; align-items:center; gap:10px; margin:2px 0 8px; }
@@ -3622,7 +3623,24 @@ function tituloParaImpressao() {
 }
 
 // Mostra em qual pasta a pessoa está vendo — importante no celular, onde a barra de pastas fica escondida
+// A busca "na pasta atual": no celular fica abaixo de "Você está em"; no computador volta pra barra de busca, ao lado da busca geral
+function posicionarBuscaLocal() {
+  const el = document.getElementById('busca-local-linha');
+  if (!el) return;
+  const celular = window.matchMedia('(max-width: 639px)').matches;
+  if (celular) {
+    const ref = document.getElementById('pasta-atual-mobile');
+    if (el.previousElementSibling !== ref) ref.after(el);
+  } else {
+    const bar = document.querySelector('.quick-bar');
+    const limpar = bar.querySelector('.btn-direita');
+    if (el.parentElement !== bar) bar.insertBefore(el, limpar);
+  }
+}
+window.addEventListener('resize', posicionarBuscaLocal);
+
 function atualizarPastaAtualMobile() {
+  posicionarBuscaLocal();
   const el = document.getElementById('pasta-atual-mobile');
   if (!el) return;
   const dentroDePasta = !modoPastas && !modoNotas && !algumFiltroAtivo();
