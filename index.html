@@ -2038,7 +2038,8 @@
 
     <div class="form-group">
       <label>Envolvido (opcional)</label>
-      <input type="text" id="f-envolvido" placeholder="Ex: Daniel" oninput="atualizarBotaoLembreteModal()">
+      <input type="text" id="f-envolvido" placeholder="Ex: Daniel (ou o telefone com DDD)" oninput="atualizarBotaoLembreteModal()">
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);margin-top:4px;cursor:pointer"><input type="checkbox" id="f-nao-avisar"> 🔕 Não avisar o envolvido ao salvar (ex.: tarefa que já foi feita)</label>
     </div>
 
     <div class="form-group" id="f-status-group" style="display:none">
@@ -2063,6 +2064,7 @@
     <button class="btn-lembrete-modal" id="btn-lembrete-modal" onclick="enviarLembreteModal()" style="display:none">🔔 Notificar novamente</button>
 
     <button class="btn-salvar" id="btn-salvar" onclick="salvarTarefa()">Salvar tarefa</button>
+    <button class="btn-salvar" id="btn-salvar-concluir" onclick="salvarEConcluir()" style="display:none;background:var(--success);margin-top:8px">✅ Salvar e concluir (sem avisar ninguém)</button>
     <button class="btn-excluir-modal" id="btn-excluir-modal" onclick="excluirDoModal()" style="display:none">🗑️ Excluir tarefa</button>
     <button class="modal-cancel" onclick="closeAddModal()" style="margin-top:8px">Cancelar</button>
   </div>
@@ -2372,7 +2374,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v66';
+const APP_VERSION = 'v67';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -4642,6 +4644,7 @@ async function openAddModal() {
   document.getElementById('f-status-group').style.display = 'block';
   document.getElementById('f-status').value = 'Aberto';
   document.getElementById('f-data-conclusao-group').style.display = 'none';
+  document.getElementById("btn-salvar-concluir").style.display = "none"; document.getElementById("f-nao-avisar").checked = false;
   document.getElementById('f-data-conclusao').value = '';
   document.getElementById('btn-lembrete-modal').style.display = 'none';
   document.getElementById('btn-excluir-modal').style.display = 'none';
@@ -4825,6 +4828,7 @@ async function openEditModal(t) {
   atualizarCampoDataConclusao();
   atualizarBotaoLembreteModal();
   document.getElementById('btn-excluir-modal').style.display = 'block';
+  document.getElementById("btn-salvar-concluir").style.display = "block"; document.getElementById("f-nao-avisar").checked = false;
   document.getElementById('btn-excluir-modal').disabled = false; // garante que nunca abre já desligado
   document.getElementById('btn-excluir-modal').dataset.nome = t.Tarefa || '';
   const prio = t.Prioridade || 'Média';
@@ -5180,6 +5184,14 @@ function selPrio(btn) {
   btn.classList.add('sel');
 }
 
+// Conclui a tarefa que está sendo editada e salva, sem mandar aviso ao envolvido (ele já participou: não precisa receber de novo)
+function salvarEConcluir() {
+  document.getElementById('f-status').value = 'Concluído';
+  try { atualizarCampoDataConclusao(); } catch (e) {}
+  document.getElementById('f-nao-avisar').checked = true;
+  salvarTarefa();
+}
+
 async function salvarTarefa() {
   const aba = document.getElementById('f-aba').value;
   if (!aba) { showToast('⚠️ Escolha a pasta'); return; }
@@ -5209,7 +5221,9 @@ async function salvarTarefa() {
 
   // Envolvido novo (ou trocado): garante que o app sabe o telefone dele ANTES de salvar, pra o aviso sair certo
   const tarefaOrig = editando ? (allData[editandoAba] || []).find(t => String(t.ID) === String(editandoId)) : null;
-  if (envolvido && (!tarefaOrig || String(tarefaOrig.Envolvido || '').trim().toLowerCase() !== envolvido.toLowerCase())) {
+  const naoAvisar = document.getElementById('f-nao-avisar').checked || document.getElementById('f-status').value === 'Concluído';
+  const eTelefone = /^[\d\s()+\-]{10,}$/.test(envolvido); // envolvido digitado como número: o servidor usa direto
+  if (envolvido && !naoAvisar && !eTelefone && (!tarefaOrig || String(tarefaOrig.Envolvido || '').trim().toLowerCase() !== envolvido.toLowerCase())) {
     showToast('⏳ Conferindo o telefone de ' + envolvido + '...');
     await garantirTelefoneEnvolvido(envolvido);
   }
@@ -5236,6 +5250,7 @@ async function salvarTarefa() {
   const novoStatus = document.getElementById('f-status').value;
   fields.Status = novoStatus;
   if (!editando && formTipoLista) fields.Tipo = 'Lista'; // criada por "Nova lista": é lista, qualquer que seja o nome da pasta
+  if (naoAvisar) fields._naoAvisar = true; // o servidor (v25+) não manda WhatsApp ao envolvido
   if (novoStatus !== 'Concluído') {
     fields['Data conclusão'] = '';
   } else {
