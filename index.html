@@ -2379,7 +2379,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v73';
+const APP_VERSION = 'v74';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -4062,8 +4062,11 @@ function renderTarefas(tarefas) {
   const chavesAtuais = gruposOrdenados.map(([k]) => k + abaAtual);
   window.__catKeysAtuais = chavesAtuais;
   const todasRecolhidas = chavesAtuais.length > 0 && chavesAtuais.every(k => categoriasColapsadas.has(k));
-  const barraDivisoes = gruposOrdenados.length >= 2
-    ? `<div class="barra-divisoes"><button class="btn-recolher" onclick="alternarRecolherTudo()">${todasRecolhidas ? '▸ Abrir todas' : '▾ Recolher todas'}</button><span class="barra-div-info">${gruposOrdenados.length} divisórias · ${filtradas.length} tarefas</span></div>`
+  const btnNovaNotaPasta = mostraNotasVinculadas
+    ? `<button class="btn-recolher" style="margin-left:auto;background:#fef9c3;color:#854d0e" onclick="abrirNota('', '${abaAtual.replace(/'/g, "\\'")}')" title="Nova nota ligada a esta pasta (também aparece em Notas)">📝 Nova nota</button>`
+    : '';
+  const barraDivisoes = (gruposOrdenados.length >= 2 || btnNovaNotaPasta)
+    ? `<div class="barra-divisoes">${gruposOrdenados.length >= 2 ? `<button class="btn-recolher" onclick="alternarRecolherTudo()">${todasRecolhidas ? '▸ Abrir todas' : '▾ Recolher todas'}</button><span class="barra-div-info">${gruposOrdenados.length} divisórias · ${filtradas.length} tarefas</span>` : ''}${btnNovaNotaPasta}</div>`
     : '';
 
   // Notas ligadas à pasta inteira: faixa no alto, antes da primeira divisória
