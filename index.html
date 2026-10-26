@@ -2345,7 +2345,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v57';
+const APP_VERSION = 'v59';
 let serverVersion = null;
 let allData = {};
 
@@ -6282,8 +6282,12 @@ function montarTextoLista(t, linhas, modo) {
   if (modo === 'completa') {
     // Lista inteira, como está: o que falta (⭐ primeiro) e depois o que já foi feito
     const feitos = linhas.filter(l => l.item && l.feito);
-    msg += '\n' + [...est, ...resto].map(item).join('\n');
-    if (feitos.length) msg += (est.length || resto.length ? '\n' : '') + feitos.map(l => `- (feito) ${textoItemLegivel(l.texto)}`).join('\n');
+    // Tudo feito: lista limpa, sem marca em cada linha. Misturado: o que falta primeiro e, separado, "Já feitos".
+    if (!est.length && !resto.length) return (msg + '\n' + feitos.map(item).join('\n')).trim();
+    // Mesmos títulos do "tudo" (quem recebe entende o que é prioridade, sem ver a ⭐), e depois o que já foi feito
+    if (est.length) msg += '\n*PRIMEIRO (prioridade):*\n' + est.map(item).join('\n') + '\n';
+    if (resto.length) msg += `\n*${est.length ? 'Depois' : 'Itens'}:*\n` + resto.map(item).join('\n');
+    if (feitos.length) msg += '\n\n*Já feitos:*\n' + feitos.map(item).join('\n');
     return msg.trim();
   }
   if (modo === 'estrelas') {
