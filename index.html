@@ -225,7 +225,7 @@
   .nota-cores { display:flex; gap:10px; margin:6px 0 4px; }
   .nota-cor { width:30px; height:30px; border-radius:50%; border:3px solid transparent; cursor:pointer; box-shadow:0 0 0 1px rgba(0,0,0,.2); }
   .nota-cor.sel { border-color:#111; }
-  .btn-mic { background:none; border:none; font-size:20px; cursor:pointer; padding:2px 4px; line-height:1; }
+  .btn-mic { color:#475569; display:inline-flex; align-items:center; background:none; border:none; font-size:20px; cursor:pointer; padding:2px 4px; line-height:1; }
   .btn-mic.ouvindo { background:#fee2e2; border-radius:50%; animation:pulsoMic 1s infinite; }
   @keyframes pulsoMic { 0%,100% { box-shadow:0 0 0 0 rgba(220,38,38,.5); } 50% { box-shadow:0 0 0 6px rgba(220,38,38,0); } }
   @media print { .btn-mic { display:none !important; } }
@@ -2153,8 +2153,10 @@
       <input type="text" id="nota-titulo" placeholder="Ex: Código do portão" autocomplete="off">
     </div>
     <div class="form-group">
-      <label>Nota <button type="button" class="btn-mic" data-alvo="nota" onclick="alternarDitado('nota')" title="Ditar a nota">🎤</button></label>
-      <textarea id="nota-texto" rows="8" style="min-height:160px" placeholder="Escreva aqui o que quiser guardar..."></textarea>
+      <label style="display:flex;align-items:center;gap:6px">Nota <button type="button" class="btn-mic" data-alvo="nota" onclick="alternarDitado('nota')" title="Ditar a nota">🎤</button>
+        <button type="button" class="btn-mic" style="font-size:16px;font-weight:800;padding:2px 9px" onmousedown="event.preventDefault()" onclick="negritoNota()" title="Negrito: selecione o texto e toque aqui (vira *texto*)">B</button>
+        <button type="button" class="btn-mic" style="font-size:13px;font-weight:700;padding:2px 8px;margin-left:auto" onclick="copiarNotaDoModal()" title="Copiar a nota inteira">📋 Copiar</button></label>
+      <textarea id="nota-texto" rows="8" style="min-height:160px" placeholder="Escreva aqui o que quiser guardar... (para negrito: selecione e toque em B)"></textarea>
     </div>
     <div class="form-group">
       <label>Cor</label>
@@ -2213,6 +2215,7 @@
     <button class="menu-mais-item" onclick="listaVirarTarefa()" title="Esta lista não é de compras: é um passo a passo com checks">☑ Não é lista de compras: voltar a ser tarefa</button>
     <button class="menu-mais-item" onclick="recomecarLista(true)">🔄 Nova compra: desmarcar tudo e tirar as estrelas</button>
     <button class="menu-mais-item" onclick="recomecarLista(false)">⭐ Só tirar as estrelas (mantém o que está marcado)</button>
+    <button class="menu-mais-item" onclick="copiarListaDoModal()">📋 Copiar a lista inteira (para colar em qualquer lugar)</button>
     <button class="menu-mais-item" onclick="enviarLista('tudo')">📤 Enviar a lista toda (⭐ primeiro)</button>
     <button class="menu-mais-item" onclick="enviarLista('estrelas')">⭐ Enviar só o que tem estrela</button>
 <button class="menu-mais-item" onclick="enviarListaPelaSecretaria()">📲 Enviar pela secretária (sem colar nada)</button>
@@ -2379,7 +2382,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v74';
+const APP_VERSION = 'v75';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -5659,6 +5662,32 @@ function abrirNotas() {
 }
 
 const notaParaCard = t => String(t || '').split('\n').map(l => l.replace(/^\s*-\s*\[( |x|X)\]\s?/, (m, c) => (c === ' ' ? '☐ ' : '☑ '))).join('\n');
+// *texto* vira negrito (igual ao WhatsApp, então o que for copiado já vai formatado)
+const negritoHtml = t => escLista(t).replace(/\*([^*\n]+)\*/g, '<b>$1</b>');
+function negritoNota() {
+  const c = document.getElementById('nota-texto');
+  const a = c.selectionStart, b = c.selectionEnd, v = c.value;
+  if (a === b) { showToast('ℹ️ Selecione o texto que quer deixar em negrito e toque em B'); return; }
+  const sel = v.slice(a, b);
+  const ja = /^\*[^*]+\*$/.test(sel);
+  const novo = ja ? sel.slice(1, -1) : '*' + sel + '*';
+  c.value = v.slice(0, a) + novo + v.slice(b);
+  c.focus(); c.setSelectionRange(a, a + novo.length);
+}
+async function copiarTextoPuro(texto) {
+  try { await navigator.clipboard.writeText(texto); showToast('📋 Copiado! É só colar (Ctrl+V) onde quiser'); }
+  catch (e) { window.prompt('Copie o texto (Ctrl+C):', texto); }
+}
+function copiarNotaDoModal() {
+  const tit = document.getElementById('nota-titulo').value.trim();
+  const txt = document.getElementById('nota-texto').value.trim();
+  copiarTextoPuro((tit ? '*' + tit + '*\n\n' : '') + txt);
+}
+function copiarListaDoModal() {
+  const t = tarefaDaLista();
+  if (!t) return;
+  copiarTextoPuro(montarTextoLista(t, listaLinhas, 'completa'));
+}
 const notaCorBg = n => NOTA_CORES[n['Cor']] || NOTA_CORES.amarelo;
 
 // Fixadas (📌) sempre primeiro; depois a ordem escolhida no botão do topo (padrão: mais recentes)
@@ -5674,7 +5703,7 @@ function notaHtml(n) {
   return `<div class="nota" style="background:${notaCorBg(n)}" onclick="abrirNota('${n.ID}')">
     ${n['Fixada'] === 'Sim' ? '<span class="nota-pin">📌</span>' : ''}
     ${n['Título'] ? `<div class="nota-titulo">${escLista(n['Título'])}</div>` : ''}
-    ${n['Texto'] ? `<div class="nota-texto">${escLista(notaParaCard(n['Texto']))}</div>` : ''}
+    ${n['Texto'] ? `<div class="nota-texto">${negritoHtml(notaParaCard(n['Texto']))}</div>` : ''}
     <div class="nota-rodape">${tag ? `<span class="nota-tag">${escLista(tag)}</span>` : '<span></span>'}${localDaNotaHtml(n)}
       <button class="nota-del" onclick="event.stopPropagation(); excluirNota('${n.ID}')" title="Excluir nota">🗑️</button></div>
   </div>`;
@@ -5728,7 +5757,7 @@ function renderNotas() {
 
   main.innerHTML = `<div class="notas-topo">
       <input type="text" id="nota-rapida" placeholder="📝 Escreva uma nota rápida e dê Enter..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();notaRapida()}">
-      <button class="btn-mic" data-alvo="rapida" onclick="alternarDitado('rapida')" title="Ditar uma nota rápida">🎤</button>
+      <button class="btn-mic" data-alvo="rapida" onclick="alternarDitado('rapida')" title="Ditar uma nota rápida">${MIC_SVG}</button>
       <button class="btn-nova-nota" onclick="abrirNota()">➕ Nova nota</button>
     </div>${pendente}${chips}${corpo}`;
 
@@ -5797,7 +5826,7 @@ function notasVinculadas(aba, divisao) {
   return notasOrdenadas(notasData.filter(n => String(n['Pasta'] || '') === aba && String(n['Divisão'] || '').trim().toLowerCase() === alvo));
 }
 function notaMiniHtml(n) {
-  const resumo = String(n['Texto'] || '').split('\n').filter(Boolean).slice(0, 2).join(' · ');
+  const resumo = String(n['Texto'] || '').replace(/\*/g, '').split('\n').filter(Boolean).slice(0, 2).join(' · ');
   return `<div class="nota-mini" style="background:${notaCorBg(n)}" onclick="abrirNota('${n.ID}')">
     ${n['Fixada'] === 'Sim' ? '📌 ' : ''}<b>${escLista(n['Título'] || resumo.slice(0, 40) || 'Nota')}</b>${n['Título'] && resumo ? `<span class="nota-mini-txt"> — ${escLista(resumo.slice(0, 120))}</span>` : ''}
   </div>`;
@@ -5919,10 +5948,13 @@ function aplicarFilaEmNotas(base) {
 // Usa o reconhecimento de voz do navegador (Chrome/Edge; pt-BR; precisa de internet e da permissão do microfone).
 // Cada pausa = uma frase reconhecida = um item. A palavra "próximo" (ou "nova linha") separa itens mesmo sem pausa.
 let ditado = null;
+// Microfone no estilo do WhatsApp/teclado (cápsula com haste), no lugar do emoji 🎤
+const MIC_SVG = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 14.5a3.5 3.5 0 0 0 3.5-3.5V5.5a3.5 3.5 0 0 0-7 0V11a3.5 3.5 0 0 0 3.5 3.5zm6-3.5a6 6 0 0 1-12 0H4.5a7.5 7.5 0 0 0 6.75 7.46V21h1.5v-2.54A7.5 7.5 0 0 0 19.5 11H18z"/></svg>';
+document.querySelectorAll('.btn-mic[data-alvo]').forEach(b => { if (b.textContent.trim() === '🎤') b.innerHTML = MIC_SVG; });
 const ditadoSuportado = () => !!(window.SpeechRecognition || window.webkitSpeechRecognition);
 
 function marcarMic(alvo, ligado) {
-  document.querySelectorAll(`.btn-mic[data-alvo="${alvo}"]`).forEach(b => { b.classList.toggle('ouvindo', ligado); b.textContent = ligado ? '⏹' : '🎤'; });
+  document.querySelectorAll(`.btn-mic[data-alvo="${alvo}"]`).forEach(b => { b.classList.toggle('ouvindo', ligado); b.innerHTML = ligado ? '⏹' : MIC_SVG; });
 }
 
 function pararDitado() {
@@ -6001,12 +6033,17 @@ function tratarFalaDitada(alvo, fala) {
     // Texto corrido: só "nova linha" quebra linha; a pontuação falada vira o sinal
     const campo = document.getElementById('nota-texto');
     const partes = String(fala || '').split(/\bnova linha\b|\bnovo item\b/i).map(pontuarFala);
-    let atual = campo.value;
+    // Escreve onde o cursor está (a posição fica guardada mesmo com o foco no botão do microfone)
+    const pos = Math.min(campo.selectionStart, campo.value.length), fim = Math.min(campo.selectionEnd, campo.value.length);
+    const depois = campo.value.slice(fim);
+    let atual = campo.value.slice(0, pos);
     partes.forEach((p, i) => {
       if (i > 0) atual = atual.replace(/[ \t]+$/, '') + '\n';
       if (p) atual += (atual && !/[\s(]$/.test(atual) && !/^[,.;:!?)]/.test(p) ? ' ' : '') + (/[\n]$|^$/.test(atual) || /[.!?]\s*$/.test(atual) ? maiuscula1(p) : p);
     });
-    campo.value = atual;
+    const cursor = atual.length;
+    campo.value = atual + (depois && !/^[\s,.;:!?)]/.test(depois) && !/\s$/.test(atual) ? ' ' : '') + depois;
+    campo.setSelectionRange(cursor, cursor);
     return;
   }
   // Itens (lista, formulário, nota rápida): "próximo"/"nova linha" separam
