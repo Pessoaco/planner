@@ -2885,7 +2885,13 @@ async function excluirSelecionadas() {
         if (naoAchadas.has(String(id))) return;
         allData[aba] = (allData[aba] || []).filter(t => String(t.ID) !== String(id));
       });
-      showToast(`🗑️ ${data.apagadas} linha${data.apagadas === 1 ? '' : 's'} excluída${data.apagadas === 1 ? '' : 's'}!`);
+      // Servidor v16+ diz o NOME de cada linha que apagou: assim se vê na hora se apagou o que era pra apagar
+      const nomesApagados = (data.removidas || []).map(r => r.tarefa).filter(Boolean);
+      showToast(nomesApagados.length
+        ? `🗑️ Excluída${nomesApagados.length === 1 ? '' : 's'}: ${nomesApagados.join(', ')}`
+        : `🗑️ ${data.apagadas} linha${data.apagadas === 1 ? '' : 's'} excluída${data.apagadas === 1 ? '' : 's'}!`);
+      const pediuNomes = new Set(itens.map(i => String(i.id)));
+      if ((data.removidas || []).some(r => !pediuNomes.has(String(r.id)))) showToast('⚠️ O servidor apagou algo que não foi pedido — confira a planilha e me avise');
     } else if (/inv[aá]lida/i.test(String(data.error || ''))) {
       // Servidor (Code.gs) ainda não republicado: usa o jeito antigo, tarefa por tarefa
       await Promise.all(itens.map(({ aba, id }) =>
@@ -3606,9 +3612,17 @@ function atualizarBotaoOrdem() {
   b.title = (modoNotas ? 'Ordem das notas' : 'Ordem das tarefas') + ': A–Z → mais recentes → mais antigas (toque para trocar)';
 }
 
+// Em vez de girar entre 3 opções (parecia que a A–Z tinha sumido), abre uma janelinha com as 3 e a atual marcada
 function alternarOrdem() {
-  const ciclo = ['az', 'recentes', 'antigas'];
-  const prox = ciclo[(ciclo.indexOf(ordemAtual()) + 1) % ciclo.length];
+  document.getElementById('troca-titulo').textContent = modoNotas ? 'Ordem das notas' : 'Ordem das tarefas';
+  document.getElementById('troca-tarefa').textContent = '';
+  const atual = ordemAtual();
+  document.getElementById('troca-opcoes').innerHTML = ['az', 'recentes', 'antigas'].map(v =>
+    `<button class="troca-opcao${v === atual ? ' atual' : ''}" onclick="fecharTroca(); definirOrdem('${v}')">${ROTULO_ORDEM[v]} <small style="margin-left:6px;color:var(--text-muted)">${AVISO_ORDEM[v]}</small>${v === atual ? ' <small style="margin-left:auto;color:var(--primary)">atual</small>' : ''}</button>`).join('');
+  document.getElementById('modal-troca').classList.add('open');
+}
+
+function definirOrdem(prox) {
   try {
     if (modoNotas) { ordemNotas = prox; localStorage.setItem('ordemNotas', prox); }
     else { ordemVista = prox; localStorage.setItem('ordemVista', prox); }
