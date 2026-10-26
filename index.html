@@ -2331,7 +2331,14 @@ const respostaVelha = inicio => inicio < escritaLocalTs;
 (function () {
   const original = window.fetch.bind(window);
   window.fetch = function (u, o) {
-    if (o && String(o.method || '').toUpperCase() === 'POST') escritaLocalTs = Date.now();
+    if (o && String(o.method || '').toUpperCase() === 'POST') {
+      // Marca no começo E no fim da gravação: uma leitura que começou DURANTE a gravação (o Google leva até 30 s) também traz a lista "de antes"
+      escritaLocalTs = Date.now();
+      const p = original(u, o);
+      const fim = () => { escritaLocalTs = Date.now(); };
+      p.then(fim, fim);
+      return p;
+    }
     return original(u, o);
   };
 })();
