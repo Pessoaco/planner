@@ -2378,7 +2378,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v71';
+const APP_VERSION = 'v72';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -3680,7 +3680,7 @@ function render() {
     renderTarefas(cruzadas);
     if (listasAchadas.length) {
       document.getElementById("main").insertAdjacentHTML("afterbegin",
-        `<div class="categoria-group"><div class="categoria-header" style="background:#d1fae5;border-right-color:#34d399;cursor:default"><span class="categoria-title" style="color:#065f46">🛒 LISTAS (${listasAchadas.length})</span></div><div class="listas-grid" style="margin-top:8px">${listasAchadas.map(listaCardHtml).join("")}</div></div>`);
+        `<div class="categoria-group"><div class="categoria-header" style="position:static;background:#d1fae5;border-right-color:#34d399;cursor:default"><span class="categoria-title" style="color:#065f46">🛒 LISTAS (${listasAchadas.length})</span></div><div class="listas-grid" style="margin-top:8px">${listasAchadas.map(listaCardHtml).join("")}</div></div>`);
     }
     // Notas que combinam com a busca aparecem em cima das tarefas encontradas
     const blocoNotas = htmlNotasNaBusca();
@@ -5722,7 +5722,7 @@ function htmlNotasNaBusca() {
   if (!searchTerm) return '';
   const achadas = notasOrdenadas(notasData).filter(n => normalizarBusca([n['Título'], n['Texto'], n['Tag']].join(' ')).includes(searchTerm));
   if (!achadas.length) return '';
-  return `<div class="categoria-group"><div class="categoria-header"><span class="categoria-title">📝 Notas (${achadas.length})</span></div>
+  return `<div class="categoria-group"><div class="categoria-header" style="position:static;cursor:default"><span class="categoria-title">📝 Notas (${achadas.length})</span></div>
     <div class="notas-grid" style="margin-top:8px">${achadas.map(notaHtml).join('')}</div></div>`;
 }
 
