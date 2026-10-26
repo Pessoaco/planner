@@ -1764,7 +1764,7 @@
   <div class="header-top">
     <div>
       <h1>📋 Secretária Virtual</h1>
-      <div class="header-subtitle" id="last-update">Carregando...</div>
+      <div class="header-subtitle"><span id="last-update">Carregando...</span><span id="versoes-topo" style="margin-left:8px;opacity:.75"></span></div>
     </div>
     <div class="header-botoes">
       <button class="btn-refresh btn-toggle-sidebar" onclick="toggleSidebar()" title="Ver pastas">☰ Pastas</button>
@@ -2346,8 +2346,14 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v62';
+const APP_VERSION = 'v63';
 let serverVersion = null;
+// Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
+function mostrarVersoesNoTopo() {
+  const el = document.getElementById('versoes-topo');
+  if (el) el.textContent = `· App ${APP_VERSION} · Servidor ${serverVersion === null ? '…' : serverVersion}`;
+}
+document.addEventListener('DOMContentLoaded', mostrarVersoesNoTopo);
 let allData = {};
 
 // ----- Atualização em segundo plano NÃO pode desfazer o que a pessoa acabou de fazer -----
@@ -3404,6 +3410,7 @@ async function loadData() {
     });
     // Code.gs antigo (ainda não republicado) não manda "versao" — o rodapé mostra isso
     serverVersion = resp.versao || 'desatualizado';
+    mostrarVersoesNoTopo();
 
     if (resp.ok && Array.isArray(resp.pastas)) sincronizarPastas(resp.pastas);
     // Resposta mais velha que uma alteração feita aqui nesse meio-tempo: não sobrescreve (a tarefa excluída não "volta")
