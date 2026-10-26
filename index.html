@@ -237,7 +237,7 @@
   .notas-div { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 10px; }
   @media print { .notas-pasta, .notas-div { display:none; } }
   .notas-lista { display:flex; flex-direction:column; gap:6px; }
-  .nota-linha { display:flex; align-items:center; gap:8px; background:var(--card); border-left:8px solid #fef08a; border-radius:10px; padding:11px 12px; box-shadow:var(--shadow); cursor:pointer; }
+  .nota-linha { display:flex; align-items:center; gap:8px; background:var(--card); border-right:8px solid #fef08a; border-radius:10px; padding:11px 12px; box-shadow:var(--shadow); cursor:pointer; }
   .nota-linha-titulo { flex:1 1 auto; min-width:0; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .nota-local { font-size:11px; color:var(--text-muted); white-space:nowrap; }
   .notas-vazio { text-align:center; padding:40px 16px; color:var(--text-muted, #6b7280); }
@@ -246,13 +246,13 @@
   /* ----- Lista marcável (observação com itens "- [ ] ...") ----- */
   .meta-lista { cursor:pointer; background:var(--primary-bg, #eef2ff); color:var(--primary, #4f46e5); border-radius:8px; padding:3px 9px; font-weight:600; }
   /* Celular: o cabeçalho (botões + busca) ocupava ~40% da tela o tempo todo. Agora rola junto com a lista; quem fica preso no
-     topo é a faixa da divisão, com a pasta na frente ("📍 Pessoal › Casa"), pra sempre saber onde se está lendo. */
+     topo é a faixa da divisória, com a pasta na frente ("📍 Pessoal › Casa"), pra sempre saber onde se está lendo. */
   .pin-svg { vertical-align:-2px; flex:none; }
   .btn-mais-mobile { display:none; }
   @media (max-width: 639px) {
     .header { position: static; }
     :root { --header-h: 0px !important; }
-    /* Faixa da divisão: título + seta à esquerda; à direita só 📌 ➕ ⋯ (grandes, fáceis de tocar). O resto fica no menu "⋯". */
+    /* Faixa da divisória: título + seta à esquerda; à direita só 📌 ➕ ⋯ (grandes, fáceis de tocar). O resto fica no menu "⋯". */
     .categoria-header { padding: 6px 8px; gap: 6px; flex-wrap: nowrap; }
     .categoria-header > * { order: 4; }
     .categoria-header .categoria-title { order: 1; flex: 0 1 auto; min-width: 0; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -274,7 +274,7 @@
   @media (max-width: 639px) { .busca-local-linha { margin: 0 0 6px; } }
   .busca-local-linha.show { display: flex; }
   .acao-divisao { display: flex; align-items: center; gap: 10px; width: 100%; padding: 14px 12px; margin-bottom: 6px; border: none; border-radius: 10px; background: var(--gray-light); font-size: 15px; font-weight: 600; color: var(--text); text-align: left; cursor: pointer; }
-  /* Só desce a faixa da divisão quando a barra "Recolher todas" existe (na busca entre pastas ela não existe, e a faixa cobria a 1ª tarefa) */
+  /* Só desce a faixa da divisória quando a barra "Recolher todas" existe (na busca entre pastas ela não existe, e a faixa cobria a 1ª tarefa) */
   #main:has(.barra-divisoes) .categoria-header { top: calc(var(--header-h, 0px) + 44px); }
   .barra-divisoes { display:flex; align-items:center; gap:10px; margin:0 0 4px; height:44px; box-sizing:border-box; position:sticky; top:var(--header-h,0px); z-index:7; background:var(--bg); }
   .btn-recolher { background:var(--primary-light); color:var(--primary); border:none; border-radius:8px; padding:7px 12px; font-size:13px; font-weight:700; cursor:pointer; }
@@ -820,8 +820,8 @@
     margin-bottom: 16px;
   }
 
-  /* Cada divisão é uma "faixa" com a cor da pasta e fica presa embaixo do cabeçalho enquanto se rola:
-     dá pra saber em qual divisão você está lendo e onde uma termina e a outra começa */
+  /* Cada divisória é uma "faixa" com a cor da pasta e fica presa embaixo do cabeçalho enquanto se rola:
+     dá pra saber em qual divisória você está lendo e onde uma termina e a outra começa */
   .categoria-header {
     display: flex;
     align-items: center;
@@ -830,7 +830,7 @@
     margin: 2px 0 6px;
     background: var(--cor-div-bg, var(--gray-light));
     background: color-mix(in srgb, var(--cor-div, #4f46e5) 6%, #ffffff);
-    border-left: 3px solid var(--cor-div, var(--primary));
+    border-right: 4px solid var(--cor-div, var(--primary));
     border-radius: 8px;
     position: sticky;
     top: var(--header-h, 0px);
@@ -880,14 +880,15 @@
     padding: 11px;
     margin-bottom: 6px;
     box-shadow: var(--shadow);
-    border-left: 2px solid transparent;
+    border-right: 3px solid transparent;
     transition: all 0.2s;
   }
 
   /* Fica reservado pra prioridade — o verde é só do botão Concluir, nunca da borda */
-  .tarefa-card.prioridade-Urgente { border-left-color: var(--danger); }
-  .tarefa-card.prioridade-Média { border-left-color: var(--warning); }
-  .tarefa-card.prioridade-Baixa { border-left-color: #94a3b8; }
+  /* Destaque (tarja de cor) do lado DIREITO, como a orelha de um fichário de verdade */
+  .tarefa-card.prioridade-Urgente { border-right-color: var(--danger); }
+  .tarefa-card.prioridade-Média { border-right-color: var(--warning); }
+  .tarefa-card.prioridade-Baixa { border-right-color: #94a3b8; }
   .tarefa-card.status-Concluído { opacity: 0.55; }
 
   .tarefa-top {
@@ -1602,7 +1603,7 @@
       box-shadow: none;
       border: none;
       border-bottom: 1px dotted #ddd;
-      border-left: none !important;
+      border-right: none !important;
       margin-bottom: 0;
       padding: 2px 0;
       border-radius: 0;
@@ -1615,6 +1616,7 @@
       flex-shrink: 0;
       width: 10px;
     }
+  /* Destaque (tarja de cor) do lado DIREITO, como a orelha de um fichário de verdade */
     body.print-reduzido .tarefa-card.prioridade-Urgente::before  { content: 'U'; color: #dc2626; }
     body.print-reduzido .tarefa-card.prioridade-Média::before    { content: 'M'; color: #d97706; }
     body.print-reduzido .tarefa-card.prioridade-Baixa::before    { content: 'B'; color: #16a34a; }
@@ -1756,6 +1758,8 @@
   .so-impressao { display:none; }
   .lista-mini { flex:1 1 220px; max-width:100%; padding:8px 11px; border-radius:10px; font-size:13px; color:#064e3b; cursor:pointer; background:#d1fae5; border:1.5px solid #6ee7b7; }
   .lista-mini-div { opacity:.7; }
+  .lista-titulo-input { flex:1; min-width:0; font-size:16px; font-weight:700; border:1.5px solid transparent; border-radius:8px; padding:4px 8px; margin:-4px 0 12px -8px; background:transparent; color:inherit; font-family:inherit; }
+  .lista-titulo-input:hover, .lista-titulo-input:focus { border-color:var(--border); background:#fff; outline:none; }
   .listas-pasta { margin:0 0 12px; }
   @media print { .so-impressao { display:block !important; } .lc-mais { display:none; } .lista-card { box-shadow:none; border:1px solid #888; } .listas-pasta, .lista-mini { display:none; } }
 
@@ -1948,19 +1952,19 @@
       <select id="f-aba">
         <option value="" disabled>Selecione a pasta...</option>
       </select>
-      <small id="aba-dica-edicao" style="display:none;margin-top:6px;font-size:12px;color:var(--text-muted)">📁 Quer mudar a tarefa de pasta? Escolha a pasta nova e depois a divisão dela — a tarefa é movida ao salvar.</small>
+      <small id="aba-dica-edicao" style="display:none;margin-top:6px;font-size:12px;color:var(--text-muted)">📁 Quer mudar a tarefa de pasta? Escolha a pasta nova e depois a divisória dela — a tarefa é movida ao salvar.</small>
     </div>
 
     <div class="form-group">
-      <label>Divisão</label>
+      <label>Divisória</label>
       <select id="f-categoria">
         <option value="">Carregando...</option>
       </select>
     </div>
 
     <div class="form-group" id="f-nova-cat-group" style="display:none">
-      <label>Nome da nova divisão</label>
-      <input type="text" id="f-nova-cat" placeholder="Digite a divisão">
+      <label>Nome da nova divisória</label>
+      <input type="text" id="f-nova-cat" placeholder="Digite a divisória">
     </div>
 
     <div class="form-group">
@@ -2072,7 +2076,7 @@
 
 <div class="modal-overlay" id="modal-categorias" onclick="if(event.target===this) fecharModalCategorias()">
   <div class="modal">
-    <h3 id="modal-categorias-title">📁 Divisões</h3>
+    <h3 id="modal-categorias-title">📁 Divisórias</h3>
     <button class="menu-mais-item" id="btn-categorias-alternar" onclick="abrirModalCategorias(true)">🌐 Ver todas as pastas</button>
     <div id="lista-categorias"></div>
     <button class="menu-mais-item" onclick="imprimirDivisoes()" style="margin-top:8px">🖨️ Imprimir esta lista</button>
@@ -2119,7 +2123,7 @@
 
 <div class="modal-overlay" id="modal-acoes-divisao" onclick="if(event.target===this) fecharAcoesDivisao()">
   <div class="modal">
-    <h3 id="acoes-divisao-titulo">Divisão</h3>
+    <h3 id="acoes-divisao-titulo">Divisória</h3>
     <div id="acoes-divisao-lista"></div>
     <button class="modal-cancel" onclick="fecharAcoesDivisao()" style="margin-top:6px">Fechar</button>
   </div>
@@ -2165,8 +2169,8 @@
       <select id="nota-pasta" onchange="atualizarDivisoesNota('')"><option value="">Nenhuma (só em Notas)</option></select>
     </div>
     <div class="form-group" id="nota-divisao-group" style="display:none">
-      <label>Divisão (opcional) — aparece dentro dessa divisão</label>
-      <select id="nota-divisao"><option value="">Toda a pasta (no alto, antes das divisões)</option></select>
+      <label>Divisória (opcional) — aparece dentro dessa divisória</label>
+      <select id="nota-divisao"><option value="">Toda a pasta (no alto, antes das divisórias)</option></select>
     </div>
     <label style="display:flex;align-items:center;gap:8px;margin:4px 0 14px;font-size:14px;cursor:pointer">
       <input type="checkbox" id="nota-fixada"> 📌 Fixar no topo
@@ -2189,7 +2193,7 @@
 <div class="modal-overlay" id="modal-lista" onclick="if(event.target===this) fecharLista()">
   <div class="modal">
     <div class="modal-titulo-linha">
-      <h3 id="lista-titulo">☑ Lista</h3>
+      <input id="lista-titulo" type="text" class="lista-titulo-input" onchange="renomearListaAtual(this.value)" title="Toque para renomear a lista" autocomplete="off">
       <button class="modal-fechar-x" onclick="fecharLista()" title="Fechar" style="margin-bottom:16px">✕</button>
     </div>
     <div id="lista-resumo" style="font-size:13px;color:var(--text-muted);margin-bottom:4px"></div>
@@ -2233,7 +2237,7 @@
     </label>
     <label class="menu-mais-item" style="display:flex;align-items:center;gap:8px;cursor:pointer">
       <input type="checkbox" id="chk-abrir-recolhido" onchange="alternarAbrirRecolhido(this.checked)">
-      ▾ Abrir cada pasta só com os nomes das divisões (as 📌 fixadas ficam abertas)
+      ▾ Abrir cada pasta só com os nomes das divisórias (as 📌 fixadas ficam abertas)
     </label>
     <button class="modal-cancel" onclick="fecharModalMais()" style="margin-top:14px">Fechar</button>
   </div>
@@ -2242,13 +2246,13 @@
 <div class="modal-overlay" id="modal-opcoes-pasta" onclick="if(event.target===this) fecharOpcoesPasta()">
   <div class="modal">
     <h3 id="opcoes-pasta-titulo">⋯ Opções da pasta</h3>
-    <button class="menu-mais-item" onclick="fecharOpcoesPasta(); abrirModalCategorias()">📁 Ver divisões desta pasta</button>
+    <button class="menu-mais-item" onclick="fecharOpcoesPasta(); abrirModalCategorias()">📁 Ver divisórias desta pasta</button>
     <button class="menu-mais-item" onclick="fecharOpcoesPasta(); abrirModalNovaPasta(abaAtual)">📋 Duplicar esta pasta inteira (cria uma pasta nova)</button>
     <button class="menu-mais-item" onclick="fecharOpcoesPasta(); renomearPasta()">✏️ Renomear esta pasta</button>
     <button class="menu-mais-item" onclick="fecharOpcoesPasta(); adicionarTagNaPasta()">🏷️ Adicionar uma tag em todas as tarefas desta pasta</button>
     <button class="menu-mais-item" onclick="fecharOpcoesPasta(); abrirCorPasta(abaAtual)">🎨 Trocar a cor desta pasta</button>
     <button class="menu-mais-item" onclick="fecharOpcoesPasta(); abrirNota('', abaAtual)">📝 Nova nota ligada a esta pasta</button>
-    <button class="menu-mais-item" onclick="fecharOpcoesPasta(); juntarTodasDivisoes()">☰ Transformar cada divisão em uma lista (junta as tarefas soltas)</button>
+    <button class="menu-mais-item" onclick="fecharOpcoesPasta(); juntarTodasDivisoes()">☰ Transformar cada divisória em uma lista (junta as tarefas soltas)</button>
     <button class="menu-mais-item" onclick="fecharOpcoesPasta(); ordenarPastasAZ()">🔤 Pastas em ordem alfabética</button>
     <button class="modal-cancel" onclick="fecharOpcoesPasta()" style="margin-top:14px">Fechar</button>
   </div>
@@ -2281,14 +2285,14 @@
 
 <div class="modal-overlay" id="modal-copiar-div" onclick="if(event.target===this) fecharCopiarDivisao()">
   <div class="modal">
-    <h3>📋 Duplicar divisão</h3>
+    <h3>📋 Duplicar divisória</h3>
     <p id="copiar-resumo" style="font-size:13px;color:var(--text-muted);margin:0 0 12px"></p>
     <div class="form-group">
       <label>Pasta de destino</label>
       <select id="copiar-destino"></select>
     </div>
     <div class="form-group">
-      <label>Nome da divisão nova</label>
+      <label>Nome da divisória nova</label>
       <input type="text" id="copiar-nome" placeholder="Ex: Obra do Seu João" autocomplete="off">
     </div>
     <div class="form-group">
@@ -2318,10 +2322,10 @@
       <select id="mover-destino" onchange="atualizarDivisoesMover()"></select>
     </div>
     <div class="form-group">
-      <label>Divisão no destino (opcional)</label>
-      <input type="text" id="mover-divisao" list="mover-divisoes" placeholder="Vazio = manter a divisão atual de cada tarefa" autocomplete="off">
+      <label>Divisória no destino (opcional)</label>
+      <input type="text" id="mover-divisao" list="mover-divisoes" placeholder="Vazio = manter a divisória atual de cada tarefa" autocomplete="off">
       <datalist id="mover-divisoes"></datalist>
-      <small style="display:block;margin-top:6px;font-size:12px;color:var(--text-muted)">✔ Se deixar vazio, cada tarefa <b>continua com a mesma divisão</b> que tem hoje (ex: Casa). Só preencha se quiser trocar.</small>
+      <small style="display:block;margin-top:6px;font-size:12px;color:var(--text-muted)">✔ Se deixar vazio, cada tarefa <b>continua com a mesma divisória</b> que tem hoje (ex: Casa). Só preencha se quiser trocar.</small>
     </div>
     <div style="display:flex;gap:10px;margin-top:14px">
       <button class="modal-cancel" onclick="fecharModalMover()">Cancelar</button>
@@ -2374,7 +2378,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v68';
+const APP_VERSION = 'v71';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -2419,7 +2423,7 @@ let notaCorSel = 'amarelo';
 let notasFila = []; // alterações de notas ainda não confirmadas pelo servidor (guardadas no aparelho até dar certo)
 
 // Ordem da lista: 'az' (alfabética, como sempre), 'recentes' (última alteração primeiro) ou 'antigas' (a mais antiga primeiro).
-// As Notas têm a ordem delas (padrão: mais recentes). Divisões fixadas (📌) ficam sempre no topo da pasta. Guardado neste aparelho.
+// As Notas têm a ordem delas (padrão: mais recentes). Divisórias fixadas (📌) ficam sempre no topo da pasta. Guardado neste aparelho.
 let ordemVista = 'az', ordemNotas = 'recentes', divisoesFixadas = {};
 try {
   ordemVista = localStorage.getItem('ordemVista') || 'az';
@@ -2690,7 +2694,7 @@ let modoUrgentesAtivo = false;
 let modoAgendaPeriodo = null; // null | 'hoje' | 'semana' — mostra o que tem Data Prevista nesse período + tudo que é Urgente
 let modoAgendaEscopo = 'global'; // 'global' (todas as pastas, atalho do cabeçalho) | 'local' (só a pasta aberta, filtro avançado)
 
-// Abrir cada pasta já recolhida (só os nomes das divisões). Padrão: ligado. As divisões fixadas (📌) ficam abertas.
+// Abrir cada pasta já recolhida (só os nomes das divisórias). Padrão: ligado. As divisórias fixadas (📌) ficam abertas.
 // Vale na primeira vez que a pasta é aberta em cada visita ao app; depois, o que você abrir/recolher fica como deixou.
 let abrirRecolhido = true;
 try { abrirRecolhido = localStorage.getItem('abrirRecolhido') !== 'nao'; } catch (e) {}
@@ -2700,7 +2704,7 @@ function alternarAbrirRecolhido(marcado) {
   try { localStorage.setItem('abrirRecolhido', marcado ? 'sim' : 'nao'); } catch (e) {}
   pastasJaAbertas.clear();
   if (!marcado) categoriasColapsadas.clear();
-  showToast(marcado ? '▾ As pastas vão abrir só com os nomes das divisões' : '▸ As pastas vão abrir com tudo aberto');
+  showToast(marcado ? '▾ As pastas vão abrir só com os nomes das divisórias' : '▸ As pastas vão abrir com tudo aberto');
 }
 function aplicarRecolhidoInicial(aba) {
   const dados = allData[aba];
@@ -2708,7 +2712,7 @@ function aplicarRecolhidoInicial(aba) {
   pastasJaAbertas.add(aba);
   const fixas = new Set(divisoesFixadas[aba] || []);
   dados.forEach(t => {
-    const chave = String(t['Divisão'] || 'Sem divisão').trim().toLowerCase();
+    const chave = String(t['Divisão'] || 'Sem divisória').trim().toLowerCase();
     if (!fixas.has(chave)) categoriasColapsadas.add(chave + aba);
   });
 }
@@ -2871,12 +2875,12 @@ function toggleSelecionado(chave, marcado) {
   atualizarBarraSelecao();
 }
 
-// Botão ☑ do título da divisão: seleciona de uma vez todas as tarefas dessa divisão que estão na tela
+// Botão ☑ do título da divisória: seleciona de uma vez todas as tarefas dessa divisória que estão na tela
 // (respeita filtros/busca; as concluídas escondidas não entram). Clicar de novo desmarca todas.
 // Ligar o modo de seleção sozinho evita marcar 150 tarefas uma por uma, principalmente no celular.
 function selecionarDivisao(aba, nome) {
   const visiveis = tarefasDaTelaAtual().filter(t => t._aba === aba && String(t['Divisão'] || '').trim() === nome);
-  if (!visiveis.length) { showToast('ℹ️ Nenhuma tarefa dessa divisão na tela'); return; }
+  if (!visiveis.length) { showToast('ℹ️ Nenhuma tarefa dessa divisória na tela'); return; }
   const chaves = visiveis.map(t => `${t._aba}::${t.ID}`);
   const todasMarcadas = chaves.every(k => selecionados.has(k));
   if (!modoSelecao) {
@@ -3037,7 +3041,7 @@ function fecharModalMover() {
   document.getElementById('modal-mover').classList.remove('open');
 }
 
-// Sugere as divisões que já existem na pasta de destino (mas aceita digitar uma nova)
+// Sugere as divisórias que já existem na pasta de destino (mas aceita digitar uma nova)
 function atualizarDivisoesMover() {
   const destino = document.getElementById('mover-destino').value;
   const divs = [...new Set((allData[destino] || []).map(t => (t['Divisão'] || '').trim()).filter(Boolean))].sort();
@@ -3069,7 +3073,7 @@ async function confirmarMover() {
       showToast('❌ ' + (data.error || 'Não foi possível mover'));
       return;
     }
-    // Guarda de onde cada tarefa saiu (pasta + divisão) pra poder desfazer
+    // Guarda de onde cada tarefa saiu (pasta + divisória) pra poder desfazer
     const registro = itens.map(it => {
       const t = (allData[it.aba] || []).find(x => String(x.ID) === String(it.id));
       return { id: it.id, abaOrigem: it.aba, divisaoOrigem: t ? (t['Divisão'] || '') : null };
@@ -3146,7 +3150,7 @@ window.addEventListener('load', () => { if (ultimoMover) mostrarBannerMover(); }
 async function desfazerMover() {
   if (!ultimoMover) return;
   const { destino, registro } = ultimoMover;
-  // Uma chamada por pasta de origem (cada tarefa volta pra pasta e divisão de onde saiu)
+  // Uma chamada por pasta de origem (cada tarefa volta pra pasta e divisória de onde saiu)
   const grupos = {};
   registro.forEach(r => { (grupos[r.abaOrigem] = grupos[r.abaOrigem] || []).push(r); });
   if (!confirm(`Devolver ${registro.length} tarefa(s) para a pasta de origem?`)) return;
@@ -3571,7 +3575,7 @@ async function switchTab(aba) {
     }).catch(() => { ultimaBusca[aba] = 0; });
   }
 
-  aplicarRecolhidoInicial(aba); // pasta abre só com os nomes das divisões (se a opção estiver ligada)
+  aplicarRecolhidoInicial(aba); // pasta abre só com os nomes das divisórias (se a opção estiver ligada)
   popularBotoesEnvolvidos();
   render();
 }
@@ -3668,21 +3672,28 @@ function render() {
   if (modoNotas) { renderNotas(); return; }
   // Qualquer filtro ativo (prioridade, status, envolvido ou busca) passa a procurar em todas as abas
   if (algumFiltroAtivo()) {
-    const cruzadas = ABAS.flatMap(aba => (allData[aba] || []).map(t => ({ ...t, _aba: aba })));
-    document.getElementById('counters').innerHTML = '';
+    // Listas não são tarefas: na busca/filtro elas saem do meio das tarefas e aparecem num bloco próprio (verde-menta), como as Notas
+    const todasCruzadas = ABAS.flatMap(aba => (allData[aba] || []).map(t => ({ ...t, _aba: aba })));
+    const cruzadas = todasCruzadas.filter(t => !ehTarefaLista(t, t._aba));
+    const listasAchadas = filtrarTarefas(todasCruzadas.filter(t => listaAtiva(t, t._aba)));
+    document.getElementById("counters").innerHTML = "";
     renderTarefas(cruzadas);
+    if (listasAchadas.length) {
+      document.getElementById("main").insertAdjacentHTML("afterbegin",
+        `<div class="categoria-group"><div class="categoria-header" style="background:#d1fae5;border-right-color:#34d399;cursor:default"><span class="categoria-title" style="color:#065f46">🛒 LISTAS (${listasAchadas.length})</span></div><div class="listas-grid" style="margin-top:8px">${listasAchadas.map(listaCardHtml).join("")}</div></div>`);
+    }
     // Notas que combinam com a busca aparecem em cima das tarefas encontradas
     const blocoNotas = htmlNotasNaBusca();
-    if (blocoNotas) document.getElementById('main').insertAdjacentHTML('afterbegin', blocoNotas);
+    if (blocoNotas) document.getElementById("main").insertAdjacentHTML("afterbegin", blocoNotas);
     return;
   }
-  // Listas não são tarefas: ficam fora do placar e do meio das tarefas (vivem em 🛒 Listas e na faixa da divisão)
+  // Listas não são tarefas: ficam fora do placar e do meio das tarefas (vivem em 🛒 Listas e na faixa da divisória)
   const tarefas = (allData[abaAtual] || []).filter(t => !ehTarefaLista(t, abaAtual)).map(t => ({ ...t, _aba: abaAtual }));
   renderCounters(tarefas);
   renderTarefas(tarefas);
 }
 
-// ----- Ordem da lista e divisões fixadas -----
+// ----- Ordem da lista e divisórias fixadas -----
 // Alfinete de localização (estilo do mapa): desenhado aqui, então fica igual em qualquer aparelho (o emoji 📍 muda de forma em cada um)
 const PIN_SVG = '<svg class="pin-svg" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="#ea4335" d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7z"/><circle cx="12" cy="9" r="2.6" fill="#fff"/></svg>';
 const ROTULO_ORDEM = { az: '🔤 A–Z', recentes: '🕒 Recentes', antigas: '🕰️ Antigas' };
@@ -3728,7 +3739,7 @@ function momentoTarefa(t) {
   return Math.max(parseDataHoraBR(t['Atualizada']), criacao || 0);
 }
 
-// 📌 no título da divisão: ela sobe pro topo sempre que a pasta abre (guardado neste aparelho)
+// 📌 no título da divisória: ela sobe pro topo sempre que a pasta abre (guardado neste aparelho)
 function fixarDivisao(keyEnc) {
   const key = decodeURIComponent(keyEnc);
   const chave = algumFiltroAtivo() ? '*' : abaAtual;
@@ -3738,7 +3749,7 @@ function fixarDivisao(keyEnc) {
   divisoesFixadas[chave] = [...lista];
   try { localStorage.setItem('divisoesFixadas', JSON.stringify(divisoesFixadas)); } catch (e) {}
   render();
-  showToast(fixou ? '📌 Divisão fixada no topo da pasta' : '📌 Divisão desafixada');
+  showToast(fixou ? '📌 Divisória fixada no topo da pasta' : '📌 Divisória desafixada');
 }
 
 // Título do papel: "Todas as pastas — tag: Comprar" quando há filtro/busca; senão o nome da pasta aberta.
@@ -3961,8 +3972,8 @@ function renderTarefas(tarefas) {
   const grupos = {};
   filtradas.forEach(t => {
     const cat = cruzado
-      ? `${ABA_LABEL[t._aba]} — ${t['Divisão'] || 'Sem divisão'}`
-      : (t['Divisão'] || 'Sem divisão');
+      ? `${ABA_LABEL[t._aba]} — ${t['Divisão'] || 'Sem divisória'}`
+      : (t['Divisão'] || 'Sem divisória');
     // Agrupa ignorando maiúscula/minúscula e espaço extra — senão "Higiene" e "HIGIENE" (ou com
     // espaço a mais) viram dois grupos diferentes que parecem idênticos na tela (o título é
     // sempre exibido em CAIXA ALTA via CSS, então a diferença fica escondida da pessoa)
@@ -3974,7 +3985,7 @@ function renderTarefas(tarefas) {
   const priOrd = { 'Urgente': 0, 'Média': 1, 'Baixa': 2 };
 
   // No modo Hoje/Semana, quem tem data+hora marcada vem primeiro (na ordem do relógio),
-  // e só depois vêm as urgentes sem data — senão a ordem alfabética das divisões esconde os horários
+  // e só depois vêm as urgentes sem data — senão a ordem alfabética das divisórias esconde os horários
   const ordenacaoPorAgenda = !!modoAgendaPeriodo;
   const timestampTarefa = t => {
     const d = paraDataObj(t['Data Prevista']);
@@ -3984,7 +3995,7 @@ function renderTarefas(tarefas) {
     return d.getTime();
   };
 
-  // Divisões fixadas (📌) sobem pro topo da pasta, em qualquer ordem escolhida (exceto no Hoje/Semana, onde manda o relógio)
+  // Divisórias fixadas (📌) sobem pro topo da pasta, em qualquer ordem escolhida (exceto no Hoje/Semana, onde manda o relógio)
   const chaveFixadas = cruzado ? '*' : abaAtual;
   const fixadas = new Set(divisoesFixadas[chaveFixadas] || []);
   const az = (a, b) => a.label.localeCompare(b.label, 'pt-BR');
@@ -4015,7 +4026,7 @@ function renderTarefas(tarefas) {
       items.sort((a, b) => (priOrd[a.Prioridade] ?? 1) - (priOrd[b.Prioridade] ?? 1) || (a.Tarefa || '').localeCompare(b.Tarefa || '', 'pt-BR'));
     }
     const ehFixada = fixadas.has(catKey);
-    // Notas ligadas a esta divisão aparecem logo abaixo do título dela (não entram na contagem de tarefas)
+    // Notas ligadas a esta divisória aparecem logo abaixo do título dela (não entram na contagem de tarefas)
     const notasDiv = mostraNotasVinculadas ? notasVinculadas(abaAtual, cat) : [];
     const listasDiv = mostraNotasVinculadas ? listasVinculadas(abaAtual, cat) : [];
     const colapsado = categoriasColapsadas.has(catKey + abaAtual);
@@ -4028,15 +4039,15 @@ function renderTarefas(tarefas) {
         <div class="categoria-header" onclick="toggleCategoria('${catKey}')">
           <span class="categoria-title" style="${corAba}">${iconeCategoria(cat)} ${cat}</span>
           <span class="categoria-toggle">${colapsado ? '▶' : '▼'}</span>
-          <button class="btn-nova-na-divisao${ehFixada ? ' fixada' : ''}" onclick="event.stopPropagation(); fixarDivisao('${encodeURIComponent(catKey)}')" title="${ehFixada ? 'Desafixar esta divisão' : 'Fixar esta divisão no topo da pasta'}">📌</button>
-          <button class="btn-nova-na-divisao" onclick="event.stopPropagation(); abrirNovaTarefaNaDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').replace(/'/g,"\\'")}')" title="Nova tarefa nesta divisão">➕</button>
-          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); novaLista('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Nova lista (compras, material...) nesta divisão">🛒</button>` : ''}
-          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); renomearDivisao(null, '${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Renomear esta divisão">✏️</button>` : ''}
-          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); abrirCopiarDivisaoDe('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Duplicar esta divisão inteira (abertas e concluídas) como lista modelo">📋</button>` : ''}
-          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); selecionarDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Selecionar (ou desmarcar) todas as tarefas desta divisão que aparecem na tela">☑</button>` : ''}
-          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); juntarDivisaoEmLista('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Juntar todas as tarefas desta divisão numa lista só (um item por tarefa)">☰</button>` : ''}
-          ${mostraNotasVinculadas && String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); abrirNota('', '${abaAtual.replace(/'/g, "\\'")}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g, "\\'")}')" title="Nova nota nesta divisão (aparece aqui, sem contar como tarefa)">📝</button>` : ''}
-          <button class="btn-nova-na-divisao btn-mais-mobile" onclick="event.stopPropagation(); abrirAcoesDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}', ${mostraNotasVinculadas ? 'true' : 'false'})" title="Mais ações desta divisão">⋯</button>
+          <button class="btn-nova-na-divisao${ehFixada ? ' fixada' : ''}" onclick="event.stopPropagation(); fixarDivisao('${encodeURIComponent(catKey)}')" title="${ehFixada ? 'Desafixar esta divisória' : 'Fixar esta divisória no topo da pasta'}">📌</button>
+          <button class="btn-nova-na-divisao" onclick="event.stopPropagation(); abrirNovaTarefaNaDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').replace(/'/g,"\\'")}')" title="Nova tarefa nesta divisória">➕</button>
+          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); novaLista('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Nova lista (compras, material...) nesta divisória">🛒</button>` : ''}
+          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); renomearDivisao(null, '${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Renomear esta divisória">✏️</button>` : ''}
+          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); abrirCopiarDivisaoDe('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Duplicar esta divisória inteira (abertas e concluídas) como lista modelo">📋</button>` : ''}
+          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); selecionarDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Selecionar (ou desmarcar) todas as tarefas desta divisória que aparecem na tela">☑</button>` : ''}
+          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); juntarDivisaoEmLista('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Juntar todas as tarefas desta divisória numa lista só (um item por tarefa)">☰</button>` : ''}
+          ${mostraNotasVinculadas && String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); abrirNota('', '${abaAtual.replace(/'/g, "\\'")}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g, "\\'")}')" title="Nova nota nesta divisória (aparece aqui, sem contar como tarefa)">📝</button>` : ''}
+          <button class="btn-nova-na-divisao btn-mais-mobile" onclick="event.stopPropagation(); abrirAcoesDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}', ${mostraNotasVinculadas ? 'true' : 'false'})" title="Mais ações desta divisória">⋯</button>
           <span class="categoria-count">${items.length}</span>
         </div>
         ${colapsado || !notasDiv.length ? '' : `<div class="notas-div">${notasDiv.map(notaMiniHtml).join('')}</div>`}
@@ -4046,21 +4057,21 @@ function renderTarefas(tarefas) {
     `;
   }).join('');
 
-  // Barra "Recolher todas / Abrir todas": com tudo recolhido só se vê o NOME das divisões (útil quando a que importa está lá embaixo)
+  // Barra "Recolher todas / Abrir todas": com tudo recolhido só se vê o NOME das divisórias (útil quando a que importa está lá embaixo)
   const chavesAtuais = gruposOrdenados.map(([k]) => k + abaAtual);
   window.__catKeysAtuais = chavesAtuais;
   const todasRecolhidas = chavesAtuais.length > 0 && chavesAtuais.every(k => categoriasColapsadas.has(k));
   const barraDivisoes = gruposOrdenados.length >= 2
-    ? `<div class="barra-divisoes"><button class="btn-recolher" onclick="alternarRecolherTudo()">${todasRecolhidas ? '▸ Abrir todas' : '▾ Recolher todas'}</button><span class="barra-div-info">${gruposOrdenados.length} divisões · ${filtradas.length} tarefas</span></div>`
+    ? `<div class="barra-divisoes"><button class="btn-recolher" onclick="alternarRecolherTudo()">${todasRecolhidas ? '▸ Abrir todas' : '▾ Recolher todas'}</button><span class="barra-div-info">${gruposOrdenados.length} divisórias · ${filtradas.length} tarefas</span></div>`
     : '';
 
-  // Notas ligadas à pasta inteira: faixa no alto, antes da primeira divisão
+  // Notas ligadas à pasta inteira: faixa no alto, antes da primeira divisória
   const notasDaPasta = mostraNotasVinculadas ? notasVinculadas(abaAtual, '') : [];
   const faixaNotasPasta = notasDaPasta.length
     ? `<div class="notas-pasta"><div class="notas-pasta-titulo">📝 NOTAS DESTA PASTA (${notasDaPasta.length})</div><div class="notas-mini">${notasDaPasta.map(notaMiniHtml).join('')}</div></div>`
     : '';
 
-  // Listas da pasta inteira (sem divisão) ou de uma divisão que não tem nenhuma tarefa (só lista): faixa no alto, com o nome da divisão
+  // Listas da pasta inteira (sem divisória) ou de uma divisória que não tem nenhuma tarefa (só lista): faixa no alto, com o nome da divisória
   const divisoesComTarefa = new Set(Object.keys(grupos));
   const listasSoltas = mostraNotasVinculadas
     ? listasPasta.filter(l => { const d = String(l['Divisão'] || '').trim().toLowerCase(); return !d || !divisoesComTarefa.has(d); })
@@ -4238,7 +4249,7 @@ function cardHtml(t) {
   `;
 }
 
-// Ícone da divisão pelo nome/palavra-chave — evita o 📁 genérico que confunde com "Pasta"
+// Ícone da divisória pelo nome/palavra-chave — evita o 📁 genérico que confunde com "Pasta"
 function iconeCategoria(nome) {
   const n = String(nome || '').toLowerCase();
   const regras = [
@@ -4260,14 +4271,14 @@ function iconeCategoria(nome) {
   return '🔹';
 }
 
-// Recolhe (ou abre) TODAS as divisões que estão na tela de uma vez
+// Recolhe (ou abre) TODAS as divisórias que estão na tela de uma vez
 function alternarRecolherTudo() {
   const chaves = window.__catKeysAtuais || [];
   const todas = chaves.length > 0 && chaves.every(k => categoriasColapsadas.has(k));
   chaves.forEach(k => { if (todas) categoriasColapsadas.delete(k); else categoriasColapsadas.add(k); });
   render();
   window.scrollTo(0, 0);
-  showToast(todas ? '▸ Divisões abertas' : '▾ Só os nomes das divisões — toque numa para abrir');
+  showToast(todas ? '▸ Divisórias abertas' : '▾ Só os nomes das divisórias — toque numa para abrir');
 }
 
 function toggleCategoria(cat) {
@@ -4283,23 +4294,23 @@ const OPCOES_PRIORIDADE = [['Urgente', '🔴 Urgente'], ['Média', '🟡 Média'
 const OPCOES_STATUS = [['Aberto', 'Aberto'], ['Em Andamento', 'Em andamento'], ['Iniciado', '▶️ Iniciado (terceiros)'], ['A conferir', '🔍 A conferir (terceiros)'],
   ['Feito', '✔️ Feito (terceiros)'], ['Aguardando', '🕓 Aguardando (preciso esperar algo)'], ['Concluído', '✅ Concluído']];
 
-// Menu "⋯" da divisão (celular): as ações menos usadas numa lista vertical
+// Menu "⋯" da divisória (celular): as ações menos usadas numa lista vertical
 function abrirAcoesDivisao(aba, div, comNota) {
-  const nome = div || 'Sem divisão';
+  const nome = div || 'Sem divisória';
   document.getElementById('acoes-divisao-titulo').textContent = nome;
   const q = s => String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
   const itens = [];
   if (div) {
-    itens.push(['✏️', 'Renomear divisão', `renomearDivisao(null,'${aba}','${q(div)}')`]);
-    itens.push(['📋', 'Duplicar divisão (como modelo)', `abrirCopiarDivisaoDe('${aba}','${q(div)}')`]);
-    itens.push(['☑', 'Selecionar tarefas da divisão', `selecionarDivisao('${aba}','${q(div)}')`]);
+    itens.push(['✏️', 'Renomear divisória', `renomearDivisao(null,'${aba}','${q(div)}')`]);
+    itens.push(['📋', 'Duplicar divisória (como modelo)', `abrirCopiarDivisaoDe('${aba}','${q(div)}')`]);
+    itens.push(['☑', 'Selecionar tarefas da divisória', `selecionarDivisao('${aba}','${q(div)}')`]);
     itens.push(['☰', 'Juntar tudo numa lista', `juntarDivisaoEmLista('${aba}','${q(div)}')`]);
-    if (comNota) itens.push(['📝', 'Nova nota nesta divisão', `abrirNota('','${aba}','${q(div)}')`]);
-    itens.push(['🛒', 'Nova lista nesta divisão', `novaLista('${aba}','${q(div)}')`]);
+    if (comNota) itens.push(['📝', 'Nova nota nesta divisória', `abrirNota('','${aba}','${q(div)}')`]);
+    itens.push(['🛒', 'Nova lista nesta divisória', `novaLista('${aba}','${q(div)}')`]);
   }
   document.getElementById('acoes-divisao-lista').innerHTML = itens.length
     ? itens.map(([ic, tx, fn]) => `<button class="acao-divisao" onclick="fecharAcoesDivisao(); ${fn.replace(/"/g, '&quot;')}">${ic} <span>${tx}</span></button>`).join('')
-    : '<p style="color:var(--text-muted);font-size:13px">Sem ações para esta divisão.</p>';
+    : '<p style="color:var(--text-muted);font-size:13px">Sem ações para esta divisória.</p>';
   document.getElementById('modal-acoes-divisao').classList.add('open');
 }
 function fecharAcoesDivisao() { document.getElementById('modal-acoes-divisao').classList.remove('open'); }
@@ -4625,7 +4636,7 @@ async function openAddModal() {
   formTipoLista = false;
   // Garante que os dados (e categorias) já foram carregados
   if (!Object.keys(allData).length) {
-    showToast('⏳ Carregando divisões...');
+    showToast('⏳ Carregando divisórias...');
     await loadData();
   }
   document.getElementById('f-obs').value = '';
@@ -4634,8 +4645,8 @@ async function openAddModal() {
   document.getElementById('btn-salvar').textContent = 'Salvar tarefa';
   document.getElementById('f-aba').disabled = false;
   document.getElementById('aba-dica-edicao').style.display = 'none';
-  // Fica em branco de propósito — obriga a pessoa a escolher a pasta e a divisão conscientemente,
-  // em vez de salvar sem querer na aba/divisão que veio marcada sozinha
+  // Fica em branco de propósito — obriga a pessoa a escolher a pasta e a divisória conscientemente,
+  // em vez de salvar sem querer na aba/divisória que veio marcada sozinha
   document.getElementById('f-aba').value = '';
   document.getElementById('f-categoria').innerHTML = '<option value="" disabled selected>Escolha a pasta primeiro...</option>';
   document.getElementById('f-tarefa-label').textContent = 'Tarefa *';
@@ -4660,7 +4671,7 @@ async function openAddModal() {
   document.getElementById('modal-add').classList.add('open');
 }
 
-// Abre "Nova tarefa" já com a Pasta e a Divisão escolhidas — usado pelo "➕" ao lado do nome da divisão na listagem
+// Abre "Nova tarefa" já com a Pasta e a Divisória escolhidas — usado pelo "➕" ao lado do nome da divisória na listagem
 async function abrirNovaTarefaNaDivisao(aba, divisao) {
   await openAddModal();
   document.getElementById('f-aba').value = aba;
@@ -4672,7 +4683,7 @@ async function abrirNovaTarefaNaDivisao(aba, divisao) {
 
 // Monta o texto de uma tarefa pra compartilhar (WhatsApp, etc.)
 function textoTarefaParaCompartilhar(t) {
-  // Tarefa-lista: manda como lista (nome + pasta/divisão + itens), não o texto cru "- [ ] item"
+  // Tarefa-lista: manda como lista (nome + pasta/divisória + itens), não o texto cru "- [ ] item"
   if (ehListaObs(t['Observação'])) {
     const linhasL = parseListaObs(t['Observação']);
     // Lista toda marcada como feita: o "tudo" saía vazio. Manda a lista inteira.
@@ -4774,7 +4785,7 @@ function compartilharSelecionadas() {
   abrirWhatsappCompartilhar(textos.join('\n\n———\n\n'));
 }
 
-// Cria uma cópia da tarefa (mesma divisão/prioridade/status/envolvido) e já abre pra renomear
+// Cria uma cópia da tarefa (mesma divisória/prioridade/status/envolvido) e já abre pra renomear
 async function duplicarTarefa(t) {
   showToast('📄 Duplicando tarefa...');
   const fields = {
@@ -4912,20 +4923,20 @@ function atualizaLabelTarefa(aba) {
   document.getElementById('f-tarefa').placeholder = isIdeias ? 'Descreva a ideia' : 'Descreva a tarefa';
 }
 
-// Uma linha da lista de divisões, com o ✏️ pra renomear (a divisão é só o texto das tarefas, então
+// Uma linha da lista de divisórias, com o ✏️ pra renomear (a divisória é só o texto das tarefas, então
 // renomear = trocar esse texto em todas as tarefas daquela pasta)
 function linhaDivisaoHtml(aba, nome) {
   return `<li class="linha-divisao" data-aba="${aba}" data-div="${encodeURIComponent(nome)}">
     <span>${iconeCategoria(nome)} ${nome}</span>
     <span class="acoes-divisao">
-      <button class="btn-renomear-div" onclick="abrirCopiarDivisao(this)" title="Duplicar esta divisão (lista modelo)">📋</button>
-      <button class="btn-renomear-div" onclick="renomearDivisao(this)" title="Renomear esta divisão">✏️</button>
-      <button class="btn-renomear-div" onclick="excluirDivisao(this)" title="Excluir esta divisão">🗑️</button>
+      <button class="btn-renomear-div" onclick="abrirCopiarDivisao(this)" title="Duplicar esta divisória (lista modelo)">📋</button>
+      <button class="btn-renomear-div" onclick="renomearDivisao(this)" title="Renomear esta divisória">✏️</button>
+      <button class="btn-renomear-div" onclick="excluirDivisao(this)" title="Excluir esta divisória">🗑️</button>
     </span>
   </li>`;
 }
 
-// ----- Copiar divisão (lista modelo: ex. a obra anterior vira a base da obra nova) -----
+// ----- Copiar divisória (lista modelo: ex. a obra anterior vira a base da obra nova) -----
 let copiarDivisaoCtx = null;
 
 function abrirCopiarDivisao(btn) {
@@ -4933,7 +4944,7 @@ function abrirCopiarDivisao(btn) {
   abrirCopiarDivisaoDe(li.dataset.aba, decodeURIComponent(li.dataset.div));
 }
 
-// Abre a janela de copiar pra uma divisão — chamada pelo 📋 do título da divisão e pelo 📋 da lista de divisões
+// Abre a janela de copiar pra uma divisória — chamada pelo 📋 do título da divisória e pelo 📋 da lista de divisórias
 function abrirCopiarDivisaoDe(aba, nome) {
   const doGrupo = (allData[aba] || []).filter(t => String(t['Divisão'] || '').trim() === nome);
   const fechadas = doGrupo.filter(t => ['concluído', 'cancelado'].includes(String(t.Status || '').trim().toLowerCase())).length;
@@ -4960,7 +4971,7 @@ async function confirmarCopiarDivisao() {
   const novaDivisao = document.getElementById('copiar-nome').value.trim();
   const novaTag = document.getElementById('copiar-tag').value.trim();
   if (!destino) { showToast('⚠️ Escolha a pasta de destino'); return; }
-  if (!novaDivisao) { showToast('⚠️ Dê um nome pra divisão nova'); return; }
+  if (!novaDivisao) { showToast('⚠️ Dê um nome pra divisória nova'); return; }
 
   const btn = document.getElementById('btn-confirmar-copiar');
   const textoOriginal = btn.textContent;
@@ -4992,7 +5003,7 @@ async function confirmarCopiarDivisao() {
       loadData(); // não deu pra conferir a lista aqui: recarrega do servidor
     }
     fecharCopiarDivisao();
-    // Só atualiza a lista de divisões se ela já estava aberta (quando copia pelo título, não abre sozinha)
+    // Só atualiza a lista de divisórias se ela já estava aberta (quando copia pelo título, não abre sozinha)
     if (document.getElementById('modal-categorias').classList.contains('open')) abrirModalCategorias(!!window.__categoriasGlobal);
     renderMantendoScroll();
     showToast(`✅ ${data.copiadas} tarefa${data.copiadas === 1 ? '' : 's'} duplicada${data.copiadas === 1 ? '' : 's'} para "${novaDivisao}" (${ABA_LABEL[destino] || destino})`);
@@ -5004,8 +5015,8 @@ async function confirmarCopiarDivisao() {
   }
 }
 
-// Exclui a divisão da pasta. Só deixa se NÃO sobrou tarefa em aberto nela — as concluídas (que ficam
-// escondidas e são o que mantém a divisão "viva" na lista) são apagadas junto, depois de confirmar.
+// Exclui a divisória da pasta. Só deixa se NÃO sobrou tarefa em aberto nela — as concluídas (que ficam
+// escondidas e são o que mantém a divisória "viva" na lista) são apagadas junto, depois de confirmar.
 async function excluirDivisao(btn) {
   const li = btn.closest('li');
   const aba = li.dataset.aba;
@@ -5018,16 +5029,16 @@ async function excluirDivisao(btn) {
 
   let forcar = false;
   if (abertas > 0) {
-    // Ainda tem tarefa em aberto: só apaga tudo com confirmação dupla (OK + digitar o nome da divisão)
-    if (!confirm(`A divisão "${nome}" tem ${abertas} tarefa${abertas === 1 ? '' : 's'} EM ABERTO e ${fechadas.length} concluída${fechadas.length === 1 ? '' : 's'} na pasta ${rotuloPasta}.\n\nQuer excluir a divisão E TODAS essas ${doGrupo.length} tarefas?\n\nNão tem volta. (Se quiser guardar as abertas, cancele e use Selecionar → Mover.)`)) return;
-    const digitado = prompt(`Para confirmar, digite o nome da divisão:\n${nome}`);
+    // Ainda tem tarefa em aberto: só apaga tudo com confirmação dupla (OK + digitar o nome da divisória)
+    if (!confirm(`A divisória "${nome}" tem ${abertas} tarefa${abertas === 1 ? '' : 's'} EM ABERTO e ${fechadas.length} concluída${fechadas.length === 1 ? '' : 's'} na pasta ${rotuloPasta}.\n\nQuer excluir a divisória E TODAS essas ${doGrupo.length} tarefas?\n\nNão tem volta. (Se quiser guardar as abertas, cancele e use Selecionar → Mover.)`)) return;
+    const digitado = prompt(`Para confirmar, digite o nome da divisória:\n${nome}`);
     if (digitado === null) return;
     if (digitado.trim().toLowerCase() !== nome.trim().toLowerCase()) {
       showToast('ℹ️ Nome diferente — nada foi apagado');
       return;
     }
     forcar = true;
-  } else if (!confirm(`Excluir a divisão "${nome}" da pasta ${rotuloPasta}?\n\nEla não tem mais tarefas em aberto — só ${fechadas.length} já concluída${fechadas.length === 1 ? '' : 's'}/cancelada${fechadas.length === 1 ? '' : 's'} (histórico), que serão apagadas junto.\n\nNão tem volta.`)) return;
+  } else if (!confirm(`Excluir a divisória "${nome}" da pasta ${rotuloPasta}?\n\nEla não tem mais tarefas em aberto — só ${fechadas.length} já concluída${fechadas.length === 1 ? '' : 's'}/cancelada${fechadas.length === 1 ? '' : 's'} (histórico), que serão apagadas junto.\n\nNão tem volta.`)) return;
 
   btn.disabled = true;
   btn.textContent = '⏳';
@@ -5047,7 +5058,7 @@ async function excluirDivisao(btn) {
     allData[aba] = (allData[aba] || []).filter(t => !(String(t['Divisão'] || '').trim() === nome && ehFechada(t)));
     abrirModalCategorias(!!window.__categoriasGlobal);
     renderMantendoScroll();
-    showToast(`✅ Divisão "${nome}" excluída`);
+    showToast(`✅ Divisória "${nome}" excluída`);
   } catch (e) {
     showToast('❌ Erro ao excluir — use Atualizar pra conferir');
     btn.disabled = false;
@@ -5056,12 +5067,12 @@ async function excluirDivisao(btn) {
 }
 
 async function renomearDivisao(btn, abaArg, divArg) {
-  // Chamada da lista de divisões (botão dentro de um item) OU direto da faixa da divisão (passando pasta e nome)
+  // Chamada da lista de divisórias (botão dentro de um item) OU direto da faixa da divisória (passando pasta e nome)
   const li = btn && btn.closest ? btn.closest('li') : null;
   const aba = abaArg || li.dataset.aba;
   const atual = divArg !== undefined ? divArg : decodeURIComponent(li.dataset.div);
   btn = btn || { disabled: false, textContent: '' };
-  const entrada = prompt(`Novo nome para a divisão "${atual}" (pasta ${ABA_LABEL[aba] || aba}):`, atual);
+  const entrada = prompt(`Novo nome para a divisória "${atual}" (pasta ${ABA_LABEL[aba] || aba}):`, atual);
   if (entrada === null) return;
   const novo = entrada.trim();
   if (!novo || novo === atual) return;
@@ -5071,7 +5082,7 @@ async function renomearDivisao(btn, abaArg, divArg) {
     const d = String(t['Divisão'] || '').trim();
     return d !== atual && d.toLowerCase() === novo.toLowerCase();
   });
-  const aviso = jaExiste ? `\n\nJá existe uma divisão "${novo}" nessa pasta — as tarefas serão juntadas nela.` : '';
+  const aviso = jaExiste ? `\n\nJá existe uma divisória "${novo}" nessa pasta — as tarefas serão juntadas nela.` : '';
   if (!confirm(`Renomear "${atual}" para "${novo}"?\n${tarefasAfetadas.length} tarefa(s) da pasta ${ABA_LABEL[aba] || aba} serão alteradas.${aviso}`)) return;
 
   btn.disabled = true;
@@ -5092,7 +5103,7 @@ async function renomearDivisao(btn, abaArg, divArg) {
     tarefasAfetadas.forEach(t => { t['Divisão'] = novo; });
     if (document.getElementById('modal-categorias').classList.contains('open')) abrirModalCategorias(!!window.__categoriasGlobal);
     renderMantendoScroll();
-    showToast(`✅ Divisão renomeada (${data.alteradas} tarefa${data.alteradas === 1 ? '' : 's'})`);
+    showToast(`✅ Divisória renomeada (${data.alteradas} tarefa${data.alteradas === 1 ? '' : 's'})`);
   } catch (e) {
     showToast('❌ Erro ao renomear — use Atualizar pra conferir');
     btn.disabled = false;
@@ -5103,13 +5114,13 @@ async function renomearDivisao(btn, abaArg, divArg) {
 async function abrirModalCategorias(global) {
   window.__categoriasGlobal = !!global;
   if (!Object.keys(allData).length) {
-    showToast('⏳ Carregando divisões...');
+    showToast('⏳ Carregando divisórias...');
     await loadData();
   }
 
   let itensHtml;
   if (global) {
-    document.getElementById('modal-categorias-title').textContent = '📁 Divisões — todas as pastas';
+    document.getElementById('modal-categorias-title').textContent = '📁 Divisórias — todas as pastas';
     itensHtml = ABAS.map(aba => {
       const cats = [...new Set((allData[aba] || []).map(t => t['Divisão']).filter(Boolean))].sort();
       if (!cats.length) return '';
@@ -5117,14 +5128,14 @@ async function abrirModalCategorias(global) {
         cats.map(c => linhaDivisaoHtml(aba, c)).join('');
     }).join('');
   } else {
-    document.getElementById('modal-categorias-title').textContent = `📁 Divisões — ${ABA_LABEL[abaAtual]}`;
+    document.getElementById('modal-categorias-title').textContent = `📁 Divisórias — ${ABA_LABEL[abaAtual]}`;
     const cats = [...new Set((allData[abaAtual] || []).map(t => t['Divisão']).filter(Boolean))].sort();
     itensHtml = cats.map(c => linhaDivisaoHtml(abaAtual, c)).join('');
   }
 
   document.getElementById('lista-categorias').innerHTML = itensHtml
     ? `<ul class="lista-categorias-ul">${itensHtml}</ul>`
-    : '<p style="color:var(--text-muted);font-size:13px">Nenhuma divisão cadastrada ainda.</p>';
+    : '<p style="color:var(--text-muted);font-size:13px">Nenhuma divisória cadastrada ainda.</p>';
   document.getElementById('btn-categorias-alternar').textContent = global
     ? '📍 Ver só desta pasta'
     : '🌐 Ver todas as pastas';
@@ -5168,13 +5179,13 @@ function preencherCategorias(aba, comPlaceholder) {
   const tarefas = allData[aba] || [];
   const cats = [...new Set(tarefas.map(t => t['Divisão']).filter(Boolean))].sort();
   const sel = document.getElementById('f-categoria');
-  sel.innerHTML = (comPlaceholder ? '<option value="" disabled selected>Selecione a divisão...</option>' : '') +
+  sel.innerHTML = (comPlaceholder ? '<option value="" disabled selected>Selecione a divisória...</option>' : '') +
     cats.map(c => `<option value="${c}">${c}</option>`).join('') +
-    '<option value="__nova__">+ Nova divisão...</option>';
+    '<option value="__nova__">+ Nova divisória...</option>';
   sel.onchange = () => {
     const novo = sel.value === '__nova__';
     document.getElementById('f-nova-cat-group').style.display = novo ? 'block' : 'none';
-    // "+ Nova divisão…" sempre começa com o nome em branco (antes ficava o nome da última divisão criada)
+    // "+ Nova divisória…" sempre começa com o nome em branco (antes ficava o nome da última divisória criada)
     if (novo) { const c = document.getElementById('f-nova-cat'); c.value = ''; c.focus(); }
   };
   document.getElementById('f-nova-cat-group').style.display = 'none';
@@ -5211,7 +5222,7 @@ async function salvarTarefa() {
   const categoria = catSel === '__nova__'
     ? document.getElementById('f-nova-cat').value.trim().toUpperCase()
     : catSel;
-  if (!categoria) { showToast('⚠️ Informe a divisão'); return; }
+  if (!categoria) { showToast('⚠️ Informe a divisória'); return; }
 
   const prioridade = document.querySelector('.prio-btn.sel')?.dataset.p || 'Média';
   // Converte de yyyy-mm-dd (input type=date) pro formato brasileiro dd/mm/aaaa antes de salvar na planilha
@@ -5358,7 +5369,7 @@ function cliquePastaCard(ev, aba) {
 
 // Arrastar uma pasta (pelo ⠿) para mudar a ordem: vale também para a lista da lateral e é guardado neste aparelho
 let arrastoPasta = null;
-// 🎨 Trocar a cor de uma pasta (aparece na lateral, nas faixas das divisões e na tela de Pastas)
+// 🎨 Trocar a cor de uma pasta (aparece na lateral, nas faixas das divisórias e na tela de Pastas)
 let corPastaAlvo = null;
 function abrirCorPasta(aba) {
   corPastaAlvo = aba;
@@ -5461,10 +5472,10 @@ function renderPastasHome() {
 
 // ===== LISTAS (compras, material de escritório...): ambiente próprio, irmão de Notas e Pastas =====
 // Uma "lista" é uma tarefa cuja observação tem itens "- [ ] item". Ela NÃO conta como tarefa (placar) e não aparece no meio das
-// tarefas da pasta: vive aqui (todas juntas) e numa faixa verde-menta na divisão/pasta a que pertence.
+// tarefas da pasta: vive aqui (todas juntas) e numa faixa verde-menta na divisória/pasta a que pertence.
 // O que é "lista" e o que é "tarefa com checks"? Só a observação com itens não basta: uma tarefa pode ter um passo a passo com checks
 // e continuar sendo tarefa. Regra: o campo "Tipo" manda (Lista / Tarefa, escolhido no menu ⋯). Sem Tipo, é lista quando a pasta,
-// a divisão, o nome ou a tag lembram compras/material/lista; senão é tarefa comum.
+// a divisória, o nome ou a tag lembram compras/material/lista; senão é tarefa comum.
 const PARECE_LISTA = /compra|mercado|lista|farm[aá]cia|material|supermercado|feira|enxoval/i;
 function tipoDaTarefa(t, aba) {
   const tipo = String((t && t.Tipo) || '').trim().toLowerCase();
@@ -5530,7 +5541,7 @@ function listaCardHtml(t) {
     <div class="lc-rodape"><span>${faltam.length} faltam de ${total}</span><span class="lc-local">${localDaLista(t)}</span></div>
   </div>`;
 }
-// Faixa mini (dentro da pasta/divisão): nome + os primeiros itens, uma linha
+// Faixa mini (dentro da pasta/divisória): nome + os primeiros itens, uma linha
 function listaMiniHtml(t) {
   const faltam = itensQueFaltam(t);
   const resumo = faltam.slice(0, 4).map(l => (l.estrela ? '⭐ ' : '') + textoItemLegivel(l.texto)).join(' · ');
@@ -5587,7 +5598,7 @@ function renderListasHome() {
     <div class="contador-linha versao-linha"><span>App ${APP_VERSION}</span><span>Servidor ${serverVersion === null ? '…' : serverVersion}</span></div>`;
 }
 
-// Cria uma lista nova (já com o modo "lista" ligado), opcionalmente já dentro de uma pasta/divisão
+// Cria uma lista nova (já com o modo "lista" ligado), opcionalmente já dentro de uma pasta/divisória
 let formTipoLista = false; // true quando a janela de tarefa foi aberta por "Nova lista": a tarefa nasce com Tipo = Lista
 // Na janela da lista (aberta de 🛒 Listas): esta "lista" é na verdade um passo a passo com checks → volta a ser tarefa da pasta
 function listaVirarTarefa() {
@@ -5651,7 +5662,7 @@ function notaHtml(n) {
 function notaLinhaHtml(n) {
   const tag = String(n['Tag'] || '').trim();
   const titulo = n['Título'] || String(n['Texto'] || '').split('\n')[0] || '(sem título)';
-  return `<div class="nota-linha" style="border-left-color:${notaCorBg(n)}" onclick="abrirNota('${n.ID}')">
+  return `<div class="nota-linha" style="border-right-color:${notaCorBg(n)}" onclick="abrirNota('${n.ID}')">
     ${n['Fixada'] === 'Sim' ? '<span>📌</span>' : ''}
     <span class="nota-linha-titulo">${escLista(titulo)}</span>
     ${localDaNotaHtml(n)}
@@ -5730,7 +5741,7 @@ function abrirNota(id, pastaPadrao, divisaoPadrao) {
   document.getElementById('nota-fixada').checked = !!n && n['Fixada'] === 'Sim';
   notaCorSel = n && NOTA_CORES[n['Cor']] ? n['Cor'] : 'amarelo';
   renderCoresNota();
-  // Vínculo com pasta/divisão: nota nova já nasce ligada à pasta aberta (se estiver numa), editável aqui
+  // Vínculo com pasta/divisória: nota nova já nasce ligada à pasta aberta (se estiver numa), editável aqui
   const selPasta = document.getElementById('nota-pasta');
   selPasta.innerHTML = '<option value="">Nenhuma (só em Notas)</option>' + ABAS.map(a => `<option value="${escLista(a).replace(/"/g, '&quot;')}">${escLista(ABA_LABEL[a] || a)}</option>`).join('');
   const pastaInicial = n ? String(n['Pasta'] || '') : (pastaPadrao || '');
@@ -5745,7 +5756,7 @@ function abrirNota(id, pastaPadrao, divisaoPadrao) {
 
 function fecharNota() { pararDitado(); document.getElementById('modal-nota').classList.remove('open'); }
 
-// Divisões da pasta escolhida (as que já existem nas tarefas dela); "valorSel" é a divisão já gravada na nota
+// Divisórias da pasta escolhida (as que já existem nas tarefas dela); "valorSel" é a divisória já gravada na nota
 function atualizarDivisoesNota(valorSel) {
   const pasta = document.getElementById('nota-pasta').value;
   const grupo = document.getElementById('nota-divisao-group');
@@ -5753,12 +5764,12 @@ function atualizarDivisoesNota(valorSel) {
   grupo.style.display = pasta ? 'block' : 'none';
   const divs = new Set((allData[pasta] || []).map(t => String(t['Divisão'] || '').trim()).filter(Boolean));
   if (valorSel) divs.add(valorSel);
-  sel.innerHTML = '<option value="">Toda a pasta (no alto, antes das divisões)</option>' +
+  sel.innerHTML = '<option value="">Toda a pasta (no alto, antes das divisórias)</option>' +
     [...divs].sort((a, b) => a.localeCompare(b, 'pt-BR')).map(d => `<option value="${escLista(d).replace(/"/g, '&quot;')}">${escLista(d)}</option>`).join('');
   sel.value = valorSel || '';
 }
 
-// Notas ligadas a uma pasta (e, se informado, a uma divisão dela). Divisão '' = notas da pasta inteira.
+// Notas ligadas a uma pasta (e, se informado, a uma divisória dela). Divisória '' = notas da pasta inteira.
 function notasVinculadas(aba, divisao) {
   const alvo = String(divisao || '').trim().toLowerCase();
   return notasOrdenadas(notasData.filter(n => String(n['Pasta'] || '') === aba && String(n['Divisão'] || '').trim().toLowerCase() === alvo));
@@ -6036,6 +6047,26 @@ function escLista(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&l
 
 let listaAba = null, listaId = null, listaLinhas = [], listaTimer = null;
 
+// Renomear a lista direto na janela dela (ex.: "Lista de Compras - Quintais e Piscina"). Nome vazio não vale: volta o que estava.
+async function renomearListaAtual(novo) {
+  const t = tarefaDaLista();
+  novo = String(novo || "").replace(/\s+/g, " ").trim();
+  if (!t) return;
+  if (!novo) { document.getElementById("lista-titulo").value = t.Tarefa || ""; showToast("✍️ O nome da lista não pode ficar vazio"); return; }
+  if (novo === t.Tarefa) return;
+  const antes = t.Tarefa;
+  t.Tarefa = novo;
+  try {
+    const res = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "text/plain" }, body: JSON.stringify({ action: "editTask", aba: listaAba, id: String(listaId), fields: { Tarefa: novo } }) });
+    const d = await res.json();
+    if (!d.ok) throw new Error(d.error || "erro");
+    showToast("✅ Lista renomeada");
+  } catch (e) {
+    t.Tarefa = antes; document.getElementById("lista-titulo").value = antes;
+    showToast("⚠️ Não consegui renomear: " + e.message);
+  }
+}
+
 function tarefaDaLista() { return (allData[listaAba] || []).find(t => String(t.ID) === String(listaId)); }
 
 // ----- Pôr tarefas soltas DENTRO de uma lista que já existe (ex: "Sabonete rosto" -> lista Farmácia) -----
@@ -6053,7 +6084,7 @@ function abrirPorEmLista(itens) {
   document.getElementById('por-em-lista-resumo').textContent = `${soltas.length} tarefa${soltas.length === 1 ? '' : 's'} (${soltas.slice(0, 3).map(t => t.Tarefa).join(', ')}${soltas.length > 3 ? '…' : ''}) vira${soltas.length === 1 ? '' : 'm'} item da lista que você escolher.`;
   document.getElementById('por-em-lista-opcoes').innerHTML = listas.length
     ? listas.map((l, i) => `<button class="menu-mais-item" onclick="confirmarPorEmLista(${i})">☑ ${escLista(l.Tarefa)} <small style="color:var(--text-muted)">— ${escLista(ABA_LABEL[l._aba] || l._aba)}${l['Divisão'] ? ' / ' + escLista(l['Divisão']) : ''} · ${parseListaObs(l['Observação']).filter(x => x.item).length} itens</small></button>`).join('')
-    : '<p style="font-size:13px">Você ainda não tem nenhuma lista. Abra uma tarefa e use "Mostrar como lista", ou o ☰ no título de uma divisão.</p>';
+    : '<p style="font-size:13px">Você ainda não tem nenhuma lista. Abra uma tarefa e use "Mostrar como lista", ou o ☰ no título de uma divisória.</p>';
   window._porEmListaOpcoes = listas;
   document.getElementById('modal-por-em-lista').classList.add('open');
 }
@@ -6192,7 +6223,7 @@ function abrirLista(aba, id, converter) {
     listaLinhas = textoParaItensLista(t['Observação']);
     if (converter && listaLinhas.length) salvarListaAgora();
   }
-  document.getElementById('lista-titulo').textContent = '☑ ' + (t.Tarefa || 'Lista');
+  document.getElementById('lista-titulo').value = t.Tarefa || 'Lista';
   document.getElementById('lista-novo').value = '';
   renderLista();
   document.getElementById('modal-lista').classList.add('open');
@@ -6443,14 +6474,14 @@ function adicionarItemLista(textoColado) {
   campo.focus();
 }
 
-// Botão ☰ do título da divisão: junta TODAS as tarefas da divisão numa tarefa-lista só (uma tarefa por item vira um item).
+// Botão ☰ do título da divisória: junta TODAS as tarefas da divisória numa tarefa-lista só (uma tarefa por item vira um item).
 // Concluída -> item marcado; Urgente -> ⭐; título começando com "***" -> vira nota (cabeçalho de seção).
 // Só apaga as tarefas antigas depois que a lista nova foi criada com sucesso.
 async function juntarDivisaoEmLista(aba, divisao) {
   const originais = (allData[aba] || []).filter(t => String(t['Divisão'] || '').trim() === divisao && String(t.Tarefa || '').trim());
-  if (originais.length < 2) { showToast('ℹ️ Essa divisão tem menos de 2 tarefas — nada para juntar'); return; }
+  if (originais.length < 2) { showToast('ℹ️ Essa divisória tem menos de 2 tarefas — nada para juntar'); return; }
   const rotulo = ABA_LABEL[aba] || aba;
-  const tag = prompt(`Juntar as ${originais.length} tarefas da divisão "${divisao}" (pasta ${rotulo}) numa lista só.\n\nCada tarefa vira um item: as concluídas ficam marcadas e as Urgentes ganham ⭐.\n\nTag para a lista (opcional, ex: Comprar). Deixe vazio para não pôr tag:`, '');
+  const tag = prompt(`Juntar as ${originais.length} tarefas da divisória "${divisao}" (pasta ${rotulo}) numa lista só.\n\nCada tarefa vira um item: as concluídas ficam marcadas e as Urgentes ganham ⭐.\n\nTag para a lista (opcional, ex: Comprar). Deixe vazio para não pôr tag:`, '');
   if (tag === null) return;
   if (!confirm(`Criar a lista "${divisao}" com ${originais.length} itens e APAGAR as ${originais.length} tarefas antigas?\n(Essa parte não tem volta.)`)) return;
 
@@ -6462,7 +6493,7 @@ async function juntarDivisaoEmLista(aba, divisao) {
   renderMantendoScroll();
 }
 
-// Núcleo (usado pelo ☰ de uma divisão e pelo "transformar todas"): cria a tarefa-lista da divisão e SÓ DEPOIS apaga as soltas.
+// Núcleo (usado pelo ☰ de uma divisória e pelo "transformar todas"): cria a tarefa-lista da divisória e SÓ DEPOIS apaga as soltas.
 // Devolve { ok, itens, apagou, erro }. Se a criação falhar, nada é apagado.
 async function criarListaDaDivisao(aba, divisao, originais, tag) {
   const linhas = originais.map(t => {
@@ -6498,8 +6529,8 @@ async function criarListaDaDivisao(aba, divisao, originais, tag) {
   }
 }
 
-// "Transformar cada divisão em uma lista" (⋯ Opções da pasta): faz o ☰ de TODAS as divisões da pasta aberta, uma de cada vez.
-// Pula divisão que já tem lista (pra não ficar duas) e divisão com menos de 2 tarefas soltas. Para no primeiro erro.
+// "Transformar cada divisória em uma lista" (⋯ Opções da pasta): faz o ☰ de TODAS as divisórias da pasta aberta, uma de cada vez.
+// Pula divisória que já tem lista (pra não ficar duas) e divisória com menos de 2 tarefas soltas. Para no primeiro erro.
 async function juntarTodasDivisoes() {
   if (modoNotas) { showToast('📁 Escolha uma pasta na lateral primeiro'); return; }
   const aba = abaAtual, rotulo = ABA_LABEL[aba] || aba;
@@ -6513,9 +6544,9 @@ async function juntarTodasDivisoes() {
     if (porDiv[d].some(t => ehListaObs(t['Observação']))) { jaTem.push(d); return; }
     if (porDiv[d].length >= 2) alvos.push({ d, soltas: porDiv[d] });
   });
-  if (!alvos.length) { showToast('ℹ️ Nada para juntar: cada divisão já é uma lista ou tem menos de 2 tarefas'); return; }
+  if (!alvos.length) { showToast('ℹ️ Nada para juntar: cada divisória já é uma lista ou tem menos de 2 tarefas'); return; }
   const total = alvos.reduce((s, a) => s + a.soltas.length, 0);
-  const tag = prompt(`Na pasta "${rotulo}": transformar ${alvos.length} divisões em ${alvos.length} listas (${total} tarefas soltas viram itens).\n\n` +
+  const tag = prompt(`Na pasta "${rotulo}": transformar ${alvos.length} divisórias em ${alvos.length} listas (${total} tarefas soltas viram itens).\n\n` +
     alvos.map(a => `• ${a.d} (${a.soltas.length})`).join('\n') +
     (jaTem.length ? `\n\nJá têm lista e não mudam: ${jaTem.join(', ')}` : '') +
     `\n\nCada tarefa vira um item (concluída = marcado, Urgente = ⭐).\n\nTag para todas as listas (opcional, ex: Comprar):`, 'Comprar');
@@ -6538,7 +6569,7 @@ async function juntarTodasDivisoes() {
 }
 
 // "tudo": ⭐ primeiro e depois o resto (só o que ainda falta). "estrelas": só o que tem ⭐ e falta.
-// Texto da lista pra mandar no WhatsApp: nome da lista + pasta/divisão, depois os itens que ainda faltam.
+// Texto da lista pra mandar no WhatsApp: nome da lista + pasta/divisória, depois os itens que ainda faltam.
 // Sem emoji de propósito: o link do WhatsApp às vezes quebra emoji (vira "�") e a ⭐ sumia. A prioridade vai por seção ("PRIMEIRO").
 // modo "tudo": PRIMEIRO (os com ⭐) e depois o resto. modo "estrelas": só os com ⭐.
 function montarTextoLista(t, linhas, modo) {
