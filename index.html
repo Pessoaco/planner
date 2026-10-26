@@ -1736,10 +1736,9 @@
 
   /* Balãozinho de troca de prioridade/status, junto do botão */
   .balao-troca { position: fixed; z-index: 400; background: #fff; border: 1.5px solid var(--border); border-radius: 14px; padding: 8px 10px; box-shadow: 0 6px 20px rgba(0,0,0,.18); display: flex; flex-wrap: wrap; gap: 6px; max-width: 280px; }
-  .balao-bolinhas { gap: 12px; padding: 10px 14px; flex-wrap: nowrap; }
-  .bolinha { width: 34px; height: 34px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 1.5px var(--border); cursor: pointer; padding: 0; }
-  .bolinha.atual { box-shadow: 0 0 0 3px var(--primary); }
-  .pilula { border: 1.5px solid var(--border); background: var(--gray-light); border-radius: 16px; padding: 7px 11px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .balao-bolinhas { gap: 5px; padding: 6px 8px; flex-wrap: nowrap; }
+  .bolinha { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+  .pilula { border: 1.5px solid var(--border); background: var(--gray-light); border-radius: 14px; padding: 5px 9px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
   .pilula.atual { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
   /* ----- Pop-ups mais compactos: cabe mais na tela, menos rolagem (computador e celular) ----- */
   .modal { padding: 16px 18px 20px; max-height: 94vh; }
@@ -2341,7 +2340,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v52';
+const APP_VERSION = 'v54';
 let serverVersion = null;
 let allData = {};
 
@@ -2954,9 +2953,21 @@ async function conferirExclusao(itens) {
       if (c) copias.push(`${c.Tarefa} (também na pasta ${k})`);
     }));
     if (restam.length) {
-      Object.keys(todos).forEach(k => { if (Array.isArray(todos[k])) allData[k] = todos[k]; });
-      render();
-      showToast(`⚠️ ${restam.length} não foi apagada da planilha: ${restam.map(t => t.Tarefa).join(', ')}. Tente excluir de novo.`);
+      // Ainda está na planilha: tenta apagar de novo, sozinho, uma vez — o usuário não precisa saber de nada disso
+      const nomes = restam.map(t => t.Tarefa).join(', ');
+      try {
+        const repetir = restam.map(t => ({ aba: itens.find(i => String(i.id) === String(t.ID)).aba, id: String(t.ID) }));
+        await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'deleteTasks', itens: repetir }) });
+        const de_novo = await buscarJsonComRetentativa(`${API_URL}?action=getAll`, 2);
+        const aindaLa = repetir.filter(({ aba, id }) => ((de_novo && de_novo[aba]) || []).some(x => String(x.ID) === id));
+        if (de_novo && typeof de_novo === 'object') Object.keys(de_novo).forEach(k => { if (Array.isArray(de_novo[k])) allData[k] = de_novo[k]; });
+        render();
+        showToast(aindaLa.length ? `⚠️ Não consegui apagar da planilha: ${nomes}. Me avise.` : `🗑️ Excluída: ${nomes}`);
+      } catch (e) {
+        Object.keys(todos).forEach(k => { if (Array.isArray(todos[k])) allData[k] = todos[k]; });
+        render();
+        showToast(`⚠️ ${restam.length} não foi apagada da planilha: ${nomes}. Tente excluir de novo.`);
+      }
     } else if (copias.length) {
       showToast(`ℹ️ Apagada daqui, mas existe cópia em outra pasta: ${copias.join('; ')}`);
     }
@@ -4235,7 +4246,7 @@ function abrirBalaoTroca(campo, id, aba, ancora, atual) {
   b.id = 'balao-troca';
   b.className = 'balao-troca' + (campo === 'prioridade' ? ' balao-bolinhas' : '');
   b.innerHTML = campo === 'prioridade'
-    ? OPCOES_PRIORIDADE.map(([v]) => `<button type="button" class="bolinha${v === atual ? ' atual' : ''}" style="background:${COR_BOLINHA[v]}" title="${v}" aria-label="${v}" onclick="escolherTroca('prioridade','${id}','${aba}','${v}'); fecharBalaoTroca()"></button>`).join('')
+    ? OPCOES_PRIORIDADE.map(([v]) => `<button type="button" class="pilula${v === atual ? ' atual' : ''}" onclick="escolherTroca('prioridade','${id}','${aba}','${v}'); fecharBalaoTroca()"><span class="bolinha" style="background:${COR_BOLINHA[v]}"></span>${v}</button>`).join('')
     : OPCOES_STATUS.map(([v]) => `<button type="button" class="pilula${v === atual ? ' atual' : ''}" onclick="escolherTroca('status','${id}','${aba}','${v}'); fecharBalaoTroca()">${ROTULO_STATUS_CURTO[v] || v}</button>`).join('');
   document.body.appendChild(b);
   const r = ancora.getBoundingClientRect();
@@ -4477,6 +4488,7 @@ async function excluir(id, nome, btn, aba) {
       allData[aba] = (allData[aba] || []).filter(t => String(t.ID) !== String(id));
       renderMantendoScroll();
       showToast(`🗑️ Excluída: ${nome}`);
+      conferirExclusao([{ aba, id: String(id) }]); // confere na planilha de verdade (e repete sozinho se ela ainda estiver lá)
       return true;
     } else {
       btn.disabled = false;
