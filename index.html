@@ -1802,6 +1802,7 @@
       <button class="btn-refresh btn-vista" id="btn-vista" onclick="toggleVista()" title="Trocar entre cards e lista" style="background:var(--primary-light);color:var(--primary);font-weight:700">▦ Cards</button>
       <button class="btn-refresh" id="btn-ordem" onclick="alternarOrdem()" title="Ordem: A–Z → mais recentes → mais antigas">🔤 A–Z</button>
       <button class="btn-refresh btn-direita" onclick="loadData()">↻ Atualizar</button>
+      <button class="btn-refresh" onclick="imprimirAtalho()" title="Imprimir o que está na tela (outros formatos: ⋯ Mais)">🖨️</button>
     </div>
   </div>
   <div class="menu-mobile">
@@ -2199,6 +2200,11 @@
       <input id="lista-titulo" type="text" class="lista-titulo-input" onchange="renomearListaAtual(this.value)" title="Toque para renomear a lista" autocomplete="off">
       <button class="modal-fechar-x" onclick="fecharLista()" title="Fechar" style="margin-bottom:16px">✕</button>
     </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+      <span style="font-size:13px;color:var(--text-muted)">🏷️ Tag</span>
+      <input id="lista-tag" type="text" list="lista-tags-opcoes" placeholder="Ex: Mercado, Internet, Utilidades (para filtrar e imprimir)" autocomplete="off" style="flex:1;min-width:0;padding:6px 10px;border:1.5px solid var(--border,#d1d5db);border-radius:8px;font-size:14px" onchange="salvarTagLista(this.value)">
+      <datalist id="lista-tags-opcoes"></datalist>
+    </div>
     <div id="lista-resumo" style="font-size:13px;color:var(--text-muted);margin-bottom:4px"></div>
     <div class="lista-add" style="align-items:center;margin-bottom:2px">
       <input type="text" id="lista-novo" placeholder="+ Novo item" style="flex:2 1 90px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarItemLista()}" onpaste="colarVariosItens(event)">
@@ -2382,7 +2388,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v75';
+const APP_VERSION = 'v77';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -5561,7 +5567,7 @@ function listaCardHtml(t) {
       + (faltam.length > 5 ? `<div class="lc-mais">+ ${faltam.length - 5} ${faltam.length - 5 === 1 ? 'item' : 'itens'}…</div>` + faltam.slice(5).map(l => `<div class="lc-item so-impressao">${item(l)}</div>`).join('') : '')
     : '<div class="lc-ok">✔ tudo marcado</div>';
   return `<div class="lista-card" onclick="${abrirListaOnclick(t)}">
-    <div class="lc-titulo">🛒 ${escLista(t.Tarefa)}</div>
+    <div class="lc-titulo">🛒 ${escLista(t.Tarefa)}${tagsDeTarefa(t).map(g => ` <span class="nota-tag">${escLista(g)}</span>`).join('')}</div>
     ${corpo}
     <div class="lc-rodape"><span>${faltam.length} faltam de ${total}</span><span class="lc-local">${localDaLista(t)}</span></div>
   </div>`;
@@ -5590,6 +5596,11 @@ function abrirListas() {
 }
 
 function filtrarListasPorPasta(aba) { listasPastaFiltro = aba; renderListasHome(); }
+let listasTagFiltro = '';
+function filtrarListasPorTag(tag) { listasTagFiltro = tag; renderListasHome(); }
+function tagsDasListas() {
+  return [...new Set(todasAsListas().flatMap(tagsDeTarefa))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+}
 
 function renderListasHome() {
   const main = document.getElementById('main');
@@ -5600,6 +5611,9 @@ function renderListasHome() {
   listas.forEach(l => { porPasta[l._aba] = (porPasta[l._aba] || 0) + 1; });
   if (listasPastaFiltro && !porPasta[listasPastaFiltro]) listasPastaFiltro = '';
   if (listasPastaFiltro) listas = listas.filter(l => l._aba === listasPastaFiltro);
+  const tagsTodas = tagsDasListas();
+  if (listasTagFiltro && !tagsTodas.includes(listasTagFiltro)) listasTagFiltro = '';
+  if (listasTagFiltro) listas = listas.filter(l => tagsDeTarefa(l).includes(listasTagFiltro));
   const nome = t => String(t.Tarefa || '');
   listas.sort((a, b) => ordemVista === 'recentes' ? momentoTarefa(b) - momentoTarefa(a)
     : ordemVista === 'antigas' ? momentoTarefa(a) - momentoTarefa(b)
@@ -5608,6 +5622,11 @@ function renderListasHome() {
       <button class="nota-chip ${listasPastaFiltro ? '' : 'on'}" onclick="filtrarListasPorPasta('')">Todas</button>
       ${Object.keys(porPasta).sort((a, b) => (ABA_LABEL[a] || a).localeCompare(ABA_LABEL[b] || b, 'pt-BR')).map(a => `<button class="nota-chip ${a === listasPastaFiltro ? 'on' : ''}" onclick="filtrarListasPorPasta('${a.replace(/'/g, "\\'")}')">${escLista(ABA_LABEL[a] || a)} (${porPasta[a]})</button>`).join('')}
     </div>` : '';
+  const chipsTag = tagsTodas.length ? `<div class="notas-tags">
+      <span style="font-size:13px;color:var(--text-muted);align-self:center">🏷️ Tag:</span>
+      <button class="nota-chip ${listasTagFiltro ? '' : 'on'}" onclick="filtrarListasPorTag('')">Todas</button>
+      ${tagsTodas.map(g => `<button class="nota-chip ${g === listasTagFiltro ? 'on' : ''}" onclick="filtrarListasPorTag('${g.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}')">${escLista(g)}</button>`).join('')}
+    </div>` : '';
   let corpo;
   if (!carregou && !listas.length) corpo = '<div class="notas-vazio"><div class="spinner" style="margin:0 auto 8px"></div>Carregando listas...</div>';
   else if (!listas.length) corpo = '<div class="notas-vazio">🛒<br>Nenhuma lista ainda.<br>Toque em <b>Nova lista</b>, ou abra uma tarefa e use "Mostrar como lista".</div>';
@@ -5615,8 +5634,8 @@ function renderListasHome() {
   main.innerHTML = `<div class="notas-topo listas-topo">
       <div class="listas-titulo">🛒 Listas <small>(todas as pastas)</small></div>
       <button class="btn-nova-lista" onclick="novaLista()">➕ Nova lista</button>
-      <button class="btn-imprimir-listas" onclick="window.print()" title="Imprimir todas as listas com todos os itens">🖨️ Imprimir</button>
-    </div>${chips}${corpo}`;
+      <button class="btn-imprimir-listas" onclick="window.print()" title="Imprime as listas que estão na tela (use os filtros de pasta e tag), com todos os itens">🖨️ Imprimir${listasTagFiltro ? ' tag ' + escLista(listasTagFiltro) : ''}</button>
+    </div>${chips}${chipsTag}${corpo}`;
   const faltamTotal = listas.reduce((s, l) => s + itensQueFaltam(l).length, 0);
   document.getElementById('counters').innerHTML = `
     <div class="contador-linha"><span class="contador-item total">Listas: <b>${listas.length}</b></span><span class="contador-item aberto">Itens faltando: <b>${faltamTotal}</b></span></div>
@@ -6126,6 +6145,25 @@ async function renomearListaAtual(novo) {
   }
 }
 
+// Tag da lista (ex.: Mercado): grava na tarefa e serve de filtro na tela 🛒 Listas (e, filtrando, só essas saem na impressão)
+async function salvarTagLista(valor) {
+  const t = tarefaDaLista();
+  if (!t) return;
+  const novo = String(valor || '').replace(/\s+/g, ' ').trim();
+  const antes = t.Tag || '';
+  if (novo === antes) return;
+  t.Tag = novo;
+  try {
+    const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'editTask', aba: listaAba, id: String(listaId), fields: { Tag: novo } }) });
+    const d = await res.json();
+    if (!d.ok) throw new Error(d.error || 'erro');
+    showToast(novo ? '🏷️ Tag salva' : '🏷️ Tag removida');
+  } catch (e) {
+    t.Tag = antes; document.getElementById('lista-tag').value = antes;
+    showToast('⚠️ Não consegui salvar a tag: ' + e.message);
+  }
+}
+
 function tarefaDaLista() { return (allData[listaAba] || []).find(t => String(t.ID) === String(listaId)); }
 
 // ----- Pôr tarefas soltas DENTRO de uma lista que já existe (ex: "Sabonete rosto" -> lista Farmácia) -----
@@ -6283,6 +6321,8 @@ function abrirLista(aba, id, converter) {
     if (converter && listaLinhas.length) salvarListaAgora();
   }
   document.getElementById('lista-titulo').value = t.Tarefa || 'Lista';
+  document.getElementById('lista-tag').value = t.Tag || '';
+  document.getElementById('lista-tags-opcoes').innerHTML = tagsDasListas().map(g => `<option value="${escLista(g).replace(/"/g, '&quot;')}">`).join('');
   document.getElementById('lista-novo').value = '';
   renderLista();
   document.getElementById('modal-lista').classList.add('open');
@@ -6667,6 +6707,9 @@ function enviarLista(modo) {
 
 // ===== PRINT =====
 // "reduzido" = uma linha compacta por tarefa. "tela" = mantém cards/lista igual você vê no app.
+// Ícone 🖨️ do alto: imprime o que está na tela (em 🛒 Listas, só as listas filtradas)
+function imprimirAtalho() { if (modoListas) window.print(); else imprimir('tela'); }
+
 function imprimir(modo) {
   const vistaOriginal = vistaModo;
   // O formato reduzido foi feito pro HTML do card — se a tela tava em lista, força card só pra impressão
