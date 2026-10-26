@@ -2388,7 +2388,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v77';
+const APP_VERSION = 'v79';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -3685,7 +3685,8 @@ function render() {
     // Listas não são tarefas: na busca/filtro elas saem do meio das tarefas e aparecem num bloco próprio (verde-menta), como as Notas
     const todasCruzadas = ABAS.flatMap(aba => (allData[aba] || []).map(t => ({ ...t, _aba: aba })));
     const cruzadas = todasCruzadas.filter(t => !ehTarefaLista(t, t._aba));
-    const listasAchadas = filtrarTarefas(todasCruzadas.filter(t => listaAtiva(t, t._aba)));
+    // Urgentes / Hoje / Semana / filtros: só tarefas. Listas só aparecem quando a pessoa está PESQUISANDO por texto.
+    const listasAchadas = (searchTerm && !modoUrgentesAtivo && !modoAgendaPeriodo) ? filtrarTarefas(todasCruzadas.filter(t => listaAtiva(t, t._aba))) : [];
     document.getElementById("counters").innerHTML = "";
     renderTarefas(cruzadas);
     if (listasAchadas.length) {
@@ -5567,9 +5568,9 @@ function listaCardHtml(t) {
       + (faltam.length > 5 ? `<div class="lc-mais">+ ${faltam.length - 5} ${faltam.length - 5 === 1 ? 'item' : 'itens'}…</div>` + faltam.slice(5).map(l => `<div class="lc-item so-impressao">${item(l)}</div>`).join('') : '')
     : '<div class="lc-ok">✔ tudo marcado</div>';
   return `<div class="lista-card" onclick="${abrirListaOnclick(t)}">
-    <div class="lc-titulo">🛒 ${escLista(t.Tarefa)}${tagsDeTarefa(t).map(g => ` <span class="nota-tag">${escLista(g)}</span>`).join('')}</div>
+    <div class="lc-titulo">🛒 ${escLista(t.Tarefa)}</div>
     ${corpo}
-    <div class="lc-rodape"><span>${faltam.length} faltam de ${total}</span><span class="lc-local">${localDaLista(t)}</span></div>
+    <div class="lc-rodape"><span>${faltam.length} faltam de ${total}${tagsDeTarefa(t).map(g => ` <span style="opacity:.6;font-size:10px">· #${escLista(g)}</span>`).join('')}</span><span class="lc-local">${localDaLista(t)}</span></div>
   </div>`;
 }
 // Faixa mini (dentro da pasta/divisória): nome + os primeiros itens, uma linha
