@@ -1761,6 +1761,7 @@
   .lista-titulo-input { flex:1; min-width:0; font-size:16px; font-weight:700; border:1.5px solid transparent; border-radius:8px; padding:4px 8px; margin:-4px 0 12px -8px; background:transparent; color:inherit; font-family:inherit; }
   .lista-titulo-input:hover, .lista-titulo-input:focus { border-color:var(--border); background:#fff; outline:none; }
   .listas-pasta { margin:0 0 12px; }
+  @media print { #counters, .counters-footer, .versao-linha { display:none !important; } }
   @media print { .so-impressao { display:block !important; } .lc-mais { display:none; } .lista-card { box-shadow:none; border:1px solid #888; } .listas-pasta, .lista-mini { display:none; } }
 
   /* Balãozinho de troca de prioridade/status, junto do botão */
@@ -2198,7 +2199,10 @@
   <div class="modal">
     <div class="modal-titulo-linha">
       <input id="lista-titulo" type="text" class="lista-titulo-input" onchange="renomearListaAtual(this.value)" title="Toque para renomear a lista" autocomplete="off">
-      <button class="modal-fechar-x" onclick="fecharLista()" title="Fechar" style="margin-bottom:16px">✕</button>
+      <span style="display:flex;gap:8px;align-items:center;margin-bottom:16px">
+        <button class="modal-fechar-x" style="background:var(--primary,#4f46e5);color:#fff" onclick="salvarListaBotao()" title="Salvar">💾</button>
+        <button class="modal-fechar-x" onclick="fecharLista()" title="Fechar" style="margin-bottom:0">✕</button>
+      </span>
     </div>
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
       <span style="font-size:13px;color:var(--text-muted)">🏷️ Tag</span>
@@ -2221,6 +2225,7 @@
     <button class="menu-mais-item" onclick="listaVirarTarefa()" title="Esta lista não é de compras: é um passo a passo com checks">☑ Não é lista de compras: voltar a ser tarefa</button>
     <button class="menu-mais-item" onclick="recomecarLista(true)">🔄 Nova compra: desmarcar tudo e tirar as estrelas</button>
     <button class="menu-mais-item" onclick="recomecarLista(false)">⭐ Só tirar as estrelas (mantém o que está marcado)</button>
+    <button class="menu-mais-item" id="btn-avisar-lista" onclick="avisarEnvolvidosDaLista()">🔔 Avisar os envolvidos agora (cada um recebe a parte dele)</button>
     <button class="menu-mais-item" onclick="copiarListaDoModal()">📋 Copiar a lista inteira (para colar em qualquer lugar)</button>
     <button class="menu-mais-item" onclick="enviarLista('tudo')">📤 Enviar a lista toda (⭐ primeiro)</button>
     <button class="menu-mais-item" onclick="enviarLista('estrelas')">⭐ Enviar só o que tem estrela</button>
@@ -2388,7 +2393,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v79';
+const APP_VERSION = 'v81';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -4875,7 +4880,7 @@ async function openEditModal(t) {
   atualizarCampoDataConclusao();
   atualizarBotaoLembreteModal();
   document.getElementById('btn-excluir-modal').style.display = 'block';
-  document.getElementById("btn-salvar-concluir").style.display = "block"; document.getElementById("btn-salvar-concluir-avisar").style.display = "block"; document.getElementById("f-nao-avisar").checked = false;
+  document.getElementById("btn-salvar-concluir").style.display = "block"; document.getElementById("btn-salvar-concluir-avisar").style.display = "block"; document.getElementById("f-nao-avisar").checked = ehTarefaLista(t, t._aba); // lista: não avisa ao salvar; o aviso sai pelo botão "Avisar os envolvidos" da lista
   document.getElementById('btn-excluir-modal').disabled = false; // garante que nunca abre já desligado
   document.getElementById('btn-excluir-modal').dataset.nome = t.Tarefa || '';
   const prio = t.Prioridade || 'Média';
@@ -5656,6 +5661,7 @@ function listaVirarTarefa() {
 async function novaLista(aba, divisao) {
   await openAddModal();
   formTipoLista = true;
+  document.getElementById('f-nao-avisar').checked = true; // lista nova: só avisa quando você mandar, pelo botão da lista
   if (aba) {
     document.getElementById('f-aba').value = aba;
     preencherCategorias(aba);
@@ -6382,7 +6388,7 @@ function salvarListaDepois() {
 
 async function salvarListaAgora() {
   const t = tarefaDaLista();
-  if (!t) return;
+  if (!t) return false;
   const obs = serializarListaObs(listaLinhas);
   t['Observação'] = obs;
   try {
@@ -6391,10 +6397,46 @@ async function salvarListaAgora() {
       body: JSON.stringify({ action: 'editTask', aba: listaAba, id: listaId, fields: { 'Observação': obs } })
     });
     const data = JSON.parse(await res.text());
-    if (!data.ok) showToast('⚠️ Não consegui salvar a lista: ' + (data.error || 'tente de novo'));
+    if (!data.ok) { showToast('⚠️ Não consegui salvar a lista: ' + (data.error || 'tente de novo')); return false; }
+    return true;
   } catch (e) {
     showToast('⚠️ Sem conexão — a última marcação pode não ter sido salva');
+    return false;
   }
+}
+
+// Manda a lista pelo WhatsApp para os envolvidos (os da tarefa + quem foi marcado em 👤 nos itens). Cada um recebe só os itens dele.
+async function avisarEnvolvidosDaLista() {
+  const t = tarefaDaLista();
+  if (!t) return;
+  try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
+  if (listaTimer) { clearTimeout(listaTimer); listaTimer = null; }
+  const btn = document.getElementById('btn-avisar-lista');
+  if (!await salvarListaAgora()) return;
+  const dados = String(t.Envolvido || '').split(/[,;]/).map(s => s.trim()).filter(Boolean);
+  const chave = s => s.toLowerCase();
+  listaLinhas.forEach(l => {
+    const q = (partesItemLista(l.texto).quem || '').trim();
+    if (q && !dados.some(d => chave(d) === chave(q))) dados.push(q);
+  });
+  if (!dados.length) { showToast('ℹ️ Ninguém para avisar: escolha o Envolvido da lista ou marque 👤 em algum item'); return; }
+  const uniao = dados.join(', ');
+  if (uniao !== String(t.Envolvido || '')) {
+    try {
+      const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'editTask', aba: listaAba, id: String(listaId), fields: { Envolvido: uniao, _naoAvisar: true } }) });
+      const d = await res.json();
+      if (!d.ok) throw new Error(d.error || 'erro');
+      t.Envolvido = uniao;
+    } catch (e) { showToast('⚠️ Não consegui incluir os envolvidos: ' + e.message); return; }
+  }
+  await enviarLembrete(listaId, listaAba, btn);
+}
+
+// Botão 💾 da lista: confirma que gravou (o salvamento automático continua funcionando por trás)
+async function salvarListaBotao() {
+  try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
+  if (listaTimer) { clearTimeout(listaTimer); listaTimer = null; }
+  if (await salvarListaAgora()) { showToast('✅ Lista salva'); fecharLista(); }
 }
 
 // Lista que se repete (compras do mês): os itens ficam, só zera as marcações. desmarcarTudo=false limpa só as estrelas.
