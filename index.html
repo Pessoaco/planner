@@ -2069,6 +2069,9 @@
     <button class="menu-mais-item" id="btn-acoes-em-lista">☑ Pôr dentro de uma lista</button>
     <button class="menu-mais-item" id="btn-acoes-duplicar">📄 Duplicar tarefa</button>
     <button class="menu-mais-item" id="btn-acoes-compartilhar">↗️ Compartilhar no WhatsApp</button>
+    <button class="menu-mais-item" id="btn-acoes-copiar">📋 Copiar texto completo</button>
+    <button class="menu-mais-item" id="btn-acoes-app">💻 Abrir no WhatsApp do computador (app)</button>
+    <button class="menu-mais-item" id="btn-acoes-secretaria">📲 Enviar pela secretária (qualquer contato)</button>
     <button class="menu-mais-item" id="btn-acoes-lembrete" style="display:none"></button>
     <button class="menu-mais-item" id="btn-acoes-excluir" style="color:var(--danger)">🗑️ Excluir tarefa</button>
     <button class="modal-cancel" onclick="fecharMenuAcoesTarefa()" style="margin-top:14px">Fechar</button>
@@ -2342,7 +2345,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v56';
+const APP_VERSION = 'v57';
 let serverVersion = null;
 let allData = {};
 
@@ -4431,6 +4434,9 @@ function abrirMenuAcoesTarefa(t) {
   btnEmLista.onclick = () => { fecharMenuAcoesTarefa(); abrirPorEmLista([{ aba: t._aba, id: t.ID }]); };
   document.getElementById('btn-acoes-duplicar').onclick = () => { fecharMenuAcoesTarefa(); duplicarTarefa(t); };
   document.getElementById('btn-acoes-compartilhar').onclick = () => { fecharMenuAcoesTarefa(); compartilharTarefa(t); };
+  document.getElementById('btn-acoes-copiar').onclick = () => { fecharMenuAcoesTarefa(); copiarTextoTarefa(t); };
+  document.getElementById('btn-acoes-app').onclick = () => { fecharMenuAcoesTarefa(); abrirWhatsappApp(t); };
+  document.getElementById('btn-acoes-secretaria').onclick = () => { fecharMenuAcoesTarefa(); enviarPelaSecretaria(t); };
   document.getElementById('btn-acoes-excluir').onclick = () => { fecharMenuAcoesTarefa(); excluir(t.ID, t.Tarefa, { disabled: false }, t._aba); };
 
   const btnLembrete = document.getElementById('btn-acoes-lembrete');
@@ -4588,7 +4594,11 @@ async function abrirNovaTarefaNaDivisao(aba, divisao) {
 // Monta o texto de uma tarefa pra compartilhar (WhatsApp, etc.)
 function textoTarefaParaCompartilhar(t) {
   // Tarefa-lista: manda como lista (nome + pasta/divisão + itens), não o texto cru "- [ ] item"
-  if (ehListaObs(t['Observação'])) return montarTextoLista(t, parseListaObs(t['Observação']), 'tudo');
+  if (ehListaObs(t['Observação'])) {
+    const linhasL = parseListaObs(t['Observação']);
+    // Lista toda marcada como feita: o "tudo" saía vazio. Manda a lista inteira.
+    return montarTextoLista(t, linhasL, linhasL.some(l => l.item && !l.feito) ? 'tudo' : 'completa');
+  }
   let msg = `*📋 Secretária Virtual*\n\n*Tarefa:* ${t.Tarefa}`;
   if (t['Observação']) msg += `\n→ ${t['Observação']}`;
 
@@ -4620,6 +4630,51 @@ function abrirWhatsappCompartilhar(texto) {
 
 function compartilharTarefa(t) {
   abrirWhatsappCompartilhar(textoTarefaParaCompartilhar(t));
+}
+
+// Texto completo da tarefa/lista (inclusive o que já foi feito) — pra copiar, abrir no app ou enviar pela secretária
+function textoCompletoDaTarefa(t) {
+  if (ehListaObs(t['Observação'])) return montarTextoLista(t, parseListaObs(t['Observação']), 'completa');
+  return textoTarefaParaCompartilhar(t);
+}
+
+async function copiarTextoTarefa(t) {
+  const texto = textoCompletoDaTarefa(t);
+  try { await navigator.clipboard.writeText(texto); showToast('📋 Copiado! É só colar (Ctrl+V) no WhatsApp ou onde quiser'); }
+  catch (e) { window.prompt('Copie o texto (Ctrl+C):', texto); }
+}
+
+// Abre o aplicativo do WhatsApp instalado no computador (não o WhatsApp Web). Se não tiver o app, o texto já fica copiado.
+function abrirWhatsappApp(t) {
+  const texto = textoCompletoDaTarefa(t);
+  try { navigator.clipboard.writeText(texto); } catch (e) {}
+  showToast('💻 Abrindo o WhatsApp do computador... (texto também copiado: Ctrl+V)');
+  window.location.href = `whatsapp://send?text=${encodeURIComponent(texto)}`;
+}
+
+// Manda o texto pelo WhatsApp da secretária (sem precisar abrir o seu), pra qualquer pessoa: nome já guardado ou telefone
+async function enviarPelaSecretaria(t) {
+  const texto = textoCompletoDaTarefa(t);
+  const dest = prompt('Enviar pelo WhatsApp da secretária.\n\nPara quem? Digite o NOME (se já está guardado) ou o TELEFONE com DDD:', '');
+  if (!dest || !dest.trim()) return;
+  showToast('⏳ Enviando...');
+  try {
+    const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'enviarTexto', destino: dest.trim(), texto }) });
+    const d = await res.json();
+    if (d.ok) { showToast('✅ Enviado!'); return; }
+    if (/Não encontrei/.test(String(d.error || ''))) {
+      if (await garantirTelefoneEnvolvido(dest.trim())) return enviarPelaSecretaria2(dest.trim(), texto);
+      return;
+    }
+    showToast('⚠️ ' + (d.error || 'Não consegui enviar'));
+  } catch (e) { showToast('⚠️ Sem conexão'); }
+}
+async function enviarPelaSecretaria2(dest, texto) {
+  try {
+    const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'enviarTexto', destino: dest, texto }) });
+    const d = await res.json();
+    showToast(d.ok ? '✅ Enviado!' : '⚠️ ' + (d.error || 'Não consegui enviar'));
+  } catch (e) { showToast('⚠️ Sem conexão'); }
 }
 
 // Compartilha todas as tarefas marcadas no modo "Selecionar", num texto só
@@ -6224,6 +6279,13 @@ function montarTextoLista(t, linhas, modo) {
   const caminho = [pasta, t['Divisão']].filter(Boolean).join(' / ');
   const item = l => `- ${textoItemLegivel(l.texto)}`;
   let msg = `*${t.Tarefa}*` + (caminho ? `\n${caminho}` : '') + '\n';
+  if (modo === 'completa') {
+    // Lista inteira, como está: o que falta (⭐ primeiro) e depois o que já foi feito
+    const feitos = linhas.filter(l => l.item && l.feito);
+    msg += '\n' + [...est, ...resto].map(item).join('\n');
+    if (feitos.length) msg += (est.length || resto.length ? '\n' : '') + feitos.map(l => `- (feito) ${textoItemLegivel(l.texto)}`).join('\n');
+    return msg.trim();
+  }
   if (modo === 'estrelas') {
     msg += '\n*PRIORIDADE (comprar primeiro):*\n' + est.map(item).join('\n');
   } else {
