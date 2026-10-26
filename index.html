@@ -248,20 +248,31 @@
   /* Celular: o cabeçalho (botões + busca) ocupava ~40% da tela o tempo todo. Agora rola junto com a lista; quem fica preso no
      topo é a faixa da divisão, com a pasta na frente ("📍 Pessoal › Casa"), pra sempre saber onde se está lendo. */
   .pin-svg { vertical-align:-2px; flex:none; }
-  .cat-pasta-mobile { display:none; font-size:11px; font-weight:700; color:var(--text-muted); text-transform:none; letter-spacing:0; white-space:nowrap; }
   .btn-mais-mobile { display:none; }
   @media (max-width: 639px) {
     .header { position: static; }
     :root { --header-h: 0px !important; }
-    .cat-pasta-mobile { display:inline; }
-    /* Faixa da divisão numa linha só: título corta com "…" e os botões menos usados ficam atrás do "⋯" */
-    .categoria-header { padding: 6px 8px; gap: 5px; flex-wrap: wrap; }
-    .categoria-header .categoria-title { flex: 0 1 auto; min-width: 0; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .categoria-header .btn-nova-na-divisao { width: 22px; height: 22px; font-size: 11px; }
+    /* Faixa da divisão: título + seta à esquerda; à direita só 📌 ➕ ⋯ (grandes, fáceis de tocar). O resto fica no menu "⋯". */
+    .categoria-header { padding: 6px 8px; gap: 6px; flex-wrap: nowrap; }
+    .categoria-header > * { order: 4; }
+    .categoria-header .categoria-title { order: 1; flex: 0 1 auto; min-width: 0; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .categoria-header .categoria-toggle { order: 2; }
+    .categoria-header .categoria-count { order: 3; margin-right: auto; }
+    .categoria-header .btn-nova-na-divisao { width: 36px; height: 36px; font-size: 18px; }
     .categoria-header .btn-extra { display: none; }
-    .categoria-header.mais-aberto .btn-extra { display: inline-flex; align-items: center; justify-content: center; }
-    .btn-mais-mobile { display: inline-flex; align-items: center; justify-content: center; }
+    .btn-mais-mobile { display: inline-flex; align-items: center; justify-content: center; font-weight: 800; }
+    .header .menu-mobile { display: flex; }
+    body .selecao-barra { flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 10px calc(10px + env(safe-area-inset-bottom)); }
+    body .selecao-botoes { flex-wrap: wrap; }
+    body .selecao-botoes > * { flex: 1 1 auto; }
   }
+  .menu-mobile { display: none; gap: 8px; margin: 4px 0 6px; }
+  .menu-mobile button { flex: 1; padding: 11px 8px; border: 2px solid transparent; border-radius: 10px; background: var(--gray-light); font-size: 15px; font-weight: 700; color: var(--text); cursor: pointer; }
+  .menu-mobile button.ativo { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
+  .btn-direita { margin-left: auto; }
+  .busca-local-linha { display: none; margin: 0 0 6px; }
+  .busca-local-linha.show { display: flex; }
+  .acao-divisao { display: flex; align-items: center; gap: 10px; width: 100%; padding: 14px 12px; margin-bottom: 6px; border: none; border-radius: 10px; background: var(--gray-light); font-size: 15px; font-weight: 600; color: var(--text); text-align: left; cursor: pointer; }
   .barra-divisoes { display:flex; align-items:center; gap:10px; margin:2px 0 8px; }
   .btn-recolher { background:var(--primary-light); color:var(--primary); border:none; border-radius:8px; padding:7px 12px; font-size:13px; font-weight:700; cursor:pointer; }
   .barra-div-info { font-size:12px; color:var(--text-muted); }
@@ -1739,8 +1750,12 @@
       <button class="btn-refresh quick-agenda" onclick="atalhoAgenda('semana')">🗓️ Semana</button>
       <button class="btn-refresh btn-vista" id="btn-vista" onclick="toggleVista()" title="Trocar entre cards e lista" style="background:var(--primary-light);color:var(--primary);font-weight:700">▦ Cards</button>
       <button class="btn-refresh" id="btn-ordem" onclick="alternarOrdem()" title="Ordem: A–Z → mais recentes → mais antigas">🔤 A–Z</button>
-      <button class="btn-refresh" onclick="loadData()">↻ Atualizar</button>
+      <button class="btn-refresh btn-direita" onclick="loadData()">↻ Atualizar</button>
     </div>
+  </div>
+  <div class="menu-mobile">
+    <button id="menu-notas" onclick="abrirNotas()">📝 Notas</button>
+    <button id="menu-pastas" onclick="abrirPastas()">📁 Pastas</button>
   </div>
 
   <div class="quick-bar">
@@ -1750,17 +1765,17 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 4 20 4 14 13 14 20 10 20 10 13"/></svg>
       </button>
     </div>
-    <div class="search-com-filtro">
-      <input type="search" id="search-local-input" class="search-input-inline" placeholder="📍 PESQUISAR NA PASTA ATUAL..." oninput="setSearchLocal(this.value)">
-      <button class="btn-filtro-icone" onclick="abrirModalFiltros('local')" title="Filtros desta pasta">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 4 20 4 14 13 14 20 10 20 10 13"/></svg>
-      </button>
-    </div>
-    <button class="btn-refresh" onclick="setFilter('todos')">🔄 Limpar</button>
+    <button class="btn-refresh btn-direita" onclick="setFilter('todos')">🔄 Limpar</button>
   </div>
 
   <div class="chips-ativos" id="chips-ativos"></div>
   <button class="pasta-atual-mobile" id="pasta-atual-mobile" onclick="toggleSidebar()"></button>
+  <div class="search-com-filtro busca-local-linha" id="busca-local-linha">
+    <input type="search" id="search-local-input" class="search-input-inline" placeholder="📍 PESQUISAR NA PASTA ATUAL..." oninput="setSearchLocal(this.value)">
+    <button class="btn-filtro-icone" onclick="abrirModalFiltros('local')" title="Filtros desta pasta">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 4 20 4 14 13 14 20 10 20 10 13"/></svg>
+    </button>
+  </div>
 </header>
 
 <div class="modal-overlay" id="modal-filtros" onclick="if(event.target===this) fecharModalFiltros()">
@@ -2047,6 +2062,14 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-acoes-divisao" onclick="if(event.target===this) fecharAcoesDivisao()">
+  <div class="modal">
+    <h3 id="acoes-divisao-titulo">Divisão</h3>
+    <div id="acoes-divisao-lista"></div>
+    <button class="modal-cancel" onclick="fecharAcoesDivisao()" style="margin-top:6px">Fechar</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-troca" onclick="if(event.target===this) fecharTroca()">
   <div class="modal">
     <h3 id="troca-titulo">Trocar</h3>
@@ -2294,9 +2317,23 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v51';
+const APP_VERSION = 'v52';
 let serverVersion = null;
 let allData = {};
+
+// ----- Atualização em segundo plano NÃO pode desfazer o que a pessoa acabou de fazer -----
+// O Google leva 10-30 s pra responder. Se você exclui (ou edita) uma tarefa enquanto uma atualização ainda está a caminho,
+// a resposta traz a lista "de antes" e a tarefa excluída reaparecia na tela. Agora toda gravação (POST) marca a hora, e
+// qualquer resposta de leitura que começou ANTES dela é considerada velha e não sobrescreve o que está na tela.
+let escritaLocalTs = 0;
+const respostaVelha = inicio => inicio < escritaLocalTs;
+(function () {
+  const original = window.fetch.bind(window);
+  window.fetch = function (u, o) {
+    if (o && String(o.method || '').toUpperCase() === 'POST') escritaLocalTs = Date.now();
+    return original(u, o);
+  };
+})();
 let abaAtual = 'PESSOAL';
 
 // Notas (post-its): o app abre nelas. Não são tarefas: ficam numa aba própria da planilha e não entram em nenhuma contagem.
@@ -3271,6 +3308,7 @@ async function loadData() {
   // ainda carrega, o resultado tem que ser salvo na pasta certa, não na que está aberta
   // no momento em que a resposta chega (senão os dados vêm trocados)
   const abaAlvo = abaAtual;
+  const inicioBusca = Date.now();
   const temCopia = Array.isArray(allData[abaAlvo]);
   // Na tela de Notas não apaga a tela com "Carregando tarefas": as notas já estão aparecendo
   if (!temCopia && !modoNotas) showLoading();
@@ -3286,7 +3324,8 @@ async function loadData() {
     serverVersion = resp.versao || 'desatualizado';
 
     if (resp.ok && Array.isArray(resp.pastas)) sincronizarPastas(resp.pastas);
-    allData[abaAlvo] = resp.dados || [];
+    // Resposta mais velha que uma alteração feita aqui nesse meio-tempo: não sobrescreve (a tarefa excluída não "volta")
+    if (!(respostaVelha(inicioBusca) && Array.isArray(allData[abaAlvo]))) allData[abaAlvo] = resp.dados || [];
     ultimaBusca[abaAlvo] = Date.now();
     if (!modoNotas && !modoPastas) aplicarRecolhidoInicial(abaAlvo);
     // Code.gs v12+ manda as notas junto; o que ainda está na fila de envio é reaplicado por cima
@@ -3316,7 +3355,9 @@ async function loadData() {
 // Busca os dados das outras pastas em segundo plano, sem travar a tela que já está aberta
 async function carregarRestanteDasPastas() {
   try {
+    const inicioBusca = Date.now();
     const todos = await buscarJsonComRetentativa(`${API_URL}?action=getAll`, 2);
+    if (respostaVelha(inicioBusca)) return; // houve alteração aqui durante a espera: descarta a resposta velha
     if (todos && typeof todos === 'object' && !Array.isArray(todos)) {
       // Pastas que o servidor devolveu: atualiza. (Não joga fora a que está na tela se ela não veio.)
       Object.keys(todos).forEach(k => { if (Array.isArray(todos[k])) { allData[k] = todos[k]; ultimaBusca[k] = Date.now(); } });
@@ -3584,6 +3625,10 @@ function tituloParaImpressao() {
 function atualizarPastaAtualMobile() {
   const el = document.getElementById('pasta-atual-mobile');
   if (!el) return;
+  const dentroDePasta = !modoPastas && !modoNotas && !algumFiltroAtivo();
+  document.getElementById('busca-local-linha').classList.toggle('show', dentroDePasta);
+  document.getElementById('menu-notas').classList.toggle('ativo', !!modoNotas && !modoPastas);
+  document.getElementById('menu-pastas').classList.toggle('ativo', !!modoPastas);
   if (modoPastas) {
     el.innerHTML = `${PIN_SVG} Você está em: <span style="color:#1d4ed8">📁 Pastas</span>`;
   } else if (modoNotas) {
@@ -3824,16 +3869,15 @@ function renderTarefas(tarefas) {
     return `
       <div class="categoria-group${ehFixada ? ' fixada' : ''}" style="--cor-div:${corG};--cor-div-bg:${corGbg}">
         <div class="categoria-header" onclick="toggleCategoria('${catKey}')">
-          ${cruzado ? '' : `<span class="cat-pasta-mobile">${PIN_SVG} ${escLista(ABA_LABEL[abaAtual] || abaAtual)} ›</span>`}
           <span class="categoria-title" style="${corAba}">${iconeCategoria(cat)} ${cat}</span>
           <span class="categoria-toggle">${colapsado ? '▶' : '▼'}</span>
           <button class="btn-nova-na-divisao${ehFixada ? ' fixada' : ''}" onclick="event.stopPropagation(); fixarDivisao('${encodeURIComponent(catKey)}')" title="${ehFixada ? 'Desafixar esta divisão' : 'Fixar esta divisão no topo da pasta'}">📌</button>
           <button class="btn-nova-na-divisao" onclick="event.stopPropagation(); abrirNovaTarefaNaDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').replace(/'/g,"\\'")}')" title="Nova tarefa nesta divisão">➕</button>
           ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); abrirCopiarDivisaoDe('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Duplicar esta divisão inteira (abertas e concluídas) como lista modelo">📋</button>` : ''}
-          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao" onclick="event.stopPropagation(); selecionarDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Selecionar (ou desmarcar) todas as tarefas desta divisão que aparecem na tela">☑</button>` : ''}
+          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); selecionarDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Selecionar (ou desmarcar) todas as tarefas desta divisão que aparecem na tela">☑</button>` : ''}
           ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); juntarDivisaoEmLista('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Juntar todas as tarefas desta divisão numa lista só (um item por tarefa)">☰</button>` : ''}
           ${mostraNotasVinculadas && String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); abrirNota('', '${abaAtual.replace(/'/g, "\\'")}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g, "\\'")}')" title="Nova nota nesta divisão (aparece aqui, sem contar como tarefa)">📝</button>` : ''}
-          <button class="btn-nova-na-divisao btn-mais-mobile" onclick="event.stopPropagation(); this.closest('.categoria-header').classList.toggle('mais-aberto')" title="Mais ações desta divisão">⋯</button>
+          <button class="btn-nova-na-divisao btn-mais-mobile" onclick="event.stopPropagation(); abrirAcoesDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}', ${mostraNotasVinculadas ? 'true' : 'false'})" title="Mais ações desta divisão">⋯</button>
           <span class="categoria-count">${items.length}</span>
         </div>
         ${colapsado || !notasDiv.length ? '' : `<div class="notas-div">${notasDiv.map(notaMiniHtml).join('')}</div>`}
@@ -4069,6 +4113,25 @@ function toggleCategoria(cat) {
 const OPCOES_PRIORIDADE = [['Urgente', '🔴 Urgente'], ['Média', '🟡 Média'], ['Baixa', '🟢 Baixa']];
 const OPCOES_STATUS = [['Aberto', 'Aberto'], ['Em Andamento', 'Em andamento'], ['Iniciado', '▶️ Iniciado (terceiros)'], ['A conferir', '🔍 A conferir (terceiros)'],
   ['Feito', '✔️ Feito (terceiros)'], ['Aguardando', '🕓 Aguardando (preciso esperar algo)'], ['Concluído', '✅ Concluído']];
+
+// Menu "⋯" da divisão (celular): as ações menos usadas numa lista vertical
+function abrirAcoesDivisao(aba, div, comNota) {
+  const nome = div || 'Sem divisão';
+  document.getElementById('acoes-divisao-titulo').textContent = nome;
+  const q = s => String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  const itens = [];
+  if (div) {
+    itens.push(['📋', 'Duplicar divisão (como modelo)', `abrirCopiarDivisaoDe('${aba}','${q(div)}')`]);
+    itens.push(['☑', 'Selecionar tarefas da divisão', `selecionarDivisao('${aba}','${q(div)}')`]);
+    itens.push(['☰', 'Juntar tudo numa lista', `juntarDivisaoEmLista('${aba}','${q(div)}')`]);
+    if (comNota) itens.push(['📝', 'Nova nota nesta divisão', `abrirNota('','${aba}','${q(div)}')`]);
+  }
+  document.getElementById('acoes-divisao-lista').innerHTML = itens.length
+    ? itens.map(([ic, tx, fn]) => `<button class="acao-divisao" onclick="fecharAcoesDivisao(); ${fn.replace(/"/g, '&quot;')}">${ic} <span>${tx}</span></button>`).join('')
+    : '<p style="color:var(--text-muted);font-size:13px">Sem ações para esta divisão.</p>';
+  document.getElementById('modal-acoes-divisao').classList.add('open');
+}
+function fecharAcoesDivisao() { document.getElementById('modal-acoes-divisao').classList.remove('open'); }
 
 function abrirTrocaCampo(campo, id, aba) {
   const t = (allData[aba] || []).find(x => String(x.ID) === String(id));
