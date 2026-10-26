@@ -1736,6 +1736,29 @@
     .meta-item { font-size: 14px; color: var(--text-muted); font-weight: 400; }
   }
 
+  /* ----- 🛒 Listas (verde-menta): ambiente próprio, irmão de Notas e Pastas ----- */
+  .sidebar-listas-item { background:#a7f3d0; color:#065f46; }
+  .sidebar-listas-item.active { outline:2px solid #059669; }
+  .menu-mobile button#menu-listas.ativo { background:#a7f3d0; color:#065f46; border-color:#059669; }
+  .listas-topo { align-items:center; gap:10px; }
+  .listas-titulo { flex:1; font-size:16px; font-weight:800; color:#065f46; }
+  .listas-titulo small { font-weight:500; color:var(--text-muted); font-size:12px; }
+  .btn-nova-lista { background:#a7f3d0; color:#065f46; border:none; border-radius:12px; padding:12px 16px; font-weight:800; font-size:14px; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,.18); }
+  .btn-imprimir-listas { background:var(--gray-light); color:var(--text); border:none; border-radius:12px; padding:12px 14px; font-weight:700; font-size:14px; cursor:pointer; }
+  .listas-grid { column-width:250px; column-gap:12px; }
+  .lista-card { break-inside:avoid; margin-bottom:12px; border-radius:12px; padding:12px 14px; cursor:pointer; background:#d1fae5; border:1.5px solid #6ee7b7; color:#064e3b; box-shadow:0 1px 4px rgba(0,0,0,.12); }
+  .lc-titulo { font-weight:800; font-size:15px; margin-bottom:6px; word-break:break-word; }
+  .lc-item { font-size:14px; padding:1px 0; word-break:break-word; }
+  .lc-mais { font-size:12px; opacity:.75; margin-top:2px; }
+  .lc-ok { font-size:13px; opacity:.8; }
+  .lc-rodape { display:flex; justify-content:space-between; gap:8px; margin-top:8px; padding-top:6px; border-top:1px dashed #6ee7b7; font-size:11px; flex-wrap:wrap; }
+  .lc-local { opacity:.85; }
+  .so-impressao { display:none; }
+  .lista-mini { flex:1 1 220px; max-width:100%; padding:8px 11px; border-radius:10px; font-size:13px; color:#064e3b; cursor:pointer; background:#d1fae5; border:1.5px solid #6ee7b7; }
+  .lista-mini-div { opacity:.7; }
+  .listas-pasta { margin:0 0 12px; }
+  @media print { .so-impressao { display:block !important; } .lc-mais { display:none; } .lista-card { box-shadow:none; border:1px solid #888; } .listas-pasta, .lista-mini { display:none; } }
+
   /* Balãozinho de troca de prioridade/status, junto do botão */
   .balao-troca { position: fixed; z-index: 400; background: #fff; border: 1.5px solid var(--border); border-radius: 14px; padding: 8px 10px; box-shadow: 0 6px 20px rgba(0,0,0,.18); display: flex; flex-wrap: wrap; gap: 6px; max-width: 280px; }
   .balao-bolinhas { gap: 5px; padding: 6px 8px; flex-wrap: nowrap; }
@@ -1779,6 +1802,7 @@
   </div>
   <div class="menu-mobile">
     <button id="menu-notas" onclick="abrirNotas()">📝 Notas</button>
+    <button id="menu-listas" onclick="abrirListas()">🛒 Listas</button>
     <button id="menu-pastas" onclick="abrirPastas()">📁 Pastas</button>
   </div>
 
@@ -2346,7 +2370,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v64';
+const APP_VERSION = 'v65';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -2381,6 +2405,8 @@ let abaAtual = 'PESSOAL';
 // Notas (post-its): o app abre nelas. Não são tarefas: ficam numa aba própria da planilha e não entram em nenhuma contagem.
 let modoNotas = true;
 let modoPastas = false; // tela inicial de Pastas (post-its coloridos), irmã da tela de Notas
+let modoListas = false; // tela de Listas (compras/material...), irmã de Notas e Pastas
+let listasPastaFiltro = '';
 let notasData = [];
 let notasCarregadas = false;
 let notaTagFiltro = '';
@@ -3237,7 +3263,7 @@ function renderTabs() {
   const cruzado = algumFiltroAtivo();
   const html = abaOrdem.map((aba, i) => {
     const [cor] = corDaPasta(aba);
-    const ativa = !cruzado && !modoNotas && !modoPastas && aba === abaAtual;
+    const ativa = !cruzado && !modoNotas && !modoPastas && !modoListas && aba === abaAtual;
     return `
     <div class="sidebar-item ${ativa ? 'active' : ''}" data-aba="${aba}" style="order:${i}" title="${ABA_LABEL[aba]}">
       <span style="color:${cor}">${iconeCategoria(aba)}</span><span class="sidebar-item-label" style="color:${cor}">${nomeCurtoPasta(aba)}</span>
@@ -3246,7 +3272,8 @@ function renderTabs() {
   `;
   }).join('');
   const sidebar = document.getElementById('sidebar-pastas');
-  const itemNotas = `<div class="sidebar-notas-item ${modoNotas && !cruzado ? 'active' : ''}" onclick="abrirNotas()" title="Notas (post-its)">📝 Notas</div>`;
+  const itemNotas = `<div class="sidebar-notas-item ${modoNotas && !cruzado ? 'active' : ''}" onclick="abrirNotas()" title="Notas (post-its)">📝 Notas</div>`
+    + `<div class="sidebar-notas-item sidebar-listas-item ${modoListas && !cruzado ? 'active' : ''}" onclick="abrirListas()" title="Todas as listas (compras, material...)">🛒 Listas</div>`;
   const itemPastas = `<div class="sidebar-notas-item sidebar-pastas-item ${modoPastas && !cruzado ? 'active' : ''}" style="order:-1" onclick="abrirPastas()" title="Ver todas as pastas">📁 Pastas</div>`;
   sidebar.innerHTML = `${itemNotas}${itemPastas}<div class="sidebar-titulo">PASTAS</div>${html}<div class="sidebar-nova-pasta" style="order:9999" onclick="abrirModalNovaPasta()">➕ Nova pasta</div><div class="sidebar-nova-pasta" style="order:10000" onclick="abrirOpcoesPasta()">⋯ Opções da pasta</div>`;
   document.querySelectorAll('.sidebar-item').forEach(w => {
@@ -3401,7 +3428,7 @@ async function loadData() {
   const inicioBusca = Date.now();
   const temCopia = Array.isArray(allData[abaAlvo]);
   // Na tela de Notas não apaga a tela com "Carregando tarefas": as notas já estão aparecendo
-  if (!temCopia && !modoNotas) showLoading();
+  if (!temCopia && !modoNotas && !modoListas) showLoading();
   else document.getElementById('last-update').textContent = 'Atualizando...';
   try {
     // Carrega rápido só a pasta atual + a lista de pastas, numa chamada SÓ (o Apps Script não
@@ -3418,7 +3445,7 @@ async function loadData() {
     // Resposta mais velha que uma alteração feita aqui nesse meio-tempo: não sobrescreve (a tarefa excluída não "volta")
     if (!(respostaVelha(inicioBusca) && Array.isArray(allData[abaAlvo]))) allData[abaAlvo] = resp.dados || [];
     ultimaBusca[abaAlvo] = Date.now();
-    if (!modoNotas && !modoPastas) aplicarRecolhidoInicial(abaAlvo);
+    if (!modoNotas && !modoPastas && !modoListas) aplicarRecolhidoInicial(abaAlvo);
     // Code.gs v12+ manda as notas junto; o que ainda está na fila de envio é reaplicado por cima
     if (Array.isArray(resp.notas)) { notasData = aplicarFilaEmNotas(resp.notas); notasCarregadas = true; salvarNotasCache(); }
     else if (resp.versao) notasCarregadas = true;
@@ -3432,7 +3459,7 @@ async function loadData() {
 
     carregarRestanteDasPastas();
   } catch (e) {
-    if (temCopia || modoNotas) {
+    if (temCopia || modoNotas || modoListas) {
       // Já tem a última cópia na tela (ou está nas Notas): não apaga, só avisa
       document.getElementById('last-update').textContent = 'Mostrando a última cópia (servidor lento)';
       showToast('⏳ O servidor está lento — mostrando a última cópia. Use Atualizar daqui a pouco.');
@@ -3464,14 +3491,14 @@ async function carregarRestanteDasPastas() {
 let vistaModo = localStorage.getItem('vistaModo') || 'cards';     // tarefas
 let vistaNotas = localStorage.getItem('vistaNotas') || 'cards';   // notas (post-its)
 let vistaPastas = localStorage.getItem('vistaPastas') || 'cards'; // tela de Pastas
-const vistaDaTela = () => (modoNotas ? vistaNotas : modoPastas ? vistaPastas : vistaModo);
+const vistaDaTela = () => (modoNotas ? vistaNotas : modoPastas ? vistaPastas : modoListas ? 'cards' : vistaModo);
 
 function aplicarVista() {
   const main = document.getElementById('main');
   const btn = document.getElementById('btn-vista');
   const atual = vistaDaTela();
   // A aparência "lista" das tarefas (grade de colunas) só vale na tela de tarefas
-  main.classList.toggle('vista-lista', !modoNotas && !modoPastas && vistaModo === 'lista');
+  main.classList.toggle('vista-lista', !modoNotas && !modoPastas && !modoListas && vistaModo === 'lista');
   // O botão mostra a visão ATUAL desta tela (antes mostrava a outra e dava a impressão de estar na errada)
   if (btn) {
     btn.textContent = atual === 'lista' ? '☰ Lista' : '▦ Cards';
@@ -3493,7 +3520,7 @@ function toggleVista() {
 async function switchTab(aba) {
   abaAtual = aba;
   modoNotas = false;
-  modoPastas = false;
+  modoPastas = false; modoListas = false;
   modoUrgentesAtivo = false;
   modoAgendaPeriodo = null;
   // Trocar de pasta limpa qualquer filtro ativo (local ou geral, tipo Urgentes) — evita confusão de achar que ainda tá filtrado
@@ -3627,10 +3654,11 @@ function render() {
   agendarSalvarCache();
   atualizarBotaoOrdem();
   // Buscar, filtrar ou pedir Urgentes/Hoje/Semana tira das Notas e mostra tarefas
-  if ((modoNotas || modoPastas) && (algumFiltroAtivo() || modoUrgentesAtivo || modoAgendaPeriodo)) { modoNotas = false; modoPastas = false; renderTabs(); }
+  if ((modoNotas || modoPastas || modoListas) && (algumFiltroAtivo() || modoUrgentesAtivo || modoAgendaPeriodo)) { modoNotas = false; modoPastas = false; modoListas = false; renderTabs(); }
   aplicarVista(); // o botão Cards/Lista e o visual seguem a visão da tela em que se está
   atualizarPastaAtualMobile();
   if (modoPastas) { renderPastasHome(); return; }
+  if (modoListas) { renderListasHome(); return; }
   if (modoNotas) { renderNotas(); return; }
   // Qualquer filtro ativo (prioridade, status, envolvido ou busca) passa a procurar em todas as abas
   if (algumFiltroAtivo()) {
@@ -3642,7 +3670,8 @@ function render() {
     if (blocoNotas) document.getElementById('main').insertAdjacentHTML('afterbegin', blocoNotas);
     return;
   }
-  const tarefas = (allData[abaAtual] || []).map(t => ({ ...t, _aba: abaAtual }));
+  // Listas não são tarefas: ficam fora do placar e do meio das tarefas (vivem em 🛒 Listas e na faixa da divisão)
+  const tarefas = (allData[abaAtual] || []).filter(t => !ehTarefaLista(t)).map(t => ({ ...t, _aba: abaAtual }));
   renderCounters(tarefas);
   renderTarefas(tarefas);
 }
@@ -3741,12 +3770,15 @@ function atualizarPastaAtualMobile() {
   posicionarBuscaLocal();
   const el = document.getElementById('pasta-atual-mobile');
   if (!el) return;
-  const dentroDePasta = !modoPastas && !modoNotas && !algumFiltroAtivo();
+  const dentroDePasta = !modoPastas && !modoNotas && !modoListas && !algumFiltroAtivo();
   document.getElementById('busca-local-linha').classList.toggle('show', dentroDePasta);
-  document.getElementById('menu-notas').classList.toggle('ativo', !!modoNotas && !modoPastas);
+  document.getElementById('menu-notas').classList.toggle('ativo', !!modoNotas && !modoPastas && !modoListas);
+  document.getElementById('menu-listas').classList.toggle('ativo', !!modoListas);
   document.getElementById('menu-pastas').classList.toggle('ativo', !!modoPastas);
   if (modoPastas) {
     el.innerHTML = `${PIN_SVG} Você está em: <span style="color:#1d4ed8">📁 Pastas</span>`;
+  } else if (modoListas) {
+    el.innerHTML = `${PIN_SVG} Você está em: <span style="color:#047857">🛒 Listas</span>`;
   } else if (modoNotas) {
     el.innerHTML = `${PIN_SVG} Você está em: <span style="color:#a16207">📝 Notas</span>`;
   } else if (algumFiltroAtivo()) {
@@ -3858,7 +3890,7 @@ function filtrarTarefas(tarefas) {
 function tarefasDaTelaAtual() {
   const origem = algumFiltroAtivo()
     ? ABAS.flatMap(aba => (allData[aba] || []).map(t => ({ ...t, _aba: aba })))
-    : (allData[abaAtual] || []).map(t => ({ ...t, _aba: abaAtual }));
+    : (allData[abaAtual] || []).filter(t => !ehTarefaLista(t)).map(t => ({ ...t, _aba: abaAtual }));
   return filtrarTarefas(origem);
 }
 
@@ -3906,8 +3938,10 @@ function exportarCSV(tudo) {
 
 function renderTarefas(tarefas) {
   const filtradas = filtrarTarefas(tarefas);
+  // Listas desta pasta (só vistas dentro de uma pasta, não na busca entre pastas): aparecem em faixas verde-menta, não como tarefas
+  const listasPasta = (!algumFiltroAtivo() && !modoAgendaPeriodo) ? (allData[abaAtual] || []).filter(listaAtiva).map(t => ({ ...t, _aba: abaAtual })) : [];
 
-  if (!filtradas.length) {
+  if (!filtradas.length && !listasPasta.length) {
     document.getElementById('main').innerHTML = searchTerm
       ? `<div class="empty">Nenhuma tarefa encontrada para "${searchTerm}".</div>`
       : '<div class="empty">Nenhuma tarefa encontrada.</div>';
@@ -3977,6 +4011,7 @@ function renderTarefas(tarefas) {
     const ehFixada = fixadas.has(catKey);
     // Notas ligadas a esta divisão aparecem logo abaixo do título dela (não entram na contagem de tarefas)
     const notasDiv = mostraNotasVinculadas ? notasVinculadas(abaAtual, cat) : [];
+    const listasDiv = mostraNotasVinculadas ? listasVinculadas(abaAtual, cat) : [];
     const colapsado = categoriasColapsadas.has(catKey + abaAtual);
     const itemsHtml = colapsado ? '' : items.map(t => cardHtml(t)).join('');
     // Na busca cruzada, colore a categoria com a cor da aba de origem (tipo etiqueta do fichário)
@@ -3989,6 +4024,7 @@ function renderTarefas(tarefas) {
           <span class="categoria-toggle">${colapsado ? '▶' : '▼'}</span>
           <button class="btn-nova-na-divisao${ehFixada ? ' fixada' : ''}" onclick="event.stopPropagation(); fixarDivisao('${encodeURIComponent(catKey)}')" title="${ehFixada ? 'Desafixar esta divisão' : 'Fixar esta divisão no topo da pasta'}">📌</button>
           <button class="btn-nova-na-divisao" onclick="event.stopPropagation(); abrirNovaTarefaNaDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').replace(/'/g,"\\'")}')" title="Nova tarefa nesta divisão">➕</button>
+          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); novaLista('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Nova lista (compras, material...) nesta divisão">🛒</button>` : ''}
           ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); renomearDivisao(null, '${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Renomear esta divisão">✏️</button>` : ''}
           ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); abrirCopiarDivisaoDe('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Duplicar esta divisão inteira (abertas e concluídas) como lista modelo">📋</button>` : ''}
           ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); selecionarDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Selecionar (ou desmarcar) todas as tarefas desta divisão que aparecem na tela">☑</button>` : ''}
@@ -3998,6 +4034,7 @@ function renderTarefas(tarefas) {
           <span class="categoria-count">${items.length}</span>
         </div>
         ${colapsado || !notasDiv.length ? '' : `<div class="notas-div">${notasDiv.map(notaMiniHtml).join('')}</div>`}
+        ${colapsado || !listasDiv.length ? '' : `<div class="notas-div">${listasDiv.map(listaMiniHtml).join('')}</div>`}
         ${itemsHtml}
       </div>
     `;
@@ -4017,8 +4054,17 @@ function renderTarefas(tarefas) {
     ? `<div class="notas-pasta"><div class="notas-pasta-titulo">📝 NOTAS DESTA PASTA (${notasDaPasta.length})</div><div class="notas-mini">${notasDaPasta.map(notaMiniHtml).join('')}</div></div>`
     : '';
 
+  // Listas da pasta inteira (sem divisão) ou de uma divisão que não tem nenhuma tarefa (só lista): faixa no alto, com o nome da divisão
+  const divisoesComTarefa = new Set(Object.keys(grupos));
+  const listasSoltas = mostraNotasVinculadas
+    ? listasPasta.filter(l => { const d = String(l['Divisão'] || '').trim().toLowerCase(); return !d || !divisoesComTarefa.has(d); })
+    : [];
+  const faixaListasPasta = listasSoltas.length
+    ? `<div class="listas-pasta"><div class="notas-pasta-titulo">🛒 LISTAS DESTA PASTA (${listasSoltas.length})</div><div class="notas-mini">${listasSoltas.map(l => listaMiniHtml(l).replace('</div>', `<span class="lista-mini-div"> · ${escLista(String(l['Divisão'] || '').trim() || 'pasta toda')}</span></div>`)).join('')}</div></div>`
+    : '';
+
   const mainEl = document.getElementById('main');
-  mainEl.innerHTML = faixaNotasPasta + barraDivisoes + html;
+  mainEl.innerHTML = faixaNotasPasta + faixaListasPasta + barraDivisoes + html;
   // Título que sai no papel: se está vendo várias pastas (tag, busca, filtro), não pode ser o nome da pasta aberta
   mainEl.dataset.aba = tituloParaImpressao();
   // Força o navegador a recalcular o layout na hora — sem isso, às vezes os cards
@@ -4243,6 +4289,7 @@ function abrirAcoesDivisao(aba, div, comNota) {
     itens.push(['☑', 'Selecionar tarefas da divisão', `selecionarDivisao('${aba}','${q(div)}')`]);
     itens.push(['☰', 'Juntar tudo numa lista', `juntarDivisaoEmLista('${aba}','${q(div)}')`]);
     if (comNota) itens.push(['📝', 'Nova nota nesta divisão', `abrirNota('','${aba}','${q(div)}')`]);
+    itens.push(['🛒', 'Nova lista nesta divisão', `novaLista('${aba}','${q(div)}')`]);
   }
   document.getElementById('acoes-divisao-lista').innerHTML = itens.length
     ? itens.map(([ic, tx, fn]) => `<button class="acao-divisao" onclick="fecharAcoesDivisao(); ${fn.replace(/"/g, '&quot;')}">${ic} <span>${tx}</span></button>`).join('')
@@ -5252,7 +5299,7 @@ function salvarNotasFila() { try { localStorage.setItem('notasFila', JSON.string
 // Abre a tela de Notas (a inicial). Sai de qualquer busca/filtro para não ficar "preso" numa pasta.
 // Tela inicial de Pastas: todas as pastas lado a lado, cada uma com a sua cor (abre com duplo clique; no celular, um toque)
 function abrirPastas() {
-  modoPastas = true; modoNotas = false;
+  modoPastas = true; modoNotas = false; modoListas = false;
   modoUrgentesAtivo = false; modoAgendaPeriodo = null;
   searchTerm = ''; searchTermLocal = '';
   document.getElementById('search-input').value = '';
@@ -5350,13 +5397,14 @@ function soltarArrastoPasta() {
 function renderPastasHome() {
   const main = document.getElementById('main');
   main.dataset.aba = 'Pastas';
-  const abertas = lista => (lista || []).filter(t => String(t.Tarefa || '').trim() && t.Status !== 'Concluído' && t.Status !== 'Cancelado');
+  const abertas = lista => (lista || []).filter(t => String(t.Tarefa || '').trim() && t.Status !== 'Concluído' && t.Status !== 'Cancelado' && !ehTarefaLista(t)); // listas não contam como tarefa
   const cards = abaOrdem.map(aba => {
     const [cor, bg] = corDaPasta(aba);
     const carregada = Array.isArray(allData[aba]);
     const ab = carregada ? abertas(allData[aba]) : [];
     const urg = ab.filter(t => t.Prioridade === 'Urgente').length;
     const nNotas = notasData.filter(n => String(n['Pasta'] || '') === aba).length;
+    const nListas = carregada ? allData[aba].filter(listaAtiva).length : 0;
     return `<div class="pasta-card" data-aba="${escLista(aba).replace(/"/g, '&quot;')}" style="--cor-pasta:${cor};--bg-pasta:${bg}" role="button" tabindex="0"
         onclick="cliquePastaCard(event,'${aba.replace(/'/g, "\\'")}')" ondblclick="switchTab('${aba.replace(/'/g, "\\'")}')"
         onkeydown="if(event.key==='Enter')switchTab('${aba.replace(/'/g, "\\'")}')">
@@ -5366,7 +5414,7 @@ function renderPastasHome() {
       </span>
       <div class="pasta-card-icone">${iconeCategoria(aba)}</div>
       <div class="pasta-card-nome">${escLista(ABA_LABEL[aba] || aba)}</div>
-      <div class="pasta-card-info">${carregada ? ab.length + (ab.length === 1 ? ' aberta' : ' abertas') : '…'}${urg ? ` · 🔴 ${urg}` : ''}${nNotas ? ` · 📝 ${nNotas}` : ''}</div>
+      <div class="pasta-card-info">${carregada ? ab.length + (ab.length === 1 ? ' aberta' : ' abertas') : '…'}${urg ? ` · 🔴 ${urg}` : ''}${nNotas ? ` · 📝 ${nNotas}` : ''}${nListas ? ` · 🛒 ${nListas}` : ''}</div>
     </div>`;
   }).join('');
   main.innerHTML = `<div class="pastas-dica">${ehToque() ? 'Toque numa pasta para abrir' : 'Dê dois cliques numa pasta para abrir'} · 🎨 troca a cor · ⠿ muda a ordem</div><div class="${vistaPastas === 'lista' ? 'pastas-lista' : 'pastas-grid'}">${cards}</div>`;
@@ -5375,9 +5423,122 @@ function renderPastasHome() {
     <div class="contador-linha versao-linha"><span>App ${APP_VERSION}</span><span>Servidor ${serverVersion === null ? '…' : serverVersion}</span></div>`;
 }
 
+// ===== LISTAS (compras, material de escritório...): ambiente próprio, irmão de Notas e Pastas =====
+// Uma "lista" é uma tarefa cuja observação tem itens "- [ ] item". Ela NÃO conta como tarefa (placar) e não aparece no meio das
+// tarefas da pasta: vive aqui (todas juntas) e numa faixa verde-menta na divisão/pasta a que pertence.
+const ehTarefaLista = t => ehListaObs(t && t['Observação']);
+const listaAtiva = t => ehTarefaLista(t) && !['concluído', 'cancelado'].includes(String(t.Status || '').trim().toLowerCase());
+const COR_LISTA = '#a7f3d0';          // verde-menta
+const COR_LISTA_BORDA = '#34d399';
+
+function todasAsListas() {
+  return ABAS.flatMap(aba => (allData[aba] || []).filter(listaAtiva).map(t => ({ ...t, _aba: aba })));
+}
+function listasVinculadas(aba, divisao) {
+  const alvo = String(divisao || '').trim().toLowerCase();
+  return (allData[aba] || []).filter(t => listaAtiva(t) && String(t['Divisão'] || '').trim().toLowerCase() === alvo)
+    .map(t => ({ ...t, _aba: aba }))
+    .sort((a, b) => String(a.Tarefa || '').localeCompare(String(b.Tarefa || ''), 'pt-BR'));
+}
+// itens que faltam, ⭐ primeiro
+function itensQueFaltam(t) {
+  const faltam = parseListaObs(t['Observação']).filter(l => l.item && !l.feito);
+  return [...faltam.filter(l => l.estrela), ...faltam.filter(l => !l.estrela)];
+}
+function localDaLista(t) {
+  const d = String(t['Divisão'] || '').trim();
+  return `📁 ${escLista(ABA_LABEL[t._aba] || t._aba)}${d ? ' › ' + escLista(d) : ''}`;
+}
+const abrirListaOnclick = t => `abrirLista('${String(t._aba).replace(/'/g, "\\'")}','${t.ID}')`;
+
+// Cartão da tela de Listas: título, os 5 primeiros itens que faltam (⭐ primeiro) e onde ela mora. Na impressão saem todos.
+function listaCardHtml(t) {
+  const total = parseListaObs(t['Observação']).filter(l => l.item).length;
+  const faltam = itensQueFaltam(t);
+  const item = l => `${l.estrela ? '⭐' : '☐'} ${escLista(textoItemLegivel(l.texto))}`;
+  const corpo = faltam.length
+    ? faltam.slice(0, 5).map(l => `<div class="lc-item">${item(l)}</div>`).join('')
+      + (faltam.length > 5 ? `<div class="lc-mais">+ ${faltam.length - 5} ${faltam.length - 5 === 1 ? 'item' : 'itens'}…</div>` + faltam.slice(5).map(l => `<div class="lc-item so-impressao">${item(l)}</div>`).join('') : '')
+    : '<div class="lc-ok">✔ tudo marcado</div>';
+  return `<div class="lista-card" onclick="${abrirListaOnclick(t)}">
+    <div class="lc-titulo">🛒 ${escLista(t.Tarefa)}</div>
+    ${corpo}
+    <div class="lc-rodape"><span>${faltam.length} faltam de ${total}</span><span class="lc-local">${localDaLista(t)}</span></div>
+  </div>`;
+}
+// Faixa mini (dentro da pasta/divisão): nome + os primeiros itens, uma linha
+function listaMiniHtml(t) {
+  const faltam = itensQueFaltam(t);
+  const resumo = faltam.slice(0, 4).map(l => (l.estrela ? '⭐ ' : '') + textoItemLegivel(l.texto)).join(' · ');
+  return `<div class="lista-mini" onclick="${abrirListaOnclick(t)}">🛒 <b>${escLista(t.Tarefa)}</b> <span class="nota-mini-txt">— ${faltam.length ? faltam.length + ' faltam' + (resumo ? ': ' + escLista(resumo.slice(0, 120)) : '') : 'tudo marcado'}</span></div>`;
+}
+
+function abrirListas() {
+  modoListas = true; modoNotas = false; modoPastas = false;
+  modoUrgentesAtivo = false; modoAgendaPeriodo = null;
+  searchTerm = ''; searchTermLocal = '';
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-local-input').value = '';
+  filtroPrioridadeG = new Set(); filtroStatusG = new Set(); filtroEnvolvidoG = new Set(); filtroTagG = new Set();
+  atualizarBotoesFiltro();
+  renderTabs();
+  render();
+  fecharSidebar();
+  window.scrollTo(0, 0);
+  // as listas moram em todas as pastas: garante que todas foram carregadas
+  if (ABAS.some(a => !Array.isArray(allData[a]))) carregarRestanteDasPastas();
+}
+
+function filtrarListasPorPasta(aba) { listasPastaFiltro = aba; renderListasHome(); }
+
+function renderListasHome() {
+  const main = document.getElementById('main');
+  main.dataset.aba = 'Listas';
+  const carregou = ABAS.every(a => Array.isArray(allData[a]));
+  let listas = todasAsListas();
+  const porPasta = {};
+  listas.forEach(l => { porPasta[l._aba] = (porPasta[l._aba] || 0) + 1; });
+  if (listasPastaFiltro && !porPasta[listasPastaFiltro]) listasPastaFiltro = '';
+  if (listasPastaFiltro) listas = listas.filter(l => l._aba === listasPastaFiltro);
+  const nome = t => String(t.Tarefa || '');
+  listas.sort((a, b) => ordemVista === 'recentes' ? momentoTarefa(b) - momentoTarefa(a)
+    : ordemVista === 'antigas' ? momentoTarefa(a) - momentoTarefa(b)
+    : (ABA_LABEL[a._aba] || a._aba).localeCompare(ABA_LABEL[b._aba] || b._aba, 'pt-BR') || nome(a).localeCompare(nome(b), 'pt-BR'));
+  const chips = Object.keys(porPasta).length > 1 ? `<div class="notas-tags">
+      <button class="nota-chip ${listasPastaFiltro ? '' : 'on'}" onclick="filtrarListasPorPasta('')">Todas</button>
+      ${Object.keys(porPasta).sort((a, b) => (ABA_LABEL[a] || a).localeCompare(ABA_LABEL[b] || b, 'pt-BR')).map(a => `<button class="nota-chip ${a === listasPastaFiltro ? 'on' : ''}" onclick="filtrarListasPorPasta('${a.replace(/'/g, "\\'")}')">${escLista(ABA_LABEL[a] || a)} (${porPasta[a]})</button>`).join('')}
+    </div>` : '';
+  let corpo;
+  if (!carregou && !listas.length) corpo = '<div class="notas-vazio"><div class="spinner" style="margin:0 auto 8px"></div>Carregando listas...</div>';
+  else if (!listas.length) corpo = '<div class="notas-vazio">🛒<br>Nenhuma lista ainda.<br>Toque em <b>Nova lista</b>, ou abra uma tarefa e use "Mostrar como lista".</div>';
+  else corpo = `<div class="listas-grid">${listas.map(listaCardHtml).join('')}</div>`;
+  main.innerHTML = `<div class="notas-topo listas-topo">
+      <div class="listas-titulo">🛒 Listas <small>(todas as pastas)</small></div>
+      <button class="btn-nova-lista" onclick="novaLista()">➕ Nova lista</button>
+      <button class="btn-imprimir-listas" onclick="window.print()" title="Imprimir todas as listas com todos os itens">🖨️ Imprimir</button>
+    </div>${chips}${corpo}`;
+  const faltamTotal = listas.reduce((s, l) => s + itensQueFaltam(l).length, 0);
+  document.getElementById('counters').innerHTML = `
+    <div class="contador-linha"><span class="contador-item total">Listas: <b>${listas.length}</b></span><span class="contador-item aberto">Itens faltando: <b>${faltamTotal}</b></span></div>
+    <div class="contador-linha versao-linha"><span>App ${APP_VERSION}</span><span>Servidor ${serverVersion === null ? '…' : serverVersion}</span></div>`;
+}
+
+// Cria uma lista nova (já com o modo "lista" ligado), opcionalmente já dentro de uma pasta/divisão
+async function novaLista(aba, divisao) {
+  await openAddModal();
+  if (aba) {
+    document.getElementById('f-aba').value = aba;
+    preencherCategorias(aba);
+    atualizaLabelTarefa(aba);
+    if (divisao) document.getElementById('f-categoria').value = divisao;
+  }
+  if (!formListaOn) alternarListaNoForm();
+  document.getElementById('f-tarefa').focus();
+}
+
 function abrirNotas() {
   modoPastas = false;
-  modoNotas = true;
+  modoNotas = true; modoListas = false;
   modoUrgentesAtivo = false; modoAgendaPeriodo = null;
   searchTerm = ''; searchTermLocal = '';
   document.getElementById('search-input').value = '';
