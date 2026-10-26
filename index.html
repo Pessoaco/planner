@@ -2182,6 +2182,7 @@
     <button class="menu-mais-item" onclick="recomecarLista(false)">⭐ Só tirar as estrelas (mantém o que está marcado)</button>
     <button class="menu-mais-item" onclick="enviarLista('tudo')">📤 Enviar a lista toda (⭐ primeiro)</button>
     <button class="menu-mais-item" onclick="enviarLista('estrelas')">⭐ Enviar só o que tem estrela</button>
+<button class="menu-mais-item" onclick="enviarListaPelaSecretaria()">📲 Enviar pela secretária (sem colar nada)</button>
     <button class="modal-cancel" onclick="fecharLista()" style="margin-top:14px">Fechar</button>
   </div>
 </div>
@@ -2345,7 +2346,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v61';
+const APP_VERSION = 'v62';
 let serverVersion = null;
 let allData = {};
 
@@ -4622,10 +4623,13 @@ function textoTarefaParaCompartilhar(t) {
 function abrirWhatsappCompartilhar(texto) {
   const celular = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
   if (celular) { window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank'); return; }
-  // No computador, o link wa.me passa pelo aplicativo do WhatsApp e às vezes quebra emoji (vira "�").
-  // Então: copia o texto (cola com Ctrl+V se algo vier estranho) e abre o WhatsApp Web direto, que lê o texto certo.
-  try { navigator.clipboard.writeText(texto); showToast('📋 Texto copiado — se algum símbolo vier estranho, é só colar (Ctrl+V)'); } catch (e) {}
-  window.open(`https://web.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
+  // No computador: abre o APLICATIVO do WhatsApp (o Web pede QR Code). O texto NÃO vai dentro do link — o Windows estraga letras
+  // em texto longo —, vai pela área de transferência: escolha a conversa e cole (Ctrl+V).
+  navigator.clipboard.writeText(texto).then(
+    () => showToast('📋 Texto copiado — abrindo o WhatsApp do computador. Escolha a conversa e cole (Ctrl+V)'),
+    () => showToast('⚠️ Não consegui copiar o texto')
+  );
+  window.location.href = 'whatsapp://';
 }
 
 function compartilharTarefa(t) {
@@ -4656,8 +4660,8 @@ function abrirWhatsappApp(t) {
 }
 
 // Manda o texto pelo WhatsApp da secretária (sem precisar abrir o seu), pra qualquer pessoa: nome já guardado ou telefone
-async function enviarPelaSecretaria(t) {
-  const texto = textoCompletoDaTarefa(t);
+async function enviarPelaSecretaria(t, textoPronto) {
+  const texto = textoPronto || textoCompletoDaTarefa(t);
   const dest = prompt('Enviar pelo WhatsApp da secretária.\n\nPara quem? Digite o NOME (se já está guardado) ou o TELEFONE com DDD:', '');
   if (!dest || !dest.trim()) return;
   showToast('⏳ Enviando...');
@@ -6282,24 +6286,24 @@ function montarTextoLista(t, linhas, modo) {
   const caminho = [pasta, t['Divisão']].filter(Boolean).join(' / ');
   const item = l => `- ${textoItemLegivel(l.texto)}`;
   let msg = `*${t.Tarefa}*` + (caminho ? `\n${caminho}` : '') + '\n';
-  if (modo === 'completa') {
-    // Lista inteira, como está: o que falta (⭐ primeiro) e depois o que já foi feito
-    const feitos = linhas.filter(l => l.item && l.feito);
-    // Tudo feito: lista limpa, sem marca em cada linha. Misturado: o que falta primeiro e, separado, "Já feitos".
-    if (!est.length && !resto.length) return (msg + '\n' + feitos.map(item).join('\n')).trim();
-    // Mesmos títulos do "tudo" (quem recebe entende o que é prioridade, sem ver a ⭐), e depois o que já foi feito
-    if (est.length) msg += '\n*PRIMEIRO (prioridade):*\n' + est.map(item).join('\n') + '\n';
-    if (resto.length) msg += '\n' + resto.map(item).join('\n'); // só uma linha em branco separa (sem a palavra "Depois")
-    if (feitos.length) msg += '\n\n*Já feitos:*\n' + feitos.map(item).join('\n');
+  // Títulos neutros (servem para compra, festa, qualquer lista): "Prioridades:" = o que tem ⭐; "Demais:" = o resto da lista.
+  // Sem nenhum ⭐ a lista sai limpa, sem título. "completa" ainda traz "Já feitos:" no fim.
+  const feitos = modo === 'completa' ? linhas.filter(l => l.item && l.feito) : [];
+  if (modo === 'estrelas') {
+    msg += '\n*Prioridades:*\n' + est.map(item).join('\n');
     return msg.trim();
   }
-  if (modo === 'estrelas') {
-    msg += '\n*PRIORIDADE (comprar primeiro):*\n' + est.map(item).join('\n');
-  } else {
-    if (est.length) msg += '\n*PRIMEIRO (prioridade):*\n' + est.map(item).join('\n') + '\n';
-    if (resto.length) msg += '\n' + resto.map(item).join('\n');
-  }
+  if (est.length) msg += '\n*Prioridades:*\n' + est.map(item).join('\n') + '\n';
+  if (resto.length) msg += '\n' + (est.length ? '*Demais:*\n' : '') + resto.map(item).join('\n');
+  if (feitos.length) msg += '\n\n' + ((est.length || resto.length) ? '*Já feitos:*\n' : '') + feitos.map(item).join('\n');
   return msg.trim();
+}
+
+// Da janela da lista: manda pelo WhatsApp da secretária (a lista toda, ⭐ primeiro), sem abrir o seu WhatsApp e sem colar
+function enviarListaPelaSecretaria() {
+  const t = tarefaDaLista();
+  const tarefa = { ...(t || { Tarefa: 'Lista' }), _aba: (t && t._aba) || listaAba };
+  enviarPelaSecretaria(tarefa, montarTextoLista(tarefa, listaLinhas, 'tudo'));
 }
 
 function enviarLista(modo) {
