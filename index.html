@@ -2070,7 +2070,7 @@
     <button class="menu-mais-item" id="btn-acoes-duplicar">📄 Duplicar tarefa</button>
     <button class="menu-mais-item" id="btn-acoes-compartilhar">↗️ Compartilhar no WhatsApp</button>
     <button class="menu-mais-item" id="btn-acoes-copiar">📋 Copiar texto completo</button>
-    <button class="menu-mais-item" id="btn-acoes-app">💻 Abrir no WhatsApp do computador (app)</button>
+    <button class="menu-mais-item" id="btn-acoes-app">💻 Copiar e abrir o WhatsApp do computador</button>
     <button class="menu-mais-item" id="btn-acoes-secretaria">📲 Enviar pela secretária (qualquer contato)</button>
     <button class="menu-mais-item" id="btn-acoes-lembrete" style="display:none"></button>
     <button class="menu-mais-item" id="btn-acoes-excluir" style="color:var(--danger)">🗑️ Excluir tarefa</button>
@@ -2345,7 +2345,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v59';
+const APP_VERSION = 'v61';
 let serverVersion = null;
 let allData = {};
 
@@ -4646,10 +4646,13 @@ async function copiarTextoTarefa(t) {
 
 // Abre o aplicativo do WhatsApp instalado no computador (não o WhatsApp Web). Se não tiver o app, o texto já fica copiado.
 function abrirWhatsappApp(t) {
+  // O texto NÃO vai dentro do link (o Windows estraga letras em texto longo): vai pela área de transferência, exato. É só colar.
   const texto = textoCompletoDaTarefa(t);
-  try { navigator.clipboard.writeText(texto); } catch (e) {}
-  showToast('💻 Abrindo o WhatsApp do computador... (texto também copiado: Ctrl+V)');
-  window.location.href = `whatsapp://send?text=${encodeURIComponent(texto)}`;
+  navigator.clipboard.writeText(texto).then(
+    () => showToast('📋 Texto copiado — abrindo o WhatsApp do computador. Escolha a conversa e cole (Ctrl+V)'),
+    () => showToast('⚠️ Não consegui copiar — use "Copiar texto completo"')
+  );
+  window.location.href = 'whatsapp://';
 }
 
 // Manda o texto pelo WhatsApp da secretária (sem precisar abrir o seu), pra qualquer pessoa: nome já guardado ou telefone
@@ -6286,7 +6289,7 @@ function montarTextoLista(t, linhas, modo) {
     if (!est.length && !resto.length) return (msg + '\n' + feitos.map(item).join('\n')).trim();
     // Mesmos títulos do "tudo" (quem recebe entende o que é prioridade, sem ver a ⭐), e depois o que já foi feito
     if (est.length) msg += '\n*PRIMEIRO (prioridade):*\n' + est.map(item).join('\n') + '\n';
-    if (resto.length) msg += `\n*${est.length ? 'Depois' : 'Itens'}:*\n` + resto.map(item).join('\n');
+    if (resto.length) msg += '\n' + resto.map(item).join('\n'); // só uma linha em branco separa (sem a palavra "Depois")
     if (feitos.length) msg += '\n\n*Já feitos:*\n' + feitos.map(item).join('\n');
     return msg.trim();
   }
@@ -6294,7 +6297,7 @@ function montarTextoLista(t, linhas, modo) {
     msg += '\n*PRIORIDADE (comprar primeiro):*\n' + est.map(item).join('\n');
   } else {
     if (est.length) msg += '\n*PRIMEIRO (prioridade):*\n' + est.map(item).join('\n') + '\n';
-    if (resto.length) msg += `\n*${est.length ? 'Depois' : 'Itens'}:*\n` + resto.map(item).join('\n');
+    if (resto.length) msg += '\n' + resto.map(item).join('\n');
   }
   return msg.trim();
 }
