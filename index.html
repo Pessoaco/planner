@@ -274,6 +274,8 @@
   @media (max-width: 639px) { .busca-local-linha { margin: 0 0 6px; } }
   .busca-local-linha.show { display: flex; }
   .acao-divisao { display: flex; align-items: center; gap: 10px; width: 100%; padding: 14px 12px; margin-bottom: 6px; border: none; border-radius: 10px; background: var(--gray-light); font-size: 15px; font-weight: 600; color: var(--text); text-align: left; cursor: pointer; }
+  /* Só desce a faixa da divisão quando a barra "Recolher todas" existe (na busca entre pastas ela não existe, e a faixa cobria a 1ª tarefa) */
+  #main:has(.barra-divisoes) .categoria-header { top: calc(var(--header-h, 0px) + 44px); }
   .barra-divisoes { display:flex; align-items:center; gap:10px; margin:0 0 4px; height:44px; box-sizing:border-box; position:sticky; top:var(--header-h,0px); z-index:7; background:var(--bg); }
   .btn-recolher { background:var(--primary-light); color:var(--primary); border:none; border-radius:8px; padding:7px 12px; font-size:13px; font-weight:700; cursor:pointer; }
   .barra-div-info { font-size:12px; color:var(--text-muted); }
@@ -831,7 +833,7 @@
     border-left: 3px solid var(--cor-div, var(--primary));
     border-radius: 8px;
     position: sticky;
-    top: calc(var(--header-h, 0px) + 44px); /* abaixo da barra "Recolher todas", que também fica fixa */
+    top: var(--header-h, 0px);
     z-index: 6;
     cursor: pointer;
     user-select: none;
@@ -2340,7 +2342,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v54';
+const APP_VERSION = 'v55';
 let serverVersion = null;
 let allData = {};
 
@@ -5094,6 +5096,8 @@ async function salvarTarefa() {
     if (data.ok) {
       closeAddModal();
       showToast(editando ? '✅ Tarefa atualizada!' : '✅ Tarefa criada!');
+      // O servidor (v17+) diz quando não conseguiu avisar o envolvido no WhatsApp — antes falhava em silêncio
+      if (data.aviso && data.aviso.avisou === false) showToast('⚠️ Tarefa salva, mas NÃO avisei o envolvido: ' + (data.aviso.motivo || 'contato não encontrado'));
 
       // Atualiza só a tarefa em memória em vez de recarregar tudo — evita a tela branca
       if (editando) {
