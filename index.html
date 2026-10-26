@@ -2374,7 +2374,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v67';
+const APP_VERSION = 'v68';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -2455,6 +2455,8 @@ function nenhumFiltroAtivoTotal() {
 }
 
 // Atualiza o texto dos botões "Envolvidos" com a contagem de selecionados (ex: "Envolvidos (2)")
+// "Escritório, Daniel" são DOIS envolvidos: o filtro lista cada nome separado e acha a tarefa por qualquer um deles
+const nomesEnvolvidos = s => String(s || '').split(/[,;]/).map(x => x.trim()).filter(Boolean);
 function popularBotoesEnvolvidos() {
   const btnLocal = document.getElementById('btn-envolvidos');
   if (btnLocal) btnLocal.textContent = `👤 Envolvidos${filtroEnvolvido.size ? ` (${filtroEnvolvido.size})` : ''}`;
@@ -2465,8 +2467,8 @@ function popularBotoesEnvolvidos() {
 // Popup de seleção de Envolvidos — evita empilhar um botão por pessoa quando a lista crescer
 function abrirModalEnvolvidos(global) {
   const nomes = global
-    ? [...new Set(ABAS.flatMap(aba => allData[aba] || []).map(t => (t.Envolvido || '').trim()).filter(Boolean))].sort()
-    : [...new Set((allData[abaAtual] || []).map(t => (t.Envolvido || '').trim()).filter(Boolean))].sort();
+    ? [...new Set(ABAS.flatMap(aba => allData[aba] || []).flatMap(t => nomesEnvolvidos(t.Envolvido)))].sort((a, b) => a.localeCompare(b, 'pt-BR'))
+    : [...new Set((allData[abaAtual] || []).flatMap(t => nomesEnvolvidos(t.Envolvido)))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
 
   document.getElementById('modal-envolvidos-title').textContent = global ? '👤 Envolvidos (todas as pastas)' : '👤 Envolvidos';
   document.getElementById('lista-envolvidos').innerHTML = nomes.length
@@ -3845,7 +3847,7 @@ function filtrarTarefas(tarefas) {
     });
   }
   if (envolvidoAtivo.size) {
-    filtradas = filtradas.filter(t => envolvidoAtivo.has((t.Envolvido || '').trim()));
+    filtradas = filtradas.filter(t => nomesEnvolvidos(t.Envolvido).some(n => envolvidoAtivo.has(n)));
   }
   if (tagAtiva.size) {
     filtradas = filtradas.filter(t => tagsDeTarefa(t).some(tg => tagAtiva.has(tg)));
@@ -4526,7 +4528,13 @@ function fecharMenuAcoesTarefa() {
 
 // Se o app ainda não sabe o telefone do envolvido, pergunta UMA vez e guarda (aba CONTATOS da planilha).
 // Não depende de nenhuma conta Google: o telefone fica junto com o app. Devolve true se agora o telefone é conhecido.
-async function garantirTelefoneEnvolvido(nome) {
+// "Escritório, Daniel": confere (e pergunta, se faltar) o telefone de CADA nome
+async function garantirTelefoneEnvolvido(nomes) {
+  let todos = true;
+  for (const n of nomesEnvolvidos(nomes)) { if (!(await garantirTelefoneUm(n))) todos = false; }
+  return todos;
+}
+async function garantirTelefoneUm(nome) {
   nome = String(nome || '').trim();
   if (!nome || /daniel/i.test(nome)) return true; // Daniel vai pro grupo, não precisa de telefone
   try {
@@ -4557,7 +4565,7 @@ async function enviarLembrete(id, aba, btn, jaPerguntou) {
     });
     const data = await res.json();
     if (data.ok) {
-      showToast('🔔 Lembrete enviado!');
+      showToast(data.semNumero && data.semNumero.length ? '🔔 Lembrete enviado, mas sem número de: ' + data.semNumero.join(', ') : '🔔 Lembrete enviado!');
     } else if (!jaPerguntou && /Não encontrei o número/.test(String(data.error || ''))) {
       // Telefone desconhecido: pergunta e tenta de novo uma vez
       const t = (allData[aba] || []).find(x => String(x.ID) === String(id));
