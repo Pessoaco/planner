@@ -2069,6 +2069,7 @@
 
     <button class="btn-salvar" id="btn-salvar" onclick="salvarTarefa()">Salvar tarefa</button>
     <button class="btn-salvar" id="btn-salvar-concluir" onclick="salvarEConcluir()" style="display:none;background:var(--success);margin-top:8px">✅ Salvar e concluir (sem avisar ninguém)</button>
+    <button class="btn-salvar" id="btn-salvar-concluir-avisar" onclick="salvarEConcluir(true)" style="display:none;background:#0f766e;margin-top:8px">✅🔔 Salvar, concluir e AVISAR os envolvidos</button>
     <button class="btn-excluir-modal" id="btn-excluir-modal" onclick="excluirDoModal()" style="display:none">🗑️ Excluir tarefa</button>
     <button class="modal-cancel" onclick="closeAddModal()" style="margin-top:8px">Cancelar</button>
   </div>
@@ -2378,7 +2379,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v72';
+const APP_VERSION = 'v73';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -4419,6 +4420,18 @@ async function trocarPrioridade(id, aba, novaPrioridade) {
   }
 }
 
+// Avisa por WhatsApp os envolvidos de que a tarefa foi concluída (servidor v30+). Só quem tem número; os outros são pulados.
+// Concluir pelo botão da tarefa avisa; as formas "sem avisar" (janela da tarefa e conclusão em lote) não passam por aqui.
+async function avisarConclusaoAosEnvolvidos(aba, id) {
+  const t = (allData[aba] || []).find(x => String(x.ID) === String(id));
+  if (t && !String(t.Envolvido || '').trim()) return; // sem envolvido: nada a avisar
+  try {
+    const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'avisarConclusao', aba, id: String(id) }) });
+    const d = await res.json();
+    if (d.ok && d.avisados && d.avisados.length) showToast('🔔 Avisei da conclusão: ' + d.avisados.join(', '));
+  } catch (e) { /* aviso é um extra: se falhar, a tarefa continua concluída */ }
+}
+
 async function atualizarStatus(id, btn, aba, novoStatus) {
   aba = aba || abaAtual;
   const textoOriginal = btn.textContent;
@@ -4450,6 +4463,8 @@ async function atualizarStatus(id, btn, aba, novoStatus) {
             delete desfazerDisponivel[id];
             salvarDesfazer();
             renderMantendoScroll();
+            // Não foi desfeita: agora sim avisa os envolvidos de que foi concluída
+            avisarConclusaoAosEnvolvidos(aba, id);
           }
         }, 8000);
       }
@@ -4633,7 +4648,7 @@ let editandoAba = null;
 async function openAddModal() {
   editandoId = null;
   editandoAba = null;
-  formTipoLista = false;
+  formTipoLista = false; avisarConclusaoDepoisDeSalvar = false;
   // Garante que os dados (e categorias) já foram carregados
   if (!Object.keys(allData).length) {
     showToast('⏳ Carregando divisórias...');
@@ -4663,7 +4678,7 @@ async function openAddModal() {
   document.getElementById('f-status-group').style.display = 'block';
   document.getElementById('f-status').value = 'Aberto';
   document.getElementById('f-data-conclusao-group').style.display = 'none';
-  document.getElementById("btn-salvar-concluir").style.display = "none"; document.getElementById("f-nao-avisar").checked = false;
+  document.getElementById("btn-salvar-concluir").style.display = "none"; document.getElementById("btn-salvar-concluir-avisar").style.display = "none"; document.getElementById("f-nao-avisar").checked = false;
   document.getElementById('f-data-conclusao').value = '';
   document.getElementById('btn-lembrete-modal').style.display = 'none';
   document.getElementById('btn-excluir-modal').style.display = 'none';
@@ -4820,7 +4835,7 @@ async function duplicarTarefa(t) {
 async function openEditModal(t) {
   editandoId = t.ID;
   editandoAba = t._aba;
-  formTipoLista = false;
+  formTipoLista = false; avisarConclusaoDepoisDeSalvar = false;
   if (!Object.keys(allData).length) await loadData();
   document.getElementById('modal-add-title').textContent = '✏️ Editar tarefa';
   document.getElementById('btn-salvar').textContent = 'Salvar alterações';
@@ -4847,7 +4862,7 @@ async function openEditModal(t) {
   atualizarCampoDataConclusao();
   atualizarBotaoLembreteModal();
   document.getElementById('btn-excluir-modal').style.display = 'block';
-  document.getElementById("btn-salvar-concluir").style.display = "block"; document.getElementById("f-nao-avisar").checked = false;
+  document.getElementById("btn-salvar-concluir").style.display = "block"; document.getElementById("btn-salvar-concluir-avisar").style.display = "block"; document.getElementById("f-nao-avisar").checked = false;
   document.getElementById('btn-excluir-modal').disabled = false; // garante que nunca abre já desligado
   document.getElementById('btn-excluir-modal').dataset.nome = t.Tarefa || '';
   const prio = t.Prioridade || 'Média';
@@ -5204,10 +5219,12 @@ function selPrio(btn) {
 }
 
 // Conclui a tarefa que está sendo editada e salva, sem mandar aviso ao envolvido (ele já participou: não precisa receber de novo)
-function salvarEConcluir() {
+let avisarConclusaoDepoisDeSalvar = false;
+function salvarEConcluir(avisar) {
   document.getElementById('f-status').value = 'Concluído';
   try { atualizarCampoDataConclusao(); } catch (e) {}
-  document.getElementById('f-nao-avisar').checked = true;
+  document.getElementById('f-nao-avisar').checked = true; // não manda o aviso de "nova tarefa"
+  avisarConclusaoDepoisDeSalvar = avisar === true;         // mas, se pedido, manda o aviso de "concluída"
   salvarTarefa();
 }
 
@@ -5314,6 +5331,8 @@ async function salvarTarefa() {
     if (data.ok) {
       closeAddModal();
       showToast(editando ? '✅ Tarefa atualizada!' : '✅ Tarefa criada!');
+      if (avisarConclusaoDepoisDeSalvar && editando) avisarConclusaoAosEnvolvidos(editandoAba, editandoId);
+      avisarConclusaoDepoisDeSalvar = false;
       // O servidor (v17+) diz quando não conseguiu avisar o envolvido no WhatsApp — antes falhava em silêncio
       if (data.aviso && data.aviso.avisou === false) showToast('⚠️ Tarefa salva, mas NÃO avisei o envolvido: ' + (data.aviso.motivo || 'contato não encontrado'));
 
