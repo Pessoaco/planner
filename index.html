@@ -2097,6 +2097,7 @@
     <button class="menu-mais-item" id="btn-acoes-app">💻 Copiar e abrir o WhatsApp do computador</button>
     <button class="menu-mais-item" id="btn-acoes-secretaria">📲 Enviar pela secretária (qualquer contato)</button>
     <button class="menu-mais-item" id="btn-acoes-lembrete" style="display:none"></button>
+    <button class="menu-mais-item" id="btn-acoes-tipo" style="display:none"></button>
     <button class="menu-mais-item" id="btn-acoes-excluir" style="color:var(--danger)">🗑️ Excluir tarefa</button>
     <button class="modal-cancel" onclick="fecharMenuAcoesTarefa()" style="margin-top:14px">Fechar</button>
   </div>
@@ -2202,6 +2203,7 @@
       <input type="text" id="lista-novo-quem" list="lista-quem-opcoes" placeholder="👤 quem (nome de quem cobrar)" style="flex:1 1 auto;min-width:0;max-width:260px" onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarItemLista()}">
     </div>
     <div id="lista-corpo"></div>
+    <button class="menu-mais-item" onclick="listaVirarTarefa()" title="Esta lista não é de compras: é um passo a passo com checks">☑ Não é lista de compras: voltar a ser tarefa</button>
     <button class="menu-mais-item" onclick="recomecarLista(true)">🔄 Nova compra: desmarcar tudo e tirar as estrelas</button>
     <button class="menu-mais-item" onclick="recomecarLista(false)">⭐ Só tirar as estrelas (mantém o que está marcado)</button>
     <button class="menu-mais-item" onclick="enviarLista('tudo')">📤 Enviar a lista toda (⭐ primeiro)</button>
@@ -2370,7 +2372,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v65';
+const APP_VERSION = 'v66';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -3671,7 +3673,7 @@ function render() {
     return;
   }
   // Listas não são tarefas: ficam fora do placar e do meio das tarefas (vivem em 🛒 Listas e na faixa da divisão)
-  const tarefas = (allData[abaAtual] || []).filter(t => !ehTarefaLista(t)).map(t => ({ ...t, _aba: abaAtual }));
+  const tarefas = (allData[abaAtual] || []).filter(t => !ehTarefaLista(t, abaAtual)).map(t => ({ ...t, _aba: abaAtual }));
   renderCounters(tarefas);
   renderTarefas(tarefas);
 }
@@ -3890,7 +3892,7 @@ function filtrarTarefas(tarefas) {
 function tarefasDaTelaAtual() {
   const origem = algumFiltroAtivo()
     ? ABAS.flatMap(aba => (allData[aba] || []).map(t => ({ ...t, _aba: aba })))
-    : (allData[abaAtual] || []).filter(t => !ehTarefaLista(t)).map(t => ({ ...t, _aba: abaAtual }));
+    : (allData[abaAtual] || []).filter(t => !ehTarefaLista(t, abaAtual)).map(t => ({ ...t, _aba: abaAtual }));
   return filtrarTarefas(origem);
 }
 
@@ -3939,7 +3941,7 @@ function exportarCSV(tudo) {
 function renderTarefas(tarefas) {
   const filtradas = filtrarTarefas(tarefas);
   // Listas desta pasta (só vistas dentro de uma pasta, não na busca entre pastas): aparecem em faixas verde-menta, não como tarefas
-  const listasPasta = (!algumFiltroAtivo() && !modoAgendaPeriodo) ? (allData[abaAtual] || []).filter(listaAtiva).map(t => ({ ...t, _aba: abaAtual })) : [];
+  const listasPasta = (!algumFiltroAtivo() && !modoAgendaPeriodo) ? (allData[abaAtual] || []).filter(t => listaAtiva(t, abaAtual)).map(t => ({ ...t, _aba: abaAtual })) : [];
 
   if (!filtradas.length && !listasPasta.length) {
     document.getElementById('main').innerHTML = searchTerm
@@ -4491,6 +4493,14 @@ function abrirMenuAcoesTarefa(t) {
   btnEmLista.onclick = () => { fecharMenuAcoesTarefa(); abrirPorEmLista([{ aba: t._aba, id: t.ID }]); };
   document.getElementById('btn-acoes-duplicar').onclick = () => { fecharMenuAcoesTarefa(); duplicarTarefa(t); };
   document.getElementById('btn-acoes-compartilhar').onclick = () => { fecharMenuAcoesTarefa(); compartilharTarefa(t); };
+  // Tarefa com checks: escolher se é "lista" (vai para 🛒 Listas) ou "tarefa" comum (continua na pasta, checks na observação)
+  const btnTipo = document.getElementById('btn-acoes-tipo');
+  if (ehListaObs(t['Observação'])) {
+    const eLista = tipoDaTarefa(t, t._aba) === 'Lista';
+    btnTipo.style.display = '';
+    btnTipo.textContent = eLista ? '☑ Não é lista de compras: voltar a ser tarefa' : '🛒 Mover para Listas';
+    btnTipo.onclick = () => { fecharMenuAcoesTarefa(); definirTipoTarefa(t._aba, t.ID, eLista ? 'Tarefa' : 'Lista'); };
+  } else btnTipo.style.display = 'none';
   document.getElementById('btn-acoes-copiar').onclick = () => { fecharMenuAcoesTarefa(); copiarTextoTarefa(t); };
   document.getElementById('btn-acoes-app').onclick = () => { fecharMenuAcoesTarefa(); abrirWhatsappApp(t); };
   document.getElementById('btn-acoes-secretaria').onclick = () => { fecharMenuAcoesTarefa(); enviarPelaSecretaria(t); };
@@ -4602,6 +4612,7 @@ let editandoAba = null;
 async function openAddModal() {
   editandoId = null;
   editandoAba = null;
+  formTipoLista = false;
   // Garante que os dados (e categorias) já foram carregados
   if (!Object.keys(allData).length) {
     showToast('⏳ Carregando divisões...');
@@ -4787,6 +4798,7 @@ async function duplicarTarefa(t) {
 async function openEditModal(t) {
   editandoId = t.ID;
   editandoAba = t._aba;
+  formTipoLista = false;
   if (!Object.keys(allData).length) await loadData();
   document.getElementById('modal-add-title').textContent = '✏️ Editar tarefa';
   document.getElementById('btn-salvar').textContent = 'Salvar alterações';
@@ -5223,6 +5235,7 @@ async function salvarTarefa() {
   // visível e pré-marcado em "Aberto", mas da pra mudar na hora (ex: "Em andamento")
   const novoStatus = document.getElementById('f-status').value;
   fields.Status = novoStatus;
+  if (!editando && formTipoLista) fields.Tipo = 'Lista'; // criada por "Nova lista": é lista, qualquer que seja o nome da pasta
   if (novoStatus !== 'Concluído') {
     fields['Data conclusão'] = '';
   } else {
@@ -5397,14 +5410,14 @@ function soltarArrastoPasta() {
 function renderPastasHome() {
   const main = document.getElementById('main');
   main.dataset.aba = 'Pastas';
-  const abertas = lista => (lista || []).filter(t => String(t.Tarefa || '').trim() && t.Status !== 'Concluído' && t.Status !== 'Cancelado' && !ehTarefaLista(t)); // listas não contam como tarefa
+  const abertas = (lista, aba) => (lista || []).filter(t => String(t.Tarefa || '').trim() && t.Status !== 'Concluído' && t.Status !== 'Cancelado' && !ehTarefaLista(t, aba)); // listas não contam como tarefa
   const cards = abaOrdem.map(aba => {
     const [cor, bg] = corDaPasta(aba);
     const carregada = Array.isArray(allData[aba]);
-    const ab = carregada ? abertas(allData[aba]) : [];
+    const ab = carregada ? abertas(allData[aba], aba) : [];
     const urg = ab.filter(t => t.Prioridade === 'Urgente').length;
     const nNotas = notasData.filter(n => String(n['Pasta'] || '') === aba).length;
-    const nListas = carregada ? allData[aba].filter(listaAtiva).length : 0;
+    const nListas = carregada ? allData[aba].filter(t => listaAtiva(t, aba)).length : 0;
     return `<div class="pasta-card" data-aba="${escLista(aba).replace(/"/g, '&quot;')}" style="--cor-pasta:${cor};--bg-pasta:${bg}" role="button" tabindex="0"
         onclick="cliquePastaCard(event,'${aba.replace(/'/g, "\\'")}')" ondblclick="switchTab('${aba.replace(/'/g, "\\'")}')"
         onkeydown="if(event.key==='Enter')switchTab('${aba.replace(/'/g, "\\'")}')">
@@ -5426,17 +5439,45 @@ function renderPastasHome() {
 // ===== LISTAS (compras, material de escritório...): ambiente próprio, irmão de Notas e Pastas =====
 // Uma "lista" é uma tarefa cuja observação tem itens "- [ ] item". Ela NÃO conta como tarefa (placar) e não aparece no meio das
 // tarefas da pasta: vive aqui (todas juntas) e numa faixa verde-menta na divisão/pasta a que pertence.
-const ehTarefaLista = t => ehListaObs(t && t['Observação']);
-const listaAtiva = t => ehTarefaLista(t) && !['concluído', 'cancelado'].includes(String(t.Status || '').trim().toLowerCase());
+// O que é "lista" e o que é "tarefa com checks"? Só a observação com itens não basta: uma tarefa pode ter um passo a passo com checks
+// e continuar sendo tarefa. Regra: o campo "Tipo" manda (Lista / Tarefa, escolhido no menu ⋯). Sem Tipo, é lista quando a pasta,
+// a divisão, o nome ou a tag lembram compras/material/lista; senão é tarefa comum.
+const PARECE_LISTA = /compra|mercado|lista|farm[aá]cia|material|supermercado|feira|enxoval/i;
+function tipoDaTarefa(t, aba) {
+  const tipo = String((t && t.Tipo) || '').trim().toLowerCase();
+  if (tipo === 'lista') return 'Lista';
+  if (tipo === 'tarefa') return 'Tarefa';
+  const a = aba || (t && t._aba) || '';
+  return PARECE_LISTA.test([ABA_LABEL[a] || a, t['Divisão'], t.Tarefa, t.Tag].join(' ')) ? 'Lista' : 'Tarefa';
+}
+const ehTarefaLista = (t, aba) => ehListaObs(t && t['Observação']) && tipoDaTarefa(t, aba) === 'Lista';
+const listaAtiva = (t, aba) => ehTarefaLista(t, aba) && !['concluído', 'cancelado'].includes(String(t.Status || '').trim().toLowerCase());
+
+// Troca o tipo de uma tarefa que tem checks: "Lista" (vai para 🛒 Listas) ou "Tarefa" (volta para as tarefas da pasta, com os checks na observação)
+async function definirTipoTarefa(aba, id, tipo) {
+  const t = (allData[aba] || []).find(x => String(x.ID) === String(id));
+  if (!t) { showToast('⚠️ Tarefa não encontrada — use Atualizar'); return; }
+  const antes = t.Tipo;
+  t.Tipo = tipo; render(); // na hora; se o servidor recusar, volta
+  try {
+    const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'editTask', aba, id: String(id), fields: { Tipo: tipo } }) });
+    const d = await res.json();
+    if (!d.ok) throw new Error(d.error || 'erro');
+    showToast(tipo === 'Lista' ? '🛒 Agora é uma lista (aparece em Listas)' : '☑ Voltou a ser tarefa (os checks continuam na observação)');
+  } catch (e) {
+    t.Tipo = antes; render();
+    showToast('⚠️ Não consegui trocar: ' + e.message);
+  }
+}
 const COR_LISTA = '#a7f3d0';          // verde-menta
 const COR_LISTA_BORDA = '#34d399';
 
 function todasAsListas() {
-  return ABAS.flatMap(aba => (allData[aba] || []).filter(listaAtiva).map(t => ({ ...t, _aba: aba })));
+  return ABAS.flatMap(aba => (allData[aba] || []).filter(t => listaAtiva(t, aba)).map(t => ({ ...t, _aba: aba })));
 }
 function listasVinculadas(aba, divisao) {
   const alvo = String(divisao || '').trim().toLowerCase();
-  return (allData[aba] || []).filter(t => listaAtiva(t) && String(t['Divisão'] || '').trim().toLowerCase() === alvo)
+  return (allData[aba] || []).filter(t => listaAtiva(t, aba) && String(t['Divisão'] || '').trim().toLowerCase() === alvo)
     .map(t => ({ ...t, _aba: aba }))
     .sort((a, b) => String(a.Tarefa || '').localeCompare(String(b.Tarefa || ''), 'pt-BR'));
 }
@@ -5524,8 +5565,18 @@ function renderListasHome() {
 }
 
 // Cria uma lista nova (já com o modo "lista" ligado), opcionalmente já dentro de uma pasta/divisão
+let formTipoLista = false; // true quando a janela de tarefa foi aberta por "Nova lista": a tarefa nasce com Tipo = Lista
+// Na janela da lista (aberta de 🛒 Listas): esta "lista" é na verdade um passo a passo com checks → volta a ser tarefa da pasta
+function listaVirarTarefa() {
+  const t = tarefaDaLista();
+  if (!t) return;
+  fecharLista();
+  definirTipoTarefa(listaAba, listaId, 'Tarefa');
+}
+
 async function novaLista(aba, divisao) {
   await openAddModal();
+  formTipoLista = true;
   if (aba) {
     document.getElementById('f-aba').value = aba;
     preencherCategorias(aba);
@@ -6400,7 +6451,7 @@ async function criarListaDaDivisao(aba, divisao, originais, tag) {
     return { item: true, feito: t.Status === 'Concluído', estrela: t.Prioridade === 'Urgente' && t.Status !== 'Concluído', texto: nome };
   });
   const fields = {
-    Tarefa: divisao, 'Divisão': divisao, Prioridade: 'Média', Status: 'Aberto', Tag: String(tag || '').trim(),
+    Tarefa: divisao, 'Divisão': divisao, Prioridade: 'Média', Status: 'Aberto', Tipo: 'Lista', Tag: String(tag || '').trim(),
     'Observação': serializarListaObs(linhas)
   };
   try {
