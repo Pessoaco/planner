@@ -1784,6 +1784,32 @@
   #modal-filtros .filtro-legenda { padding: 5px 0 1px !important; }
   #modal-filtros .modal { gap: 5px; }
   @media (max-width: 639px) { .modal { padding-bottom: 40px; } }
+  /* Janela de tarefa: título (com 💾) no alto e Salvar/Cancelar embaixo sempre visíveis; o meio rola */
+  #modal-add .modal { padding-bottom: 0; max-height: 92vh; }
+  #modal-add .modal-titulo-linha { position: sticky; top: -16px; z-index: 5; background: #fff; margin: -16px -18px 6px; padding: 14px 18px 4px; }
+  .modal-rodape-fixo { position: sticky; bottom: 0; z-index: 5; display: flex; gap: 8px; background: #fff; margin: 10px -18px 0; padding: 8px 18px 12px; border-top: 1px solid #e5e7eb; }
+  .modal-rodape-fixo .btn-salvar { padding: 11px 13px; flex: 2; }
+  .modal-rodape-fixo .modal-cancel { margin: 0; flex: 1; padding: 11px 12px; }
+  #modal-add .form-group { margin-bottom: 7px; }
+  /* Calendário do mês */
+  #modal-calendario .modal { max-width: 760px; padding-bottom: 24px; }
+  .cal-grade { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .cal-sem { text-align: center; font-size: 11px; font-weight: 700; color: var(--text-muted); padding: 2px 0; }
+  .cal-dia { min-height: 62px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 3px 4px; cursor: pointer; background: #fff; overflow: hidden; }
+  .cal-dia.fora { background: #f8fafc; opacity: .55; }
+  .cal-dia.hoje { border-color: var(--primary, #4f46e5); box-shadow: inset 0 0 0 1px var(--primary, #4f46e5); }
+  .cal-dia.sel { background: #eef2ff; border-color: var(--primary, #4f46e5); }
+  .cal-num { font-size: 12px; font-weight: 700; }
+  .cal-ev { display: block; font-size: 10px; line-height: 1.25; margin-top: 1px; padding: 0 3px; border-radius: 3px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cal-mais { font-size: 10px; color: var(--text-muted); }
+  .cal-pontos { display: none; gap: 2px; margin-top: 3px; flex-wrap: wrap; }
+  .cal-pt { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  @media (max-width: 639px) { .cal-ev, .cal-mais { display: none; } .cal-pontos { display: flex; } .cal-dia { min-height: 46px; } }
+  .cal-item { display: flex; gap: 8px; align-items: center; padding: 9px 10px; border: 1px solid #e5e7eb; border-left-width: 5px; border-radius: 10px; margin-bottom: 6px; cursor: pointer; background: #fff; }
+  .cal-item small { color: var(--text-muted); display: block; }
+  /* Campo "+ Novo item" (lista e lista dentro da tarefa): maior e com borda destacada, para achar fácil */
+  #lista-novo, #lista-novo-qtd, #obs-lista-novo, #obs-lista-novo-qtd { padding: 12px 12px; font-size: 16px; border: 2px solid var(--primary,#4f46e5); border-radius: 10px; background: #fff; }
+  #lista-novo-qtd, #obs-lista-novo-qtd { border-color: #c7d2fe; font-size: 14px; }
 </style>
 </head>
 <body>
@@ -1800,6 +1826,7 @@
       <button class="btn-refresh quick-urgentes" id="btn-urgentes" onclick="atalhoUrgentes()">🔥 Urgentes</button>
       <button class="btn-refresh quick-agenda" onclick="atalhoAgenda('hoje')">📅 Hoje</button>
       <button class="btn-refresh quick-agenda" onclick="atalhoAgenda('semana')">🗓️ Semana</button>
+      <button class="btn-refresh quick-agenda" onclick="abrirCalendario()" title="Calendário do mês com os compromissos que têm data">📆 Mês</button>
       <button class="btn-refresh btn-vista" id="btn-vista" onclick="toggleVista()" title="Trocar entre cards e lista" style="background:var(--primary-light);color:var(--primary);font-weight:700">▦ Cards</button>
       <button class="btn-refresh" id="btn-ordem" onclick="alternarOrdem()" title="Ordem: A–Z → mais recentes → mais antigas">🔤 A–Z</button>
       <button class="btn-refresh btn-direita" onclick="loadData()">↻ Atualizar</button>
@@ -1825,7 +1852,7 @@
   <div class="chips-ativos" id="chips-ativos"></div>
   <button class="pasta-atual-mobile" id="pasta-atual-mobile" onclick="toggleSidebar()"></button>
   <div class="search-com-filtro busca-local-linha" id="busca-local-linha">
-    <input type="search" id="search-local-input" class="search-input-inline" placeholder="📍 PESQUISAR NA PASTA ATUAL..." oninput="setSearchLocal(this.value)">
+    <input type="search" id="search-local-input" class="search-input-inline" placeholder="📍 PESQUISAR NESTA PÁGINA..." oninput="setSearchLocal(this.value)">
     <button class="btn-filtro-icone" onclick="abrirModalFiltros('local')" title="Filtros desta pasta">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 4 20 4 14 13 14 20 10 20 10 13"/></svg>
     </button>
@@ -2018,6 +2045,35 @@
     </div>
 
     <div class="form-group">
+      <label>🔁 Repete (opcional) — ao concluir, a próxima já é criada</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+        <select id="f-rep-tipo" onchange="atualizarRepeteForm()" style="flex:1 1 140px">
+          <option value="">Não repete</option>
+          <option value="dias:1">Todo dia</option>
+          <option value="dias:7">Toda semana</option>
+          <option value="dias:14">A cada 2 semanas</option>
+          <option value="dias:15">A cada 15 dias</option>
+          <option value="meses:1">Todo mês</option>
+          <option value="dias:N">A cada ___ dias…</option>
+        </select>
+        <input type="number" id="f-rep-n" min="1" max="365" placeholder="dias" style="width:80px;display:none">
+        <select id="f-rep-base" style="flex:1 1 180px;display:none">
+          <option value="conclusao">contar do dia em que eu concluir</option>
+          <option value="prevista">contar da data prevista (agenda fixa)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>🔔 Me avisar no WhatsApp antes (precisa de data; "1 hora" precisa de hora)</label>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:14px">
+        <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="f-avisar" value="3d"> 3 dias antes</label>
+        <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="f-avisar" value="1d"> 1 dia antes</label>
+        <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="f-avisar" value="1h"> 1 hora antes</label>
+      </div>
+    </div>
+
+    <div class="form-group">
       <label>Observação (opcional)</label>
       <textarea id="f-obs" placeholder="Detalhes adicionais..."></textarea>
       <div id="obs-lista-editor" style="display:none">
@@ -2069,11 +2125,30 @@
 
     <button class="btn-lembrete-modal" id="btn-lembrete-modal" onclick="enviarLembreteModal()" style="display:none">🔔 Notificar novamente</button>
 
-    <button class="btn-salvar" id="btn-salvar" onclick="salvarTarefa()">Salvar tarefa</button>
     <button class="btn-salvar" id="btn-salvar-concluir" onclick="salvarEConcluir()" style="display:none;background:var(--success);margin-top:8px">✅ Salvar e concluir (sem avisar ninguém)</button>
     <button class="btn-salvar" id="btn-salvar-concluir-avisar" onclick="salvarEConcluir(true)" style="display:none;background:#0f766e;margin-top:8px">✅🔔 Salvar, concluir e AVISAR os envolvidos</button>
     <button class="btn-excluir-modal" id="btn-excluir-modal" onclick="excluirDoModal()" style="display:none">🗑️ Excluir tarefa</button>
-    <button class="modal-cancel" onclick="closeAddModal()" style="margin-top:8px">Cancelar</button>
+    <div class="modal-rodape-fixo">
+      <button class="btn-salvar" id="btn-salvar" onclick="salvarTarefa()">Salvar tarefa</button>
+      <button class="modal-cancel" onclick="closeAddModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-calendario" onclick="if(event.target===this) fecharCalendario()">
+  <div class="modal">
+    <div class="modal-titulo-linha">
+      <h3 id="cal-titulo">📆 Calendário</h3>
+      <span style="display:flex;gap:6px;align-items:center;margin-bottom:16px">
+        <button class="modal-fechar-x" onclick="calMover(-1)" title="Mês anterior">‹</button>
+        <button class="modal-fechar-x" style="width:auto;padding:0 12px;border-radius:18px;font-size:13px" onclick="calHoje()">Hoje</button>
+        <button class="modal-fechar-x" onclick="calMover(1)" title="Próximo mês">›</button>
+        <button class="modal-fechar-x" onclick="fecharCalendario()" title="Fechar">✕</button>
+      </span>
+    </div>
+    <div id="cal-grade"></div>
+    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);margin:6px 0;cursor:pointer"><input type="checkbox" id="cal-concluidas" onchange="renderCalendario()"> Mostrar também as concluídas</label>
+    <div id="cal-dia"></div>
   </div>
 </div>
 
@@ -2393,7 +2468,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v81';
+const APP_VERSION = 'v83';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -2945,6 +3020,7 @@ async function trocarStatusSelecionadas(novoStatus) {
   atualizarBarraSelecao();
   renderMantendoScroll();
   showToast(`✅ Tarefas atualizadas para "${rotulo}"!`);
+  if (novoStatus === 'Concluído') for (const { aba, id } of itens) await gerarRecorrenciaDepoisDeConcluir(aba, id);
 }
 
 async function excluirSelecionadas() {
@@ -4483,6 +4559,7 @@ async function atualizarStatus(id, btn, aba, novoStatus) {
             renderMantendoScroll();
             // Não foi desfeita: agora sim avisa os envolvidos de que foi concluída
             avisarConclusaoAosEnvolvidos(aba, id);
+            gerarRecorrenciaDepoisDeConcluir(aba, id);
           }
         }, 8000);
       }
@@ -4691,6 +4768,7 @@ async function openAddModal() {
   document.getElementById('f-hora').value = '';
   document.getElementById('f-data-fim').value = '';
   document.getElementById('f-hora-fim').value = '';
+  preencherRepeteForm(''); preencherAvisoForm('');
   // Status fica visível também ao criar — às vezes a tarefa já nasce "Em andamento"
   // (ex: já começou a resolver, só falta anotar o resto) e esperar editar depois é fácil esquecer
   document.getElementById('f-status-group').style.display = 'block';
@@ -4874,6 +4952,7 @@ async function openEditModal(t) {
   document.getElementById('f-hora').value = (t.Hora || '').trim().substring(0, 5);
   document.getElementById('f-data-fim').value = parseDataParaInput(t['Data Fim']);
   document.getElementById('f-hora-fim').value = (t['Hora Fim'] || '').trim().substring(0, 5);
+  preencherRepeteForm(t.Repete || ''); preencherAvisoForm(t['Avisar antes'] || '');
   document.getElementById('f-status-group').style.display = 'block';
   document.getElementById('f-status').value = t.Status || 'Aberto';
   document.getElementById('f-data-conclusao').value = parseDataParaInput(t['Data conclusão']);
@@ -5299,6 +5378,14 @@ async function salvarTarefa() {
     Tag: tag,
     'Observação': obs
   };
+  // Repetição e aviso antes: só grava se tem valor (ou se já tinha, para poder apagar)
+  const repete = lerRepeteForm(), avisarAntes = lerAvisoForm();
+  if (repete || (tarefaOrig && tarefaOrig.Repete)) fields.Repete = repete;
+  if (avisarAntes || (tarefaOrig && tarefaOrig['Avisar antes'])) {
+    fields['Avisar antes'] = avisarAntes;
+    // mudou o aviso, a data ou a hora: os avisos já enviados valem de novo
+    if (!tarefaOrig || avisarAntes !== (tarefaOrig['Avisar antes'] || '') || dataPrevista !== (tarefaOrig['Data Prevista'] || '') || hora !== (tarefaOrig.Hora || '')) fields['Avisos enviados'] = '';
+  }
   // Le o status escolhido tanto ao criar quanto ao editar — ao criar, o campo já vem
   // visível e pré-marcado em "Aberto", mas da pra mudar na hora (ex: "Em andamento")
   const novoStatus = document.getElementById('f-status').value;
@@ -5363,6 +5450,7 @@ async function salvarTarefa() {
         allData[aba].push(Object.assign({ ID: data.id, 'Data criação': new Date().toLocaleDateString('pt-BR') }, fields));
       }
       renderMantendoScroll();
+      if (editando && novoStatus === 'Concluído') gerarRecorrenciaDepoisDeConcluir(editandoAba, editandoId);
     } else {
       showToast('⚠️ Erro: ' + (data.error || 'tente novamente'));
     }
@@ -5372,6 +5460,52 @@ async function salvarTarefa() {
     btn.disabled = false;
     btn.textContent = textoOriginal;
   }
+}
+
+// ----- Repetição e aviso antes (campos da janela da tarefa) -----
+function atualizarRepeteForm() {
+  const tipo = document.getElementById('f-rep-tipo').value;
+  document.getElementById('f-rep-n').style.display = tipo === 'dias:N' ? '' : 'none';
+  document.getElementById('f-rep-base').style.display = tipo ? '' : 'none';
+}
+function lerRepeteForm() {
+  let tipo = document.getElementById('f-rep-tipo').value;
+  if (!tipo) return '';
+  if (tipo === 'dias:N') { const n = parseInt(document.getElementById('f-rep-n').value, 10); if (!(n > 0)) return ''; tipo = 'dias:' + n; }
+  return tipo + ':' + document.getElementById('f-rep-base').value;
+}
+function preencherRepeteForm(valor) {
+  const m = String(valor || '').match(/^(dias|meses):(\d+):(conclusao|prevista)$/);
+  const sel = document.getElementById('f-rep-tipo');
+  if (!m) { sel.value = ''; document.getElementById('f-rep-n').value = ''; }
+  else {
+    const chave = m[1] + ':' + m[2];
+    if ([...sel.options].some(o => o.value === chave)) { sel.value = chave; document.getElementById('f-rep-n').value = ''; }
+    else { sel.value = 'dias:N'; document.getElementById('f-rep-n').value = m[2]; }
+    document.getElementById('f-rep-base').value = m[3];
+  }
+  atualizarRepeteForm();
+}
+function lerAvisoForm() { return [...document.querySelectorAll('.f-avisar:checked')].map(c => c.value).join(','); }
+function preencherAvisoForm(valor) {
+  const lista = String(valor || '').split(',').map(s => s.trim());
+  document.querySelectorAll('.f-avisar').forEach(c => { c.checked = lista.includes(c.value); });
+}
+
+// Concluiu uma tarefa que repete: o servidor cria a próxima (só uma vez) e o app atualiza a pasta
+async function gerarRecorrenciaDepoisDeConcluir(aba, id) {
+  const t = (allData[aba] || []).find(x => String(x.ID) === String(id));
+  if (!t || !String(t.Repete || '').trim()) return;
+  try {
+    const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'gerarRecorrencia', aba, id: String(id) }) });
+    const d = await res.json();
+    if (d.ok && d.gerou) {
+      t.Repete = '';
+      const novos = await buscarJsonComRetentativa(`${API_URL}?action=getData&aba=${encodeURIComponent(aba)}`, 2);
+      if (Array.isArray(novos)) { allData[aba] = novos; renderMantendoScroll(); }
+      showToast('🔁 Próxima criada para ' + d.data);
+    }
+  } catch (e) { /* a próxima pode ser criada depois: concluir de novo não duplica */ }
 }
 
 // ===== NOTAS (post-its) =====
@@ -5620,6 +5754,8 @@ function renderListasHome() {
   const tagsTodas = tagsDasListas();
   if (listasTagFiltro && !tagsTodas.includes(listasTagFiltro)) listasTagFiltro = '';
   if (listasTagFiltro) listas = listas.filter(l => tagsDeTarefa(l).includes(listasTagFiltro));
+  // Busca "Pesquisar na pasta atual": aqui acha pelo nome da lista, pasta, divisória, tag ou item
+  if (searchTermLocal) listas = listas.filter(l => normalizarBusca([l.Tarefa, ABA_LABEL[l._aba] || l._aba, l['Divisão'], l.Tag, l['Observação']].join(' ')).includes(searchTermLocal));
   const nome = t => String(t.Tarefa || '');
   listas.sort((a, b) => ordemVista === 'recentes' ? momentoTarefa(b) - momentoTarefa(a)
     : ordemVista === 'antigas' ? momentoTarefa(a) - momentoTarefa(b)
@@ -5635,6 +5771,7 @@ function renderListasHome() {
     </div>` : '';
   let corpo;
   if (!carregou && !listas.length) corpo = '<div class="notas-vazio"><div class="spinner" style="margin:0 auto 8px"></div>Carregando listas...</div>';
+  else if (!listas.length && (searchTermLocal || listasTagFiltro || listasPastaFiltro)) corpo = '<div class="notas-vazio">🛒<br>Nenhuma lista encontrada com esse filtro.</div>';
   else if (!listas.length) corpo = '<div class="notas-vazio">🛒<br>Nenhuma lista ainda.<br>Toque em <b>Nova lista</b>, ou abra uma tarefa e use "Mostrar como lista".</div>';
   else corpo = `<div class="listas-grid">${listas.map(listaCardHtml).join('')}</div>`;
   main.innerHTML = `<div class="notas-topo listas-topo">
@@ -6768,6 +6905,91 @@ function imprimir(modo) {
     document.body.classList.remove('print-reduzido', 'print-tela', 'vista-lista-print');
     if (vistaModo !== vistaOriginal) { vistaModo = vistaOriginal; aplicarVista(); render(); }
   }, 500);
+}
+
+// ===== CALENDÁRIO DO MÊS =====
+// Mostra as tarefas com Data Prevista (de todas as pastas, sem as listas). Toque no dia para ver os compromissos dele.
+let calAno = 0, calMes = 0, calDiaSel = '', calItensDia = [];
+const COR_PRIO_CAL = { Urgente: '#dc2626', 'Média': '#d97706', Baixa: '#16a34a' };
+const MESES_PT = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const isoDia = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+function abrirCalendario() {
+  const h = new Date();
+  calAno = h.getFullYear(); calMes = h.getMonth(); calDiaSel = isoDia(h);
+  if (ABAS.some(a => !Array.isArray(allData[a]))) carregarRestanteDasPastas();
+  document.getElementById('modal-calendario').classList.add('open');
+  renderCalendario();
+}
+function fecharCalendario() { document.getElementById('modal-calendario').classList.remove('open'); }
+function calMover(delta) { const d = new Date(calAno, calMes + delta, 1); calAno = d.getFullYear(); calMes = d.getMonth(); renderCalendario(); }
+function calHoje() { const h = new Date(); calAno = h.getFullYear(); calMes = h.getMonth(); calDiaSel = isoDia(h); renderCalendario(); }
+function calSelecionar(iso) { calDiaSel = iso; renderCalendario(); }
+
+// { 'yyyy-mm-dd': [tarefa, ...] } — período (Data Prevista até Data Fim) aparece em todos os dias dele
+function tarefasPorDia() {
+  const mostraConc = document.getElementById('cal-concluidas') && document.getElementById('cal-concluidas').checked;
+  const mapa = {};
+  ABAS.forEach(aba => (allData[aba] || []).forEach(t => {
+    if (!String(t.Tarefa || '').trim() || ehTarefaLista(t, aba)) return;
+    const st = String(t.Status || '').trim().toLowerCase();
+    if (!mostraConc && (st === 'concluído' || st === 'cancelado')) return;
+    const norm = s => (s ? s.split('-').map((x, k) => (k ? x.padStart(2, '0') : x)).join('-') : '');
+    const ini = norm(parseDataParaInput(t['Data Prevista']));
+    if (!ini) return;
+    const fim = norm(parseDataParaInput(t['Data Fim']));
+    let d = new Date(ini + 'T12:00:00');
+    const ultimo = new Date((fim && fim >= ini ? fim : ini) + 'T12:00:00');
+    for (let n = 0; d <= ultimo && n < 62; n++, d.setDate(d.getDate() + 1)) (mapa[isoDia(d)] = mapa[isoDia(d)] || []).push({ ...t, _aba: aba });
+  }));
+  const hora = t => String(t.Hora || '').trim().substring(0, 5) || '99:99';
+  Object.values(mapa).forEach(l => l.sort((a, b) => hora(a).localeCompare(hora(b)) || String(a.Tarefa).localeCompare(String(b.Tarefa), 'pt-BR')));
+  return mapa;
+}
+
+function renderCalendario() {
+  const mapa = tarefasPorDia();
+  document.getElementById('cal-titulo').textContent = `📆 ${MESES_PT[calMes]} ${calAno}`;
+  const hojeIso = isoDia(new Date());
+  const primeiro = new Date(calAno, calMes, 1);
+  const inicio = new Date(calAno, calMes, 1 - primeiro.getDay()); // semana começa no domingo
+  let html = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(s => `<div class="cal-sem">${s}</div>`).join('');
+  const semanas = Math.ceil((primeiro.getDay() + new Date(calAno, calMes + 1, 0).getDate()) / 7);
+  for (let i = 0; i < semanas * 7; i++) {
+    const d = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate() + i);
+    const iso = isoDia(d), evs = mapa[iso] || [];
+    const classes = ['cal-dia', d.getMonth() !== calMes ? 'fora' : '', iso === hojeIso ? 'hoje' : '', iso === calDiaSel ? 'sel' : ''].join(' ');
+    const cor = t => COR_PRIO_CAL[t.Prioridade] || '#64748b';
+    html += `<div class="${classes}" onclick="calSelecionar('${iso}')"><div class="cal-num">${d.getDate()}</div>
+      ${evs.slice(0, 3).map(t => `<span class="cal-ev" style="background:${cor(t)}">${t.Hora ? escLista(String(t.Hora).substring(0, 5)) + ' ' : ''}${escLista(t.Tarefa)}</span>`).join('')}
+      ${evs.length > 3 ? `<span class="cal-mais">+ ${evs.length - 3}</span>` : ''}
+      <div class="cal-pontos">${evs.slice(0, 6).map(t => `<span class="cal-pt" style="background:${cor(t)}"></span>`).join('')}</div></div>`;
+  }
+  document.getElementById('cal-grade').innerHTML = `<div class="cal-grade">${html}</div>`;
+
+  // Compromissos do dia escolhido
+  const [a, m, dd] = calDiaSel.split('-').map(Number);
+  const nomeDia = new Date(a, m - 1, dd).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  calItensDia = mapa[calDiaSel] || [];
+  document.getElementById('cal-dia').innerHTML = `<div style="font-weight:700;margin:8px 0 6px;text-transform:capitalize">${nomeDia}</div>`
+    + (calItensDia.length ? calItensDia.map((t, i) => `<div class="cal-item" style="border-left-color:${COR_PRIO_CAL[t.Prioridade] || '#64748b'}" onclick="calAbrirTarefa(${i})">
+        <b style="min-width:46px">${t.Hora ? escLista(String(t.Hora).substring(0, 5)) : '—'}</b>
+        <span style="flex:1;min-width:0"><b>${escLista(t.Tarefa)}</b><small>📁 ${escLista(ABA_LABEL[t._aba] || t._aba)}${t['Divisão'] ? ' › ' + escLista(String(t['Divisão']).split('/').pop().trim()) : ''}${t.Envolvido ? ' · 👤 ' + escLista(t.Envolvido) : ''}</small></span>
+      </div>`).join('') : '<div style="color:var(--text-muted);font-size:14px;margin-bottom:8px">Nenhum compromisso neste dia.</div>')
+    + `<button class="menu-mais-item" onclick="calNovaTarefa()">➕ Nova tarefa neste dia</button>`;
+}
+
+function calAbrirTarefa(i) {
+  const t = calItensDia[i];
+  if (!t) return;
+  fecharCalendario();
+  openEditModal(t);
+}
+async function calNovaTarefa() {
+  const dia = calDiaSel;
+  fecharCalendario();
+  await openAddModal();
+  document.getElementById('f-data').value = dia;
 }
 
 // ===== UTILS =====
