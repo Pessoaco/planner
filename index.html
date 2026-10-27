@@ -2493,7 +2493,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v85';
+const APP_VERSION = 'v86';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -5767,7 +5767,7 @@ const abrirListaOnclick = t => `abrirLista('${String(t._aba).replace(/'/g, "\\'"
 // Cartão da tela de Listas: título, os 5 primeiros itens que faltam (⭐ primeiro) e onde ela mora. Na impressão saem todos.
 function listaCardHtml(t) {
   const total = parseListaObs(t['Observação']).filter(l => l.item).length;
-  const faltam = itensQueFaltam(t);
+  const faltam = itensQueFaltam(t).filter(l => !listasSoEstrelas || l.estrela);
   const item = l => `${l.estrela ? '⭐' : '☐'} ${escLista(textoItemLegivel(l.texto))}`;
   const corpo = faltam.length
     ? faltam.slice(0, 5).map(l => `<div class="lc-item">${item(l)}</div>`).join('')
@@ -5804,6 +5804,8 @@ function abrirListas() {
 
 function filtrarListasPorPasta(aba) { listasPastaFiltro = aba; renderListasHome(); }
 let listasTagFiltro = '';
+let listasSoEstrelas = false; // "⭐ Só as estrelas": mostra/imprime apenas os itens marcados com estrela
+function alternarSoEstrelas() { listasSoEstrelas = !listasSoEstrelas; renderListasHome(); }
 function filtrarListasPorTag(tag) { listasTagFiltro = tag; renderListasHome(); }
 function tagsDasListas() {
   return [...new Set(todasAsListas().flatMap(tagsDeTarefa))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
@@ -5823,6 +5825,7 @@ function renderListasHome() {
   if (listasTagFiltro) listas = listas.filter(l => tagsDeTarefa(l).includes(listasTagFiltro));
   // Busca "Pesquisar na pasta atual": aqui acha pelo nome da lista, pasta, divisória, tag ou item
   if (searchTermLocal) listas = listas.filter(l => normalizarBusca([l.Tarefa, ABA_LABEL[l._aba] || l._aba, l['Divisão'], l.Tag, l['Observação']].join(' ')).includes(searchTermLocal));
+  if (listasSoEstrelas) listas = listas.filter(l => itensQueFaltam(l).some(i => i.estrela));
   const nome = t => String(t.Tarefa || '');
   listas.sort((a, b) => ordemVista === 'recentes' ? momentoTarefa(b) - momentoTarefa(a)
     : ordemVista === 'antigas' ? momentoTarefa(a) - momentoTarefa(b)
@@ -5844,6 +5847,7 @@ function renderListasHome() {
   main.innerHTML = `<div class="notas-topo listas-topo">
       <div class="listas-titulo">🛒 Listas <small>(todas as pastas)</small></div>
       <button class="btn-nova-lista" onclick="novaLista()">➕ Nova lista</button>
+      <button class="btn-imprimir-listas" style="${listasSoEstrelas ? 'background:#fde68a' : ''}" onclick="alternarSoEstrelas()" title="Mostra e imprime só os itens marcados com estrela">⭐ Só as estrelas${listasSoEstrelas ? ' ✔' : ''}</button>
       <button class="btn-imprimir-listas" onclick="window.print()" title="Imprime as listas que estão na tela (use os filtros de pasta e tag), com todos os itens">🖨️ Imprimir${listasTagFiltro ? ' tag ' + escLista(listasTagFiltro) : ''}</button>
     </div>${chips}${chipsTag}${corpo}`;
   const faltamTotal = listas.reduce((s, l) => s + itensQueFaltam(l).length, 0);
