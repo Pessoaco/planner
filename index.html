@@ -1948,6 +1948,7 @@
 <div class="selecao-barra" id="selecao-barra">
   <span id="selecao-contagem">0 selecionadas</span>
   <div class="selecao-botoes">
+    <button class="btn-selecao-concluir" style="background:#475569" onclick="selecionarTudoDaPagina()" title="Marcar/desmarcar todas as tarefas desta página">☑ Todas</button>
     <select id="selecao-status" class="selecao-status-select" onchange="trocarStatusSelecionadas(this.value); this.value=''">
       <option value="">Trocar status…</option>
       <option value="Aberto">Aberto</option>
@@ -2492,7 +2493,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v84';
+const APP_VERSION = 'v85';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -3005,6 +3006,20 @@ function selecionarDivisao(aba, nome) {
   atualizarBarraSelecao();
   renderMantendoScroll();
   showToast(todasMarcadas ? `☐ ${chaves.length} desmarcada${chaves.length === 1 ? '' : 's'}` : `☑ ${chaves.length} tarefa${chaves.length === 1 ? '' : 's'} selecionada${chaves.length === 1 ? '' : 's'}`);
+}
+
+// ☑ Todas: marca de uma vez TODAS as tarefas que estão na página (a pasta aberta, ou o resultado da busca/filtro), mesmo as de divisórias recolhidas.
+// Clicar de novo desmarca todas. Serve para trocar prioridade/status, mover ou excluir uma pasta inteira.
+function selecionarTudoDaPagina() {
+  const visiveis = tarefasDaTelaAtual();
+  if (!visiveis.length) { showToast('ℹ️ Nenhuma tarefa na tela'); return; }
+  const chaves = visiveis.map(t => `${t._aba}::${t.ID}`);
+  const todasMarcadas = chaves.every(k => selecionados.has(k));
+  if (!modoSelecao) { modoSelecao = true; document.getElementById('btn-modo-selecao').classList.add('ativo'); }
+  chaves.forEach(k => { if (todasMarcadas) selecionados.delete(k); else selecionados.add(k); });
+  atualizarBarraSelecao();
+  renderMantendoScroll();
+  showToast(todasMarcadas ? `☐ ${chaves.length} desmarcadas` : `☑ ${chaves.length} tarefas selecionadas`);
 }
 
 function atualizarBarraSelecao() {
@@ -4200,11 +4215,14 @@ function renderTarefas(tarefas) {
   const chavesAtuais = gruposOrdenados.map(([k]) => k + abaAtual);
   window.__catKeysAtuais = chavesAtuais;
   const todasRecolhidas = chavesAtuais.length > 0 && chavesAtuais.every(k => categoriasColapsadas.has(k));
+  const btnTodas = modoSelecao
+    ? `<button class="btn-recolher" style="background:#dcfce7;color:#166534" onclick="selecionarTudoDaPagina()" title="Marca (ou desmarca) todas as tarefas desta página">☑ Selecionar todas (${filtradas.length})</button>`
+    : '';
   const btnNovaNotaPasta = mostraNotasVinculadas
     ? `<button class="btn-recolher" style="margin-left:auto;background:#fef9c3;color:#854d0e" onclick="abrirNota('', '${abaAtual.replace(/'/g, "\\'")}')" title="Nova nota ligada a esta pasta (também aparece em Notas)">📝 Nova nota</button>`
     : '';
-  const barraDivisoes = (gruposOrdenados.length >= 2 || btnNovaNotaPasta)
-    ? `<div class="barra-divisoes">${gruposOrdenados.length >= 2 ? `<button class="btn-recolher" onclick="alternarRecolherTudo()">${todasRecolhidas ? '▸ Abrir todas' : '▾ Recolher todas'}</button><span class="barra-div-info">${gruposOrdenados.length} divisórias · ${filtradas.length} tarefas</span>` : ''}${btnNovaNotaPasta}</div>`
+  const barraDivisoes = (gruposOrdenados.length >= 2 || btnNovaNotaPasta || btnTodas)
+    ? `<div class="barra-divisoes">${btnTodas}${gruposOrdenados.length >= 2 ? `<button class="btn-recolher" onclick="alternarRecolherTudo()">${todasRecolhidas ? '▸ Abrir todas' : '▾ Recolher todas'}</button><span class="barra-div-info">${gruposOrdenados.length} divisórias · ${filtradas.length} tarefas</span>` : ''}${btnNovaNotaPasta}</div>`
     : '';
 
   // Notas ligadas à pasta inteira: faixa no alto, antes da primeira divisória
