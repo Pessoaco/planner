@@ -2494,7 +2494,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v89';
+const APP_VERSION = 'v90';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -2889,7 +2889,7 @@ function atalhoAgenda(periodo, escopo) {
 function atualizarChipsAtivos() {
   const cruzado = algumFiltroAtivo();
   const chips = [];
-  if (cruzado) chips.push('🌐 Todas as pastas');
+  if (cruzado) chips.push(pastasEscolhidas.size ? '📁 ' + [...pastasEscolhidas].map(a => String(ABA_LABEL[a] || a).toUpperCase()).join(', ') : '🌐 Todas as pastas');
   if (modoAgendaPeriodo) chips.push(modoAgendaPeriodo === 'hoje' ? '📅 Hoje + Urgente' : '🗓️ Semana + Urgente');
   const prio = cruzado ? filtroPrioridadeG : filtroPrioridade;
   const stat = cruzado ? filtroStatusG : filtroStatus;
@@ -3821,6 +3821,7 @@ function escolherPasta(aba) {
   if (!aba) pastasEscolhidas.clear();
   else if (pastasEscolhidas.has(aba)) pastasEscolhidas.delete(aba);
   else pastasEscolhidas.add(aba);
+  atualizarChipsAtivos();
   render();
 }
 function render() {
