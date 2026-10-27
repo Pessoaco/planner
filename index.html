@@ -2494,7 +2494,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v87';
+const APP_VERSION = 'v89';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -3857,7 +3857,7 @@ function render() {
       document.getElementById("main").insertAdjacentHTML("afterbegin",
         `<div class="notas-tags" style="margin:0 0 10px"><span style="font-size:13px;color:var(--text-muted);align-self:center">📁 Pastas:</span>
           <button class="nota-chip ${pastasEscolhidas.size ? '' : 'on'}" onclick="escolherPasta('')">Todas</button>
-          ${abasComTarefa.map(a => `<button class="nota-chip ${pastasEscolhidas.has(a) ? 'on' : ''}" onclick="escolherPasta('${a.replace(/'/g, "\\'")}')">${escLista(ABA_LABEL[a] || a)} (${cruzadasTodas.filter(t => t._aba === a).length})</button>`).join('')}
+          ${abasComTarefa.map(a => `<button class="nota-chip ${pastasEscolhidas.has(a) ? 'on' : ''}" onclick="escolherPasta('${a.replace(/'/g, "\\'")}')">${escLista(String(ABA_LABEL[a] || a).toUpperCase())} (${cruzadasTodas.filter(t => t._aba === a).length})</button>`).join('')}
         </div>`);
     }
     return;
@@ -5825,6 +5825,17 @@ function abrirListas() {
 
 function filtrarListasPorPasta(aba) { listasPastaFiltro = aba; renderListasHome(); }
 let listasTagFiltro = '';
+let listasNaTela = []; // as listas que estão aparecendo agora na tela de Listas (depois dos filtros)
+// Manda de uma vez tudo o que está na tela de Listas: uma mensagem só, com um bloco por lista (só ⭐ se "Só as estrelas" estiver ligado)
+function enviarListasDaTela() {
+  const blocos = listasNaTela.map(t => {
+    const linhas = parseListaObs(t['Observação']);
+    return { t, linhas };
+  }).filter(b => b.linhas.some(l => l.item && !l.feito && (!listasSoEstrelas || l.estrela)))
+    .map(b => montarTextoLista(b.t, b.linhas, listasSoEstrelas ? 'estrelas' : 'tudo'));
+  if (!blocos.length) { showToast('Nada para enviar com esses filtros'); return; }
+  abrirWhatsappCompartilhar(blocos.join('\n\n- - - - -\n\n'));
+}
 let listasSoEstrelas = false; // "⭐ Só as estrelas": mostra/imprime apenas os itens marcados com estrela
 function alternarSoEstrelas() { listasSoEstrelas = !listasSoEstrelas; renderListasHome(); }
 function filtrarListasPorTag(tag) { listasTagFiltro = tag; renderListasHome(); }
@@ -5848,12 +5859,13 @@ function renderListasHome() {
   if (searchTermLocal) listas = listas.filter(l => normalizarBusca([l.Tarefa, ABA_LABEL[l._aba] || l._aba, l['Divisão'], l.Tag, l['Observação']].join(' ')).includes(searchTermLocal));
   if (listasSoEstrelas) listas = listas.filter(l => itensQueFaltam(l).some(i => i.estrela));
   const nome = t => String(t.Tarefa || '');
+  listasNaTela = listas;
   listas.sort((a, b) => ordemVista === 'recentes' ? momentoTarefa(b) - momentoTarefa(a)
     : ordemVista === 'antigas' ? momentoTarefa(a) - momentoTarefa(b)
     : (ABA_LABEL[a._aba] || a._aba).localeCompare(ABA_LABEL[b._aba] || b._aba, 'pt-BR') || nome(a).localeCompare(nome(b), 'pt-BR'));
   const chips = Object.keys(porPasta).length > 1 ? `<div class="notas-tags">
       <button class="nota-chip ${listasPastaFiltro ? '' : 'on'}" onclick="filtrarListasPorPasta('')">Todas</button>
-      ${Object.keys(porPasta).sort((a, b) => (ABA_LABEL[a] || a).localeCompare(ABA_LABEL[b] || b, 'pt-BR')).map(a => `<button class="nota-chip ${a === listasPastaFiltro ? 'on' : ''}" onclick="filtrarListasPorPasta('${a.replace(/'/g, "\\'")}')">${escLista(ABA_LABEL[a] || a)} (${porPasta[a]})</button>`).join('')}
+      ${Object.keys(porPasta).sort((a, b) => (ABA_LABEL[a] || a).localeCompare(ABA_LABEL[b] || b, 'pt-BR')).map(a => `<button class="nota-chip ${a === listasPastaFiltro ? 'on' : ''}" onclick="filtrarListasPorPasta('${a.replace(/'/g, "\\'")}')">${escLista(String(ABA_LABEL[a] || a).toUpperCase())} (${porPasta[a]})</button>`).join('')}
     </div>` : '';
   const chipsTag = tagsTodas.length ? `<div class="notas-tags">
       <span style="font-size:13px;color:var(--text-muted);align-self:center">🏷️ Tag:</span>
@@ -5869,6 +5881,7 @@ function renderListasHome() {
       <div class="listas-titulo">🛒 Listas <small>(todas as pastas)</small></div>
       <button class="btn-nova-lista" onclick="novaLista()">➕ Nova lista</button>
       <button class="btn-imprimir-listas" style="${listasSoEstrelas ? 'background:#fde68a' : ''}" onclick="alternarSoEstrelas()" title="Mostra e imprime só os itens marcados com estrela">⭐ Só as estrelas${listasSoEstrelas ? ' ✔' : ''}</button>
+      <button class="btn-imprimir-listas" onclick="enviarListasDaTela()" title="Manda para o WhatsApp tudo o que está na tela (uma mensagem, um bloco por lista)">📲 Enviar</button>
       <button class="btn-imprimir-listas" onclick="window.print()" title="Imprime as listas que estão na tela (use os filtros de pasta e tag), com todos os itens">🖨️ Imprimir${listasTagFiltro ? ' tag ' + escLista(listasTagFiltro) : ''}</button>
     </div>${chips}${chipsTag}${corpo}`;
   const faltamTotal = listas.reduce((s, l) => s + itensQueFaltam(l).length, 0);
