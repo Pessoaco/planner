@@ -179,6 +179,7 @@
   .sidebar-notas-item { order:-1; display:flex; align-items:center; gap:8px; margin:6px 8px 12px; padding:10px 12px; border-radius:10px;
     background:#fef08a; color:#713f12; font-weight:800; font-size:13px; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,.18); }
   .sidebar-notas-item.active { outline:2px solid #ca8a04; }
+  .sidebar-listas-item { margin-top:-6px; }
   .sidebar-pastas-item { background:#dbeafe; color:#1e3a8a; margin-top:-6px; }
   .sidebar-pastas-item.active { outline-color:#2563eb; }
   .pastas-dica { font-size:13px; color:var(--text-muted); margin:2px 0 12px; }
@@ -2493,7 +2494,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v86';
+const APP_VERSION = 'v87';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -2839,6 +2840,7 @@ function alternarEsconderAguardando(marcado) {
 }
 
 function limparModosAtalho() {
+  pastasEscolhidas.clear();
   modoUrgentesAtivo = false;
   modoAgendaPeriodo = null;
 }
@@ -3813,6 +3815,14 @@ function renderMantendoScroll() {
 }
 
 // ===== RENDER =====
+// Nas telas que cruzam pastas (Urgentes/Hoje/Semana/filtros): quais pastas entram na tela e na impressão. Vazio = todas.
+let pastasEscolhidas = new Set();
+function escolherPasta(aba) {
+  if (!aba) pastasEscolhidas.clear();
+  else if (pastasEscolhidas.has(aba)) pastasEscolhidas.delete(aba);
+  else pastasEscolhidas.add(aba);
+  render();
+}
 function render() {
   agendarSalvarCache();
   atualizarBotaoOrdem();
@@ -3827,7 +3837,9 @@ function render() {
   if (algumFiltroAtivo()) {
     // Listas não são tarefas: na busca/filtro elas saem do meio das tarefas e aparecem num bloco próprio (verde-menta), como as Notas
     const todasCruzadas = ABAS.flatMap(aba => (allData[aba] || []).map(t => ({ ...t, _aba: aba })));
-    const cruzadas = todasCruzadas.filter(t => !ehTarefaLista(t, t._aba));
+    const cruzadasTodas = todasCruzadas.filter(t => !ehTarefaLista(t, t._aba));
+    // Escolher de quais pastas mostrar/imprimir (vazio = todas)
+    const cruzadas = pastasEscolhidas.size ? cruzadasTodas.filter(t => pastasEscolhidas.has(t._aba)) : cruzadasTodas;
     // Urgentes / Hoje / Semana / filtros: só tarefas. Listas só aparecem quando a pessoa está PESQUISANDO por texto.
     const listasAchadas = (searchTerm && !modoUrgentesAtivo && !modoAgendaPeriodo) ? filtrarTarefas(todasCruzadas.filter(t => listaAtiva(t, t._aba))) : [];
     document.getElementById("counters").innerHTML = "";
@@ -3839,6 +3851,15 @@ function render() {
     // Notas que combinam com a busca aparecem em cima das tarefas encontradas
     const blocoNotas = htmlNotasNaBusca();
     if (blocoNotas) document.getElementById("main").insertAdjacentHTML("afterbegin", blocoNotas);
+    // Faixa "De quais pastas?" (só na tela, não sai na impressão): marque as pastas que quer ver/imprimir
+    const abasComTarefa = ABAS.filter(a => cruzadasTodas.some(t => t._aba === a));
+    if (abasComTarefa.length > 1) {
+      document.getElementById("main").insertAdjacentHTML("afterbegin",
+        `<div class="notas-tags" style="margin:0 0 10px"><span style="font-size:13px;color:var(--text-muted);align-self:center">📁 Pastas:</span>
+          <button class="nota-chip ${pastasEscolhidas.size ? '' : 'on'}" onclick="escolherPasta('')">Todas</button>
+          ${abasComTarefa.map(a => `<button class="nota-chip ${pastasEscolhidas.has(a) ? 'on' : ''}" onclick="escolherPasta('${a.replace(/'/g, "\\'")}')">${escLista(ABA_LABEL[a] || a)} (${cruzadasTodas.filter(t => t._aba === a).length})</button>`).join('')}
+        </div>`);
+    }
     return;
   }
   // Listas não são tarefas: ficam fora do placar e do meio das tarefas (vivem em 🛒 Listas e na faixa da divisória)
