@@ -1958,6 +1958,12 @@
       <option value="Aguardando">Aguardando (preciso esperar algo)</option>
       <option value="Concluído">Concluído</option>
     </select>
+    <select id="selecao-prio" class="selecao-status-select" onchange="trocarPrioridadeSelecionadas(this.value); this.value=''">
+      <option value="">Trocar prioridade…</option>
+      <option value="Urgente">🔴 Urgente</option>
+      <option value="Média">🟡 Média</option>
+      <option value="Baixa">🟢 Baixa</option>
+    </select>
     <button class="btn-selecao-concluir" onclick="concluirSelecionadas()">✅ Concluir</button>
     <button class="btn-selecao-concluir" onclick="compartilharSelecionadas()">📤 Compartilhar</button>
     <button class="btn-selecao-concluir" onclick="abrirModalMover()">📁 Mover</button>
@@ -2366,6 +2372,15 @@
       <label>Tag para todas as tarefas duplicadas (opcional)</label>
       <input type="text" id="np-tag" placeholder="Ex: Obra — vazio = sem tag" autocomplete="off">
     </div>
+    <div class="form-group">
+      <label>Prioridade das tarefas duplicadas</label>
+      <select id="np-prio">
+        <option value="">Manter a de cada tarefa</option>
+        <option value="Baixa">Todas Baixa</option>
+        <option value="Média">Todas Média</option>
+        <option value="Urgente">Todas Urgente</option>
+      </select>
+    </div>
     <div style="display:flex;gap:10px;margin-top:14px">
       <button class="modal-cancel" onclick="fecharModalNovaPasta()">Cancelar</button>
       <button class="btn-salvar" onclick="criarPastaNova()">Criar</button>
@@ -2388,6 +2403,15 @@
     <div class="form-group">
       <label>Tag para todas as tarefas duplicadas (opcional)</label>
       <input type="text" id="copiar-tag" placeholder="Vazio = as tarefas duplicadas ficam sem tag" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label>Prioridade das tarefas duplicadas</label>
+      <select id="copiar-prio">
+        <option value="">Manter a de cada tarefa</option>
+        <option value="Baixa">Todas Baixa</option>
+        <option value="Média">Todas Média</option>
+        <option value="Urgente">Todas Urgente</option>
+      </select>
     </div>
     <small style="display:block;margin:2px 0 6px;font-size:12px;color:var(--text-muted)">As tarefas duplicadas nascem como <b>Aberto</b>, com a observação. <b>Tag</b>, datas, concluída, envolvido e agenda são limpos. O original não muda.</small>
     <div style="display:flex;gap:10px;margin-top:14px">
@@ -2468,7 +2492,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v83';
+const APP_VERSION = 'v84';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -2658,7 +2682,7 @@ async function criarPastaNova() {
     const resp = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'criarPasta', origem: origem, nomeNova: nome, tag: (document.getElementById('np-tag').value || '').trim() })
+      body: JSON.stringify({ action: 'criarPasta', origem: origem, nomeNova: nome, tag: (document.getElementById('np-tag').value || '').trim(), prioridade: document.getElementById('np-prio').value })
     });
     const data = await resp.json();
     if (!data.ok) { showToast('⚠️ ' + (data.error || 'Erro ao criar pasta')); return; }
@@ -3021,6 +3045,29 @@ async function trocarStatusSelecionadas(novoStatus) {
   renderMantendoScroll();
   showToast(`✅ Tarefas atualizadas para "${rotulo}"!`);
   if (novoStatus === 'Concluído') for (const { aba, id } of itens) await gerarRecorrenciaDepoisDeConcluir(aba, id);
+}
+
+// Troca a prioridade de todas as selecionadas de uma vez (ex.: divisória copiada de outra obra: tudo Baixa e ir subindo)
+async function trocarPrioridadeSelecionadas(prio) {
+  if (!prio || !selecionados.size) return;
+  const itens = [...selecionados].map(chave => { const [aba, id] = chave.split('::'); return { aba, id }; });
+  if (!confirm(`Trocar a prioridade de ${itens.length} tarefa(s) para "${prio}"?`)) return;
+  showToast(`⏳ Trocando a prioridade de ${itens.length} tarefa${itens.length === 1 ? '' : 's'}...`);
+  const falhas = [];
+  // uma de cada vez: o servidor do Google atende melhor sem pedidos simultâneos na mesma aba
+  for (const { aba, id } of itens) {
+    try {
+      const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'editTask', aba, id: String(id), fields: { Prioridade: prio } }) });
+      const d = await res.json();
+      if (!d.ok) throw new Error(d.error || 'erro');
+      const t = (allData[aba] || []).find(x => String(x.ID) === String(id));
+      if (t) t.Prioridade = prio;
+    } catch (e) { falhas.push(id); }
+  }
+  selecionados.clear();
+  atualizarBarraSelecao();
+  renderMantendoScroll();
+  showToast(falhas.length ? `⚠️ ${itens.length - falhas.length} trocada(s); ${falhas.length} não deu certo — tente de novo` : `✅ Prioridade trocada para ${prio} em ${itens.length} tarefa${itens.length === 1 ? '' : 's'}`);
 }
 
 async function excluirSelecionadas() {
@@ -5068,6 +5115,7 @@ function abrirCopiarDivisaoDe(aba, nome) {
   sel.value = aba;
   document.getElementById('copiar-nome').value = `${nome} (cópia)`;
   document.getElementById('copiar-tag').value = '';
+  document.getElementById('copiar-prio').value = '';
   document.getElementById('modal-copiar-div').classList.add('open');
   document.getElementById('copiar-nome').focus();
 }
@@ -5082,6 +5130,7 @@ async function confirmarCopiarDivisao() {
   const destino = document.getElementById('copiar-destino').value;
   const novaDivisao = document.getElementById('copiar-nome').value.trim();
   const novaTag = document.getElementById('copiar-tag').value.trim();
+  const novaPrio = document.getElementById('copiar-prio').value;
   if (!destino) { showToast('⚠️ Escolha a pasta de destino'); return; }
   if (!novaDivisao) { showToast('⚠️ Dê um nome pra divisória nova'); return; }
 
@@ -5093,7 +5142,7 @@ async function confirmarCopiarDivisao() {
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'copyDivisao', aba, divisao: nome, destino, novaDivisao, novaTag })
+      body: JSON.stringify({ action: 'copyDivisao', aba, divisao: nome, destino, novaDivisao, novaTag, prioridade: novaPrio })
     });
     const data = JSON.parse(await res.text());
     if (!data.ok) {
@@ -5108,7 +5157,7 @@ async function confirmarCopiarDivisao() {
       origem.forEach((t, i) => {
         const c = { ...t, ID: data.ids[i], Status: 'Aberto', 'Data criação': hoje, 'Divisão': novaDivisao,
           'Data Prevista': '', Hora: '', 'Data Fim': '', 'Hora Fim': '', 'Data conclusão': '', Envolvido: '',
-          'ID Evento Calendário': '', _recorrenciaRRule: '', Tag: novaTag };
+          'ID Evento Calendário': '', _recorrenciaRRule: '', Tag: novaTag, Prioridade: novaPrio || t.Prioridade };
         allData[destino].push(c);
       });
     } else {
