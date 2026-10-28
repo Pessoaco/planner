@@ -2494,7 +2494,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v90';
+const APP_VERSION = 'v91';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -7047,6 +7047,19 @@ function tarefasPorDia() {
     let d = new Date(ini + 'T12:00:00');
     const ultimo = new Date((fim && fim >= ini ? fim : ini) + 'T12:00:00');
     for (let n = 0; d <= ultimo && n < 62; n++, d.setDate(d.getDate() + 1)) (mapa[isoDia(d)] = mapa[isoDia(d)] || []).push({ ...t, _aba: aba });
+    // Tarefa que se repete: mostra as próximas ocorrências no calendário (só desenhadas; a tarefa real nasce quando você concluir a atual)
+    const rep = String(t.Repete || '').match(/^(dias|meses):(\d+):(conclusao|prevista)$/);
+    if (rep && !(st === 'concluído' || st === 'cancelado')) {
+      const passo = parseInt(rep[2], 10), limite = new Date(calAno, calMes + 2, 0, 12);
+      const base = new Date(ini + 'T12:00:00');
+      for (let k = 1; k < 400; k++) {
+        const p = new Date(base);
+        if (rep[1] === 'dias') p.setDate(base.getDate() + k * passo);
+        else { p.setDate(1); p.setMonth(base.getMonth() + k * passo); p.setDate(Math.min(base.getDate(), new Date(p.getFullYear(), p.getMonth() + 1, 0).getDate())); }
+        if (p > limite) break;
+        (mapa[isoDia(p)] = mapa[isoDia(p)] || []).push({ ...t, _aba: aba, _projecao: true });
+      }
+    }
   }));
   const hora = t => String(t.Hora || '').trim().substring(0, 5) || '99:99';
   Object.values(mapa).forEach(l => l.sort((a, b) => hora(a).localeCompare(hora(b)) || String(a.Tarefa).localeCompare(String(b.Tarefa), 'pt-BR')));
@@ -7067,7 +7080,7 @@ function renderCalendario() {
     const classes = ['cal-dia', d.getMonth() !== calMes ? 'fora' : '', iso === hojeIso ? 'hoje' : '', iso === calDiaSel ? 'sel' : ''].join(' ');
     const cor = t => COR_PRIO_CAL[t.Prioridade] || '#64748b';
     html += `<div class="${classes}" onclick="calSelecionar('${iso}')"><div class="cal-num">${d.getDate()}</div>
-      ${evs.slice(0, 3).map(t => `<span class="cal-ev" style="background:${cor(t)}">${t.Hora ? escLista(String(t.Hora).substring(0, 5)) + ' ' : ''}${escLista(t.Tarefa)}</span>`).join('')}
+      ${evs.slice(0, 3).map(t => `<span class="cal-ev" style="background:${cor(t)}${t._projecao ? ';opacity:.6' : ''}">${t._projecao ? '🔁 ' : ''}${t.Hora ? escLista(String(t.Hora).substring(0, 5)) + ' ' : ''}${escLista(t.Tarefa)}</span>`).join('')}
       ${evs.length > 3 ? `<span class="cal-mais">+ ${evs.length - 3}</span>` : ''}
       <div class="cal-pontos">${evs.slice(0, 6).map(t => `<span class="cal-pt" style="background:${cor(t)}"></span>`).join('')}</div></div>`;
   }
@@ -7080,7 +7093,7 @@ function renderCalendario() {
   document.getElementById('cal-dia').innerHTML = `<div style="font-weight:700;margin:8px 0 6px;text-transform:capitalize">${nomeDia}</div>`
     + (calItensDia.length ? calItensDia.map((t, i) => `<div class="cal-item" style="border-left-color:${COR_PRIO_CAL[t.Prioridade] || '#64748b'}" onclick="calAbrirTarefa(${i})">
         <b style="min-width:46px">${t.Hora ? escLista(String(t.Hora).substring(0, 5)) : '—'}</b>
-        <span style="flex:1;min-width:0"><b>${escLista(t.Tarefa)}</b><small>📁 ${escLista(ABA_LABEL[t._aba] || t._aba)}${t['Divisão'] ? ' › ' + escLista(String(t['Divisão']).split('/').pop().trim()) : ''}${t.Envolvido ? ' · 👤 ' + escLista(t.Envolvido) : ''}</small></span>
+        <span style="flex:1;min-width:0"><b>${t._projecao ? '🔁 ' : ''}${escLista(t.Tarefa)}</b><small>${t._projecao ? 'repetição prevista · ' : ''}📁 ${escLista(ABA_LABEL[t._aba] || t._aba)}${t['Divisão'] ? ' › ' + escLista(String(t['Divisão']).split('/').pop().trim()) : ''}${t.Envolvido ? ' · 👤 ' + escLista(t.Envolvido) : ''}</small></span>
       </div>`).join('') : '<div style="color:var(--text-muted);font-size:14px;margin-bottom:8px">Nenhum compromisso neste dia.</div>')
     + `<button class="menu-mais-item" onclick="calNovaTarefa()">➕ Nova tarefa neste dia</button>`;
 }
