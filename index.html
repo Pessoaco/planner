@@ -2494,7 +2494,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v91';
+const APP_VERSION = 'v93';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -4217,13 +4217,13 @@ function renderTarefas(tarefas) {
           <span class="categoria-toggle">${colapsado ? '▶' : '▼'}</span>
           <button class="btn-nova-na-divisao${ehFixada ? ' fixada' : ''}" onclick="event.stopPropagation(); fixarDivisao('${encodeURIComponent(catKey)}')" title="${ehFixada ? 'Desafixar esta divisória' : 'Fixar esta divisória no topo da pasta'}">📌</button>
           <button class="btn-nova-na-divisao" onclick="event.stopPropagation(); abrirNovaTarefaNaDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').replace(/'/g,"\\'")}')" title="Nova tarefa nesta divisória">➕</button>
-          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); novaLista('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Nova lista (compras, material...) nesta divisória">🛒</button>` : ''}
+          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); abrirNota('', '${String(items[0]._aba).replace(/'/g, "\\'")}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g, "\\'")}')" title="Nova nota nesta divisória (aparece aqui, sem contar como tarefa)">📝</button>` : ''}
           ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); renomearDivisao(null, '${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Renomear esta divisória">✏️</button>` : ''}
-          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); abrirCopiarDivisaoDe('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Duplicar esta divisória inteira (abertas e concluídas) como lista modelo">📋</button>` : ''}
+          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); novaLista('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Nova lista (compras, material...) nesta divisória">🛒</button>` : ''}
+          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); abrirCopiarDivisaoDe('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Duplicar esta divisória inteira (abertas e concluídas) como lista modelo">🗂️</button>` : ''}
           ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); selecionarDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Selecionar (ou desmarcar) todas as tarefas desta divisória que aparecem na tela">☑</button>` : ''}
           ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); juntarDivisaoEmLista('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Juntar todas as tarefas desta divisória numa lista só (um item por tarefa)">☰</button>` : ''}
-          ${mostraNotasVinculadas && String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); abrirNota('', '${abaAtual.replace(/'/g, "\\'")}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g, "\\'")}')" title="Nova nota nesta divisória (aparece aqui, sem contar como tarefa)">📝</button>` : ''}
-          <button class="btn-nova-na-divisao btn-mais-mobile" onclick="event.stopPropagation(); abrirAcoesDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}', ${mostraNotasVinculadas ? 'true' : 'false'})" title="Mais ações desta divisória">⋯</button>
+          <button class="btn-nova-na-divisao btn-mais-mobile" onclick="event.stopPropagation(); abrirAcoesDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}', true)" title="Mais ações desta divisória">⋯</button>
           <span class="categoria-count">${items.length}</span>
         </div>
         ${colapsado || !notasDiv.length ? '' : `<div class="notas-div">${notasDiv.map(notaMiniHtml).join('')}</div>`}
@@ -4483,12 +4483,12 @@ function abrirAcoesDivisao(aba, div, comNota) {
   const q = s => String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
   const itens = [];
   if (div) {
+    if (comNota) itens.push(['📝', 'Nova nota nesta divisória', `abrirNota('','${aba}','${q(div)}')`]);
     itens.push(['✏️', 'Renomear divisória', `renomearDivisao(null,'${aba}','${q(div)}')`]);
-    itens.push(['📋', 'Duplicar divisória (como modelo)', `abrirCopiarDivisaoDe('${aba}','${q(div)}')`]);
+    itens.push(['🛒', 'Nova lista nesta divisória', `novaLista('${aba}','${q(div)}')`]);
+    itens.push(['🗂️', 'Duplicar divisória (como modelo)', `abrirCopiarDivisaoDe('${aba}','${q(div)}')`]);
     itens.push(['☑', 'Selecionar tarefas da divisória', `selecionarDivisao('${aba}','${q(div)}')`]);
     itens.push(['☰', 'Juntar tudo numa lista', `juntarDivisaoEmLista('${aba}','${q(div)}')`]);
-    if (comNota) itens.push(['📝', 'Nova nota nesta divisória', `abrirNota('','${aba}','${q(div)}')`]);
-    itens.push(['🛒', 'Nova lista nesta divisória', `novaLista('${aba}','${q(div)}')`]);
   }
   document.getElementById('acoes-divisao-lista').innerHTML = itens.length
     ? itens.map(([ic, tx, fn]) => `<button class="acao-divisao" onclick="fecharAcoesDivisao(); ${fn.replace(/"/g, '&quot;')}">${ic} <span>${tx}</span></button>`).join('')
