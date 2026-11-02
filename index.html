@@ -2494,7 +2494,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v93';
+const APP_VERSION = 'v94';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -4134,7 +4134,15 @@ function renderTarefas(tarefas) {
   // Listas desta pasta (só vistas dentro de uma pasta, não na busca entre pastas): aparecem em faixas verde-menta, não como tarefas
   const listasPasta = (!algumFiltroAtivo() && !modoAgendaPeriodo) ? (allData[abaAtual] || []).filter(t => listaAtiva(t, abaAtual)).map(t => ({ ...t, _aba: abaAtual })) : [];
 
-  if (!filtradas.length && !listasPasta.length) {
+  // Divisória sem nenhuma tarefa, mas com nota ou lista ligada a ela, continua aparecendo na pasta (só quando não há busca/filtro)
+  const divsSoNotas = (nenhumFiltroAtivoTotal() && !searchTermLocal && !modoAgendaPeriodo && !modoUrgentesAtivo)
+    ? [...new Map([
+        ...notasData.filter(n => String(n['Pasta'] || '') === abaAtual && String(n['Divisão'] || '').trim()).map(n => String(n['Divisão']).trim()),
+        ...listasPasta.map(l => String(l['Divisão'] || '').trim()).filter(Boolean)
+      ].map(d => [d.toLowerCase(), d])).values()]
+    : [];
+
+  if (!filtradas.length && !listasPasta.length && !divsSoNotas.length) {
     document.getElementById('main').innerHTML = searchTerm
       ? `<div class="empty">Nenhuma tarefa encontrada para "${searchTerm}".</div>`
       : '<div class="empty">Nenhuma tarefa encontrada.</div>';
@@ -4157,6 +4165,7 @@ function renderTarefas(tarefas) {
     if (!grupos[catKey]) grupos[catKey] = { label: cat.trim(), items: [] };
     grupos[catKey].items.push(t);
   });
+  divsSoNotas.forEach(d => { const k = d.toLowerCase(); if (!grupos[k]) grupos[k] = { label: d, items: [] }; });
 
   const priOrd = { 'Urgente': 0, 'Média': 1, 'Baixa': 2 };
 
@@ -4185,8 +4194,9 @@ function renderTarefas(tarefas) {
     : Object.entries(grupos).sort(([ka, a], [kb, b]) => {
         const fa = fixadas.has(ka), fb = fixadas.has(kb);
         if (fa !== fb) return fa ? -1 : 1;
-        if (ordemVista === 'recentes') return Math.max(...b.items.map(momentoTarefa)) - Math.max(...a.items.map(momentoTarefa)) || az(a, b);
-        if (ordemVista === 'antigas') return Math.min(...a.items.map(momentoTarefa)) - Math.min(...b.items.map(momentoTarefa)) || az(a, b);
+        const mx = g => g.items.length ? Math.max(...g.items.map(momentoTarefa)) : 0, mn = g => g.items.length ? Math.min(...g.items.map(momentoTarefa)) : 0; // divisória só com notas: sem tarefas
+        if (ordemVista === 'recentes') return mx(b) - mx(a) || az(a, b);
+        if (ordemVista === 'antigas') return mn(a) - mn(b) || az(a, b);
         return az(a, b);
       });
 
@@ -4207,23 +4217,24 @@ function renderTarefas(tarefas) {
     const listasDiv = mostraNotasVinculadas ? listasVinculadas(abaAtual, cat) : [];
     const colapsado = categoriasColapsadas.has(catKey + abaAtual);
     const itemsHtml = colapsado ? '' : items.map(t => cardHtml(t)).join('');
+    const it0 = items[0] || { _aba: abaAtual, 'Divisão': cat }; // divisória só com notas/listas: sem tarefa para tirar a pasta e o nome
     // Na busca cruzada, colore a categoria com a cor da aba de origem (tipo etiqueta do fichário)
-    const corAba = cruzado ? `color: ${corDaPasta(items[0]._aba)[0]};` : '';
-    const [corG, corGbg] = corDaPasta(cruzado ? items[0]._aba : abaAtual);
+    const corAba = cruzado ? `color: ${corDaPasta(it0._aba)[0]};` : '';
+    const [corG, corGbg] = corDaPasta(cruzado ? it0._aba : abaAtual);
     return `
       <div class="categoria-group${ehFixada ? ' fixada' : ''}" style="--cor-div:${corG};--cor-div-bg:${corGbg}">
         <div class="categoria-header" onclick="toggleCategoria('${catKey}')">
           <span class="categoria-title" style="${corAba}">${iconeCategoria(cat)} ${cat}</span>
           <span class="categoria-toggle">${colapsado ? '▶' : '▼'}</span>
           <button class="btn-nova-na-divisao${ehFixada ? ' fixada' : ''}" onclick="event.stopPropagation(); fixarDivisao('${encodeURIComponent(catKey)}')" title="${ehFixada ? 'Desafixar esta divisória' : 'Fixar esta divisória no topo da pasta'}">📌</button>
-          <button class="btn-nova-na-divisao" onclick="event.stopPropagation(); abrirNovaTarefaNaDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').replace(/'/g,"\\'")}')" title="Nova tarefa nesta divisória">➕</button>
-          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); abrirNota('', '${String(items[0]._aba).replace(/'/g, "\\'")}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g, "\\'")}')" title="Nova nota nesta divisória (aparece aqui, sem contar como tarefa)">📝</button>` : ''}
-          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); renomearDivisao(null, '${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Renomear esta divisória">✏️</button>` : ''}
-          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); novaLista('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Nova lista (compras, material...) nesta divisória">🛒</button>` : ''}
-          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); abrirCopiarDivisaoDe('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Duplicar esta divisória inteira (abertas e concluídas) como lista modelo">🗂️</button>` : ''}
-          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); selecionarDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Selecionar (ou desmarcar) todas as tarefas desta divisória que aparecem na tela">☑</button>` : ''}
-          ${String(items[0]['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); juntarDivisaoEmLista('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Juntar todas as tarefas desta divisória numa lista só (um item por tarefa)">☰</button>` : ''}
-          <button class="btn-nova-na-divisao btn-mais-mobile" onclick="event.stopPropagation(); abrirAcoesDivisao('${items[0]._aba}', '${String(items[0]['Divisão'] || '').trim().replace(/'/g,"\\'")}', true)" title="Mais ações desta divisória">⋯</button>
+          <button class="btn-nova-na-divisao" onclick="event.stopPropagation(); abrirNovaTarefaNaDivisao('${it0._aba}', '${String(it0['Divisão'] || '').replace(/'/g,"\\'")}')" title="Nova tarefa nesta divisória">➕</button>
+          ${String(it0['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); abrirNota('', '${String(it0._aba).replace(/'/g, "\\'")}', '${String(it0['Divisão'] || '').trim().replace(/'/g, "\\'")}')" title="Nova nota nesta divisória (aparece aqui, sem contar como tarefa)">📝</button>` : ''}
+          ${String(it0['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); renomearDivisao(null, '${it0._aba}', '${String(it0['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Renomear esta divisória">✏️</button>` : ''}
+          ${String(it0['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); novaLista('${it0._aba}', '${String(it0['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Nova lista (compras, material...) nesta divisória">🛒</button>` : ''}
+          ${String(it0['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); abrirCopiarDivisaoDe('${it0._aba}', '${String(it0['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Duplicar esta divisória inteira (abertas e concluídas) como lista modelo">🗂️</button>` : ''}
+          ${String(it0['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); selecionarDivisao('${it0._aba}', '${String(it0['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Selecionar (ou desmarcar) todas as tarefas desta divisória que aparecem na tela">☑</button>` : ''}
+          ${String(it0['Divisão'] || '').trim() ? `<button class="btn-nova-na-divisao btn-extra" onclick="event.stopPropagation(); juntarDivisaoEmLista('${it0._aba}', '${String(it0['Divisão'] || '').trim().replace(/'/g,"\\'")}')" title="Juntar todas as tarefas desta divisória numa lista só (um item por tarefa)">☰</button>` : ''}
+          <button class="btn-nova-na-divisao btn-mais-mobile" onclick="event.stopPropagation(); abrirAcoesDivisao('${it0._aba}', '${String(it0['Divisão'] || '').trim().replace(/'/g,"\\'")}', true)" title="Mais ações desta divisória">⋯</button>
           <span class="categoria-count">${items.length}</span>
         </div>
         ${colapsado || !notasDiv.length ? '' : `<div class="notas-div">${notasDiv.map(notaMiniHtml).join('')}</div>`}
