@@ -1910,6 +1910,9 @@
       <button class="filter-btn" data-grupo="statusG" data-valor="Aguardando" onclick="setFilter('statusG','Aguardando')">🕓 Aguardando</button>
       <button class="filter-btn" data-grupo="statusG" data-valor="Concluído" onclick="setFilter('statusG','Concluído')">Concluídas</button>
       <div class="filters-break"></div>
+      <div class="filtro-legenda">Agenda</div>
+      <button class="filter-btn" data-grupo="compromissoG" onclick="setFilter('compromissoG')" title="Só o que tem data e hora, de hoje em diante, de qualquer prioridade">📅 Compromissos (data e hora)</button>
+      <div class="filters-break"></div>
       <div class="filtro-legenda">Envolvidos</div>
       <button class="filter-btn" id="btn-envolvidos-g" onclick="abrirModalEnvolvidos(true)">👤 Envolvidos</button>
       <div class="filters-break"></div>
@@ -2494,7 +2497,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v94';
+const APP_VERSION = 'v96';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -2564,10 +2567,11 @@ let filtroPrioridadeG = new Set();
 let filtroStatusG = new Set();
 let filtroEnvolvidoG = new Set();
 let filtroTagG = new Set();
+let filtroCompromissoG = false; // 📅 só tarefas com data e hora (em todas as pastas)
 
 function algumFiltroAtivo() {
   // Só os filtros GLOBAIS (+ busca por texto) forçam o modo cruzado entre abas
-  return filtroPrioridadeG.size > 0 || filtroStatusG.size > 0 || filtroEnvolvidoG.size > 0 || filtroTagG.size > 0 || !!searchTerm || (!!modoAgendaPeriodo && modoAgendaEscopo === 'global');
+  return filtroPrioridadeG.size > 0 || filtroStatusG.size > 0 || filtroEnvolvidoG.size > 0 || filtroTagG.size > 0 || filtroCompromissoG || !!searchTerm || (!!modoAgendaPeriodo && modoAgendaEscopo === 'global');
 }
 
 function nenhumFiltroAtivoTotal() {
@@ -2841,6 +2845,7 @@ function alternarEsconderAguardando(marcado) {
 
 function limparModosAtalho() {
   pastasEscolhidas.clear();
+  filtroCompromissoG = false;
   modoUrgentesAtivo = false;
   modoAgendaPeriodo = null;
 }
@@ -2895,6 +2900,7 @@ function atualizarChipsAtivos() {
   const stat = cruzado ? filtroStatusG : filtroStatus;
   const env = cruzado ? filtroEnvolvidoG : filtroEnvolvido;
   const tag = cruzado ? filtroTagG : filtroTag;
+  if (filtroCompromissoG) chips.push('📅 Compromissos (data e hora)');
   prio.forEach(v => chips.push(`${{Urgente:'🔴',Média:'🟡',Baixa:'🟢'}[v] || ''} ${v}`));
   stat.forEach(v => chips.push(v));
   env.forEach(v => chips.push(`👤 ${v}`));
@@ -2916,6 +2922,7 @@ function normalizarBusca(s) {
 
 // Digitar uma busca rápida assume que a pessoa quer ver isso agora — some com filtros de prioridade/status/envolvido antigos
 function limparFiltrosAoDigitar() {
+  filtroCompromissoG = false;
   modoUrgentesAtivo = false;
   modoAgendaPeriodo = null;
   filtroPrioridade = new Set();
@@ -3747,6 +3754,7 @@ function atualizarBotoesFiltro() {
     if (b.dataset.grupo === 'statusG') { b.classList.toggle('active', filtroStatusG.has(b.dataset.valor)); return; }
     if (b.dataset.grupo === 'envolvidoG') { b.classList.toggle('active', filtroEnvolvidoG.has(b.dataset.valor)); return; }
     if (b.dataset.grupo === 'tagG') { b.classList.toggle('active', filtroTagG.has(b.dataset.valor)); return; }
+    if (b.dataset.grupo === 'compromissoG') { b.classList.toggle('active', filtroCompromissoG); return; }
   });
   atualizarChipsAtivos();
 }
@@ -3770,6 +3778,7 @@ function setFilter(grupo, valor) {
     filtroStatusG = new Set();
     filtroEnvolvidoG = new Set();
     filtroTagG = new Set();
+    filtroCompromissoG = false;
     searchTermLocal = '';
     searchTerm = '';
     document.getElementById('search-local-input').value = '';
@@ -3790,6 +3799,8 @@ function setFilter(grupo, valor) {
     if (filtroEnvolvidoG.has(valor)) filtroEnvolvidoG.delete(valor); else filtroEnvolvidoG.add(valor);
   } else if (grupo === 'tagG') {
     if (filtroTagG.has(valor)) filtroTagG.delete(valor); else filtroTagG.add(valor);
+  } else if (grupo === 'compromissoG') {
+    filtroCompromissoG = !filtroCompromissoG;
   }
 
   atualizarBotoesFiltro();
@@ -4027,6 +4038,8 @@ function filtrarTarefas(tarefas) {
   }
 
   if (prioridadeAtiva.size) filtradas = filtradas.filter(t => prioridadeAtiva.has(t.Prioridade));
+  // "Compromissos": só o que tem data E hora, de hoje em diante (independe da prioridade)
+  if (cruzado && filtroCompromissoG) filtradas = filtradas.filter(compromissoComHora);
   if (statusAtivo.size) {
     filtradas = filtradas.filter(t => {
       const statusTarefa = (t.Status || '').trim().toLowerCase();
@@ -4171,7 +4184,7 @@ function renderTarefas(tarefas) {
 
   // No modo Hoje/Semana, quem tem data+hora marcada vem primeiro (na ordem do relógio),
   // e só depois vêm as urgentes sem data — senão a ordem alfabética das divisórias esconde os horários
-  const ordenacaoPorAgenda = !!modoAgendaPeriodo;
+  const ordenacaoPorAgenda = !!modoAgendaPeriodo || filtroCompromissoG; // relógio manda (compromissos em ordem de data e hora)
   const timestampTarefa = t => {
     const d = paraDataObj(t['Data Prevista']);
     if (!d) return Infinity;
@@ -4301,6 +4314,16 @@ function paraDataObj(dataRaw) {
 }
 
 // "hoje" = só o dia de hoje. "semana" = hoje até 6 dias à frente (os próximos 7 dias)
+// Compromisso = tarefa com DATA e HORA, de hoje em diante (a prioridade não importa)
+function compromissoComHora(t) {
+  if (!String(t.Hora || '').trim()) return false;
+  const d = paraDataObj(t['Data Prevista']);
+  if (!d) return false;
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  d.setHours(0, 0, 0, 0);
+  return d >= hoje;
+}
+
 function dataDentroDoPeriodo(dataRaw, periodo) {
   const d = paraDataObj(dataRaw);
   if (!d) return false;
