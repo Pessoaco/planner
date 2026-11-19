@@ -2021,6 +2021,26 @@
       </div>
     </div>
 
+    <div class="form-group">
+      <label style="display:flex;align-items:center;gap:6px">Observação (opcional) <button type="button" class="btn-mic" id="btn-mic-obs" data-alvo="obs" onclick="alternarDitado('obs')" title="Ditar a observação (diga &quot;vírgula&quot;, &quot;ponto final&quot; ou &quot;nova linha&quot; quando precisar)">🎤</button></label>
+      <textarea id="f-obs" placeholder="Detalhes adicionais... (ou toque no microfone e fale)"></textarea>
+      <div id="obs-lista-editor" style="display:none">
+        <div id="obs-lista-itens"></div>
+        <div class="lista-add" style="align-items:center;margin-bottom:2px">
+          <input type="text" id="obs-lista-novo" placeholder="+ Novo item" style="flex:2 1 90px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();addItemForm()}">
+          <input type="text" id="obs-lista-novo-qtd" placeholder="qtd / obs" style="flex:1 1 70px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();addItemForm()}">
+          <button type="button" class="btn-mic" data-alvo="form" onclick="alternarDitado('form')" title="Falar os itens (faça uma pausa ou diga 'próximo' para separar)">🎤</button>
+          <button type="button" class="btn-estrela-nova" id="obs-lista-novo-est" onclick="alternarEstrelaNova('form')" title="Prioridade (fazer/comprar primeiro)">☆</button>
+          <button type="button" class="lista-quem-btn" id="obs-lista-novo-btn" onclick="alternarDetalheNovo('form')" title="A quem cobrar este item">👤</button>
+          <button type="button" class="menu-mais-item" style="width:auto;margin:0" onclick="addItemForm()" title="Adicionar item">➕</button>
+        </div>
+        <div class="lista-add" id="obs-lista-novo-det" style="display:none;margin-top:0">
+          <input type="text" id="obs-lista-novo-quem" list="lista-quem-opcoes" placeholder="👤 quem (nome de quem cobrar)" style="flex:1 1 auto;min-width:0;max-width:260px" onkeydown="if(event.key==='Enter'){event.preventDefault();addItemForm()}">
+        </div>
+      </div>
+      <button type="button" class="menu-mais-item" id="btn-obs-lista" style="margin-top:6px" onclick="alternarListaNoForm()">☑ Mostrar como lista (com quadradinhos)</button>
+    </div>
+
     <div class="form-row">
       <div class="form-group">
         <label>Data prevista (opcional)</label>
@@ -2082,26 +2102,6 @@
         <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="f-avisar" value="1d"> 1 dia antes</label>
         <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" class="f-avisar" value="1h"> 1 hora antes</label>
       </div>
-    </div>
-
-    <div class="form-group">
-      <label>Observação (opcional)</label>
-      <textarea id="f-obs" placeholder="Detalhes adicionais..."></textarea>
-      <div id="obs-lista-editor" style="display:none">
-        <div id="obs-lista-itens"></div>
-        <div class="lista-add" style="align-items:center;margin-bottom:2px">
-          <input type="text" id="obs-lista-novo" placeholder="+ Novo item" style="flex:2 1 90px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();addItemForm()}">
-          <input type="text" id="obs-lista-novo-qtd" placeholder="qtd / obs" style="flex:1 1 70px;min-width:0" onkeydown="if(event.key==='Enter'){event.preventDefault();addItemForm()}">
-          <button type="button" class="btn-mic" data-alvo="form" onclick="alternarDitado('form')" title="Falar os itens (faça uma pausa ou diga 'próximo' para separar)">🎤</button>
-          <button type="button" class="btn-estrela-nova" id="obs-lista-novo-est" onclick="alternarEstrelaNova('form')" title="Prioridade (fazer/comprar primeiro)">☆</button>
-          <button type="button" class="lista-quem-btn" id="obs-lista-novo-btn" onclick="alternarDetalheNovo('form')" title="A quem cobrar este item">👤</button>
-          <button type="button" class="menu-mais-item" style="width:auto;margin:0" onclick="addItemForm()" title="Adicionar item">➕</button>
-        </div>
-        <div class="lista-add" id="obs-lista-novo-det" style="display:none;margin-top:0">
-          <input type="text" id="obs-lista-novo-quem" list="lista-quem-opcoes" placeholder="👤 quem (nome de quem cobrar)" style="flex:1 1 auto;min-width:0;max-width:260px" onkeydown="if(event.key==='Enter'){event.preventDefault();addItemForm()}">
-        </div>
-      </div>
-      <button type="button" class="menu-mais-item" id="btn-obs-lista" style="margin-top:6px" onclick="alternarListaNoForm()">☑ Mostrar como lista (com quadradinhos)</button>
     </div>
 
     <div class="form-group">
@@ -2497,7 +2497,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v96';
+const APP_VERSION = 'v97';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -6266,7 +6266,7 @@ function pararDitado() {
   try { d.rec.onend = null; d.rec.stop(); } catch (e) {}
   marcarMic(d.alvo, false);
   // o que ainda estava sendo falado (sem "próximo" no fim) entra como o último item
-  if (d.alvo !== 'nota' && d.buffer) { const c = campoNovoDoDitado(d.alvo); if (c) c.value = ''; confirmarItemDitado(d.alvo, d.buffer); }
+  if (d.alvo !== 'nota' && d.alvo !== 'obs' && d.buffer) { const c = campoNovoDoDitado(d.alvo); if (c) c.value = ''; confirmarItemDitado(d.alvo, d.buffer); }
 }
 
 function alternarDitado(alvo) {
@@ -6287,8 +6287,8 @@ function alternarDitado(alvo) {
   rec.onend = () => { if (ditado && ditado.ativo) { try { rec.start(); } catch (e) { pararDitado(); } } };
   try { rec.start(); } catch (e) { pararDitado(); showToast('🎤 Não consegui ligar o microfone'); return; }
   marcarMic(alvo, true);
-  showToast(alvo === 'nota'
-    ? '🎤 Pode falar. Diga "vírgula", "ponto final" ou "nova linha" quando precisar. Toque no ⏹ para parar.'
+  showToast(alvo === 'nota' || alvo === 'obs'
+    ?'🎤 Pode falar. Diga "vírgula", "ponto final" ou "nova linha" quando precisar. Toque no ⏹ para parar.'
     : (ditadoModo === 'pausa' ? '🎤 Fale um item; cada pausa vira um item. Toque no ⏹ para parar.' : '🎤 Fale o item e diga "próximo" para passar ao seguinte. Pode pensar à vontade. Toque no ⏹ para parar.'));
 }
 
@@ -6317,7 +6317,7 @@ function alternarDitadoModo(porPausa) {
 
 // O item que ainda está sendo falado (modo "próximo") aparece no campo "Novo item" enquanto você fala
 function campoNovoDoDitado(alvo) { return document.getElementById(alvo === 'lista' ? 'lista-novo' : alvo === 'form' ? 'obs-lista-novo' : 'nota-rapida'); }
-function mostrarPendenteDitado() { if (ditado && ditado.alvo !== 'nota') { const c = campoNovoDoDitado(ditado.alvo); if (c) c.value = ditado.buffer || ''; } }
+function mostrarPendenteDitado() { if (ditado && ditado.alvo !== 'nota' && ditado.alvo !== 'obs') { const c = campoNovoDoDitado(ditado.alvo); if (c) c.value = ditado.buffer || ''; } }
 function limparBufferDitado() { if (ditado) ditado.buffer = ''; }
 
 function confirmarItemDitado(alvo, texto) {
@@ -6332,9 +6332,9 @@ function confirmarItemDitado(alvo, texto) {
 
 function tratarFalaDitada(alvo, fala) {
   if (!ditado) return;
-  if (alvo === 'nota') {
+  if (alvo === 'nota' || alvo === 'obs') {
     // Texto corrido: só "nova linha" quebra linha; a pontuação falada vira o sinal
-    const campo = document.getElementById('nota-texto');
+    const campo = document.getElementById(alvo === 'obs' ? 'f-obs' : 'nota-texto');
     const partes = String(fala || '').split(/\bnova linha\b|\bnovo item\b/i).map(pontuarFala);
     // Escreve onde o cursor está (a posição fica guardada mesmo com o foco no botão do microfone)
     const pos = Math.min(campo.selectionStart, campo.value.length), fim = Math.min(campo.selectionEnd, campo.value.length);
@@ -6347,6 +6347,7 @@ function tratarFalaDitada(alvo, fala) {
     const cursor = atual.length;
     campo.value = atual + (depois && !/^[\s,.;:!?)]/.test(depois) && !/\s$/.test(atual) ? ' ' : '') + depois;
     campo.setSelectionRange(cursor, cursor);
+    campo.dispatchEvent(new Event('input', { bubbles: true })); // avisa o formulário que mudou (confirmar ao fechar, altura do campo)
     return;
   }
   // Itens (lista, formulário, nota rápida): "próximo"/"nova linha" separam
@@ -6515,6 +6516,8 @@ function ligarListaNoForm() {
   formListaLinhas = ehListaObs(txt) ? parseListaObs(txt) : textoParaItensLista(txt);
   formListaOn = true;
   campo.style.display = 'none';
+  pararDitado(); // se estava ditando a observação em texto, desliga: agora são itens
+  document.getElementById('btn-mic-obs').style.display = 'none';
   document.getElementById('obs-lista-editor').style.display = '';
   document.getElementById('btn-obs-lista').textContent = '↩ Voltar para texto normal';
   renderListaForm();
@@ -6527,6 +6530,7 @@ function desligarListaNoForm(reset) {
   if (formListaOn && !reset) campo.value = formListaLinhas.filter(l => l.texto.trim()).map(l => l.texto.trim()).join('\n');
   formListaOn = false; formListaLinhas = [];
   campo.style.display = '';
+  document.getElementById('btn-mic-obs').style.display = '';
   document.getElementById('obs-lista-editor').style.display = 'none';
   document.getElementById('btn-obs-lista').textContent = '☑ Mostrar como lista (com quadradinhos)';
 }
