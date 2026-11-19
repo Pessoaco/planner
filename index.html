@@ -2022,7 +2022,7 @@
     </div>
 
     <div class="form-group">
-      <label style="display:flex;align-items:center;gap:6px">Observação (opcional) <button type="button" class="btn-mic" id="btn-mic-obs" data-alvo="obs" onclick="alternarDitado('obs')" title="Ditar a observação (diga &quot;vírgula&quot;, &quot;ponto final&quot; ou &quot;nova linha&quot; quando precisar)">🎤</button></label>
+      <label style="display:flex;align-items:center;gap:6px">Observação (opcional) <button type="button" class="btn-mic" id="btn-mic-obs" data-alvo="obs" onclick="alternarDitado('obs')" title="Ditar a observação (diga &quot;vírgula&quot;, &quot;ponto final&quot;, &quot;pule linha&quot; ou &quot;novo parágrafo&quot; para deixar uma linha em branco)">🎤</button></label>
       <textarea id="f-obs" placeholder="Detalhes adicionais... (ou toque no microfone e fale)"></textarea>
       <div id="obs-lista-editor" style="display:none">
         <div id="obs-lista-itens"></div>
@@ -2497,7 +2497,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v97';
+const APP_VERSION = 'v98';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -6288,7 +6288,7 @@ function alternarDitado(alvo) {
   try { rec.start(); } catch (e) { pararDitado(); showToast('🎤 Não consegui ligar o microfone'); return; }
   marcarMic(alvo, true);
   showToast(alvo === 'nota' || alvo === 'obs'
-    ?'🎤 Pode falar. Diga "vírgula", "ponto final" ou "nova linha" quando precisar. Toque no ⏹ para parar.'
+    ?'🎤 Pode falar. Diga "vírgula", "ponto final", "pule linha" ou "novo parágrafo" (linha em branco). Toque no ⏹ para parar.'
     : (ditadoModo === 'pausa' ? '🎤 Fale um item; cada pausa vira um item. Toque no ⏹ para parar.' : '🎤 Fale o item e diga "próximo" para passar ao seguinte. Pode pensar à vontade. Toque no ⏹ para parar.'));
 }
 
@@ -6303,7 +6303,12 @@ function pontuarFala(s) {
   PONTUACAO_FALADA.forEach(([re, p]) => { t = t.replace(re, p); });
   return t.replace(/[ \t]+([,.;:!?)])/g, '$1').replace(/\([ \t]+/g, '(').replace(/[ \t]{2,}/g, ' ').trim();
 }
-const SEPARADOR_FALADO = /\b(?:pr[oó]xim[oa]|novo item|nova linha)\b/i;
+// Comandos de voz. PULAR DE LINHA (Enter): "nova linha", "pule linha", "pule uma linha", "outra linha", "na outra linha", "próxima linha".
+// LINHA EM BRANCO (Enter duas vezes): "novo parágrafo", "linha em branco", "pule duas linhas", "pule um espaço".
+const VOZ_LINHA = '(?:nova linha|novo item|(?:na |para a |pra )?outra linha|pr[oó]xima linha|pule (?:uma |a )?linha|pular (?:uma |a )?linha)';
+const VOZ_BRANCO = '(?:novo par[aá]grafo|par[aá]grafo|linha em branco|pule (?:duas|2) linhas|pular (?:duas|2) linhas|pule (?:um|1) espa[cç]o|pular (?:um|1) espa[cç]o)';
+const VOZ_QUEBRA_TEXTO = new RegExp('\\b(' + VOZ_BRANCO + ')\\b|\\b(' + VOZ_LINHA + ')\\b', 'i');
+const SEPARADOR_FALADO = new RegExp('\\b(?:' + VOZ_LINHA + '|pr[oó]xim[oa])\\b', 'i');
 const maiuscula1 = s => s.charAt(0).toUpperCase() + s.slice(1);
 
 // Modo de separar os itens: 'proximo' (padrão: só quando você diz "próximo"; pausa para pensar NÃO corta) ou 'pausa' (cada pausa = um item)
@@ -6335,13 +6340,19 @@ function tratarFalaDitada(alvo, fala) {
   if (alvo === 'nota' || alvo === 'obs') {
     // Texto corrido: só "nova linha" quebra linha; a pontuação falada vira o sinal
     const campo = document.getElementById(alvo === 'obs' ? 'f-obs' : 'nota-texto');
-    const partes = String(fala || '').split(/\bnova linha\b|\bnovo item\b/i).map(pontuarFala);
+    // split com 2 grupos devolve [texto, branco, linha, texto, branco, linha, ...]: cada comando vira 1 Enter (linha) ou 2 (linha em branco)
+    const cru = String(fala || '').split(VOZ_QUEBRA_TEXTO);
+    const partes = [], quebras = [];
+    for (let k = 0; k < cru.length; k += 3) {
+      partes.push(pontuarFala(cru[k]));
+      if (k + 1 < cru.length) quebras.push(cru[k + 1] ? '\n\n' : '\n');
+    }
     // Escreve onde o cursor está (a posição fica guardada mesmo com o foco no botão do microfone)
     const pos = Math.min(campo.selectionStart, campo.value.length), fim = Math.min(campo.selectionEnd, campo.value.length);
     const depois = campo.value.slice(fim);
     let atual = campo.value.slice(0, pos);
     partes.forEach((p, i) => {
-      if (i > 0) atual = atual.replace(/[ \t]+$/, '') + '\n';
+      if (i > 0) atual = atual.replace(/[ \t]+$/, '') + quebras[i - 1];
       if (p) atual += (atual && !/[\s(]$/.test(atual) && !/^[,.;:!?)]/.test(p) ? ' ' : '') + (/[\n]$|^$/.test(atual) || /[.!?]\s*$/.test(atual) ? maiuscula1(p) : p);
     });
     const cursor = atual.length;
