@@ -1455,6 +1455,7 @@
   .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
 
   .modal-titulo-linha { display: flex; align-items: center; justify-content: space-between; }
+  @media (pointer: fine) { .modal-titulo-linha { cursor: grab; user-select: none; } .modal-titulo-linha button, .modal-titulo-linha input { cursor: pointer; } }
   .modal-titulo-linha h3 { margin-bottom: 16px; }
   .modal-fechar-x {
     background: var(--gray-light);
@@ -2497,7 +2498,7 @@ function corDaPasta(aba) {
 
 // Versões mostradas no rodapé: se a do App ou a do Servidor não bater com a que foi entregue, é porque
 // aquela parte (GitHub / publicação do Code.gs) ainda não foi atualizada. Subir o número a cada entrega.
-const APP_VERSION = 'v98';
+const APP_VERSION = 'v99';
 let serverVersion = null;
 // Versões sempre visíveis no topo (o rodapé some quando há filtro): dá pra conferir na hora se a atualização pegou
 function mostrarVersoesNoTopo() {
@@ -6164,14 +6165,14 @@ function salvarNota() {
   atualizarTelaNotas();
 }
 
-// Nota rápida: o que foi digitado vira o título de uma nota amarela (toque nela depois pra escrever mais)
+// Nota rápida: o que foi digitado (ou ditado) vira o TEXTO de uma nota amarela, sem título (o título é opcional e se escreve depois, ao abrir a nota)
 function notaRapida() {
   limparBufferDitado();
   const campo = document.getElementById('nota-rapida');
   const txt = campo.value.trim();
   if (!txt) return;
   const novo = String(Date.now());
-  const campos = { 'Título': txt, 'Texto': '', 'Cor': 'amarelo', 'Tag': '', 'Fixada': '' };
+  const campos = { 'Título': '', 'Texto': txt, 'Cor': 'amarelo', 'Tag': '', 'Fixada': '' };
   notasData.push({ ID: novo, 'Data criação': new Date().toLocaleDateString('pt-BR'), ...campos });
   enfileirarNota({ tipo: 'add', fields: { ID: novo, ...campos } });
   atualizarTelaNotas();
@@ -6310,6 +6311,44 @@ const VOZ_BRANCO = '(?:novo par[aá]grafo|par[aá]grafo|linha em branco|pule (?:
 const VOZ_QUEBRA_TEXTO = new RegExp('\\b(' + VOZ_BRANCO + ')\\b|\\b(' + VOZ_LINHA + ')\\b', 'i');
 const SEPARADOR_FALADO = new RegExp('\\b(?:' + VOZ_LINHA + '|pr[oó]xim[oa])\\b', 'i');
 const maiuscula1 = s => s.charAt(0).toUpperCase() + s.slice(1);
+
+// ===== JANELAS ARRASTÁVEIS (mouse) =====
+// Segure o botão do mouse na faixa do título de qualquer janela (Editar nota, Nova tarefa, Filtros…) e arraste para onde quiser,
+// por exemplo para ver o que está atrás dela. Só vale com mouse: no celular a janela continua como era. Fecha e abre = volta ao lugar.
+(function () {
+  let arr = null;
+  const lerTrans = m => { const r = String(m.style.transform || '').match(/translate\((-?[\d.]+)px,\s*(-?[\d.]+)px\)/); return r ? [Number(r[1]), Number(r[2])] : [0, 0]; };
+  document.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'mouse' || e.button !== 0) return;
+    const linha = e.target.closest && e.target.closest('.modal-titulo-linha');
+    if (!linha || e.target.closest('button, input, select, textarea, a')) return;
+    const modal = linha.closest('.modal');
+    if (!modal) return;
+    const [tx, ty] = lerTrans(modal);
+    arr = { modal, x0: e.clientX, y0: e.clientY, tx, ty };
+    modal.style.transition = 'none';
+    e.preventDefault();
+  });
+  document.addEventListener('pointermove', e => {
+    if (!arr) return;
+    const [ax, ay] = lerTrans(arr.modal);
+    let nx = arr.tx + e.clientX - arr.x0, ny = arr.ty + e.clientY - arr.y0;
+    const r = arr.modal.getBoundingClientRect();
+    const novoEsq = r.left + (nx - ax), novoTopo = r.top + (ny - ay);
+    // não deixa a faixa do título sair da tela (sempre sobra um pedaço para pegar de volta)
+    if (novoEsq + r.width < 80 || novoEsq > window.innerWidth - 80) nx = ax;
+    if (novoTopo < 0 || novoTopo > window.innerHeight - 40) ny = ay;
+    arr.modal.style.transform = `translate(${nx}px, ${ny}px)`;
+  });
+  const soltar = () => { arr = null; };
+  document.addEventListener('pointerup', soltar);
+  document.addEventListener('pointercancel', soltar);
+  // ao fechar a janela ela volta ao centro, para a próxima vez abrir no lugar de sempre
+  document.querySelectorAll('.modal-overlay').forEach(ov => {
+    new MutationObserver(() => { if (!ov.classList.contains('open')) ov.querySelectorAll('.modal').forEach(m => { m.style.transform = ''; }); })
+      .observe(ov, { attributes: true, attributeFilter: ['class'] });
+  });
+})();
 
 // Modo de separar os itens: 'proximo' (padrão: só quando você diz "próximo"; pausa para pensar NÃO corta) ou 'pausa' (cada pausa = um item)
 let ditadoModo = 'proximo';
